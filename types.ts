@@ -20,6 +20,7 @@ export interface Message {
     visual_text: string;
     audio_text: string;
   };
+  job_status_update?: JobStatus;
   ui_triggers?: {
     theme_color: string;
     show_orange_border: boolean;

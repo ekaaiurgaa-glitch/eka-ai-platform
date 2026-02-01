@@ -1,23 +1,25 @@
 
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { EKA_CONSTITUTION } from "../constants";
-import { VehicleContext } from "../types";
+import { VehicleContext, JobStatus } from "../types";
 
 export class GeminiService {
   private textModel: string = 'gemini-3-pro-preview';
   private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
-  async sendMessage(history: { role: string; parts: { text: string }[] }[], context?: VehicleContext) {
+  async sendMessage(history: { role: string; parts: { text: string }[] }[], context?: VehicleContext, currentStatus: JobStatus = 'CREATED') {
     try {
-      // Use process.env.API_KEY directly when initializing GoogleGenAI
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-      const contextPrompt = context && context.brand ? 
-        `\n\n[LOCKED VEHICLE CONTEXT]:
-        Brand: ${context.brand}
-        Model: ${context.model}
-        Year: ${context.year}
-        Fuel: ${context.fuelType}` : '';
+      const contextPrompt = `
+[CURRENT SYSTEM STATE]:
+Current Status: ${currentStatus}
+${context && context.brand ? `
+Locked Vehicle Context:
+Brand: ${context.brand}
+Model: ${context.model}
+Year: ${context.year}
+Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
 
       const response = await ai.models.generateContent({
         model: this.textModel,
@@ -38,6 +40,10 @@ export class GeminiService {
                 },
                 required: ["visual_text", "audio_text"]
               },
+              job_status_update: { 
+                type: Type.STRING,
+                description: "Must be one of the JobStatus enums defined in constitution."
+              },
               ui_triggers: {
                 type: Type.OBJECT,
                 properties: {
@@ -55,15 +61,15 @@ export class GeminiService {
                 required: ["vehicle_display_query", "part_display_query"]
               }
             },
-            required: ["response_content", "ui_triggers", "visual_assets"]
+            required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
           }
         },
       });
 
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.grounding_chunks;
       const groundingUrls: { title: string; uri: string }[] = [];
       if (groundingChunks) {
-        groundingChunks.forEach(chunk => {
+        groundingChunks.forEach((chunk: any) => {
           if (chunk.web?.uri) {
             groundingUrls.push({ 
               title: chunk.web.title || 'Technical Source', 
@@ -73,7 +79,6 @@ export class GeminiService {
         });
       }
 
-      // Use response.text property to extract output
       const result = JSON.parse(response.text || '{}');
       return {
         ...result,
@@ -86,6 +91,7 @@ export class GeminiService {
           visual_text: "1. SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n   a. The EKA-Ai engine encountered an interruption.\n   b. Please re-issue the command.",
           audio_text: "System error. Diagnostic engine timed out."
         },
+        job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
         visual_assets: { vehicle_display_query: "Vehicle Error", part_display_query: null },
         grounding_urls: []
@@ -95,7 +101,6 @@ export class GeminiService {
 
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
-      // Use process.env.API_KEY directly when initializing GoogleGenAI
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
@@ -121,7 +126,6 @@ export class GeminiService {
     }
   }
 
-  // Implementation of base64 decoding as recommended
   private decodeBase64(base64: string): Uint8Array {
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
@@ -131,7 +135,6 @@ export class GeminiService {
     return bytes;
   }
 
-  // Implementation of audio decoding for raw PCM data from Gemini API
   async decodeAudioData(
     data: Uint8Array,
     ctx: AudioContext,

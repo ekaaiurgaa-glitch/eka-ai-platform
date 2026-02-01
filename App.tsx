@@ -24,9 +24,9 @@ const App: React.FC = () => {
         visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.\n   d. I can scan for official safety recalls and common manufacturer issues.",
         audio_text: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance, provide a DTC, or scan for official recalls."
       },
+      job_status_update: 'CREATED',
       ui_triggers: { theme_color: "#FF6600", show_orange_border: true },
       visual_assets: { vehicle_display_query: "Modern Car Diagnostic Interface", part_display_query: null },
-      // Removed non-existent language_code property to fix line 29 error
       timestamp: new Date(),
       isValidated: true
     }
@@ -58,6 +58,7 @@ const App: React.FC = () => {
   }, [messages, isLoading]);
 
   useEffect(() => {
+    // Sync UI state if context is manually completed but AI hasn't updated status yet
     if (isContextComplete(vehicleContext) && status === 'CREATED') {
       setStatus('VEHICLE_CONTEXT_COLLECTED');
     }
@@ -156,7 +157,7 @@ const App: React.FC = () => {
     let lastViolationReason = "";
 
     while (attempts < 2) {
-      const responseData = await geminiService.sendMessage(currentHistory, vehicleContext);
+      const responseData = await geminiService.sendMessage(currentHistory, vehicleContext, status);
       
       const violation = checkProtocolViolations(responseData.response_content.visual_text);
       
@@ -185,6 +186,7 @@ const App: React.FC = () => {
           visual_text: "1. AUDIT ALERT: GOVERNANCE BREACH DETECTED\n   a. Breach Type: Protocol Violation\n   b. Remediation Required: System reset required.",
           audio_text: "Response blocked due to protocol breach."
         },
+        job_status_update: status,
         ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
         visual_assets: { vehicle_display_query: "Protocol Violation", part_display_query: null },
         grounding_urls: []
@@ -197,6 +199,7 @@ const App: React.FC = () => {
       role: 'assistant',
       content: finalParsedResponse.response_content.visual_text,
       response_content: finalParsedResponse.response_content,
+      job_status_update: finalParsedResponse.job_status_update as JobStatus,
       ui_triggers: finalParsedResponse.ui_triggers,
       visual_assets: finalParsedResponse.visual_assets,
       grounding_urls: finalParsedResponse.grounding_urls,
@@ -205,8 +208,9 @@ const App: React.FC = () => {
       validationError: validationError
     };
     
-    if (finalParsedResponse.response_content.visual_text.toLowerCase().includes('probable cause')) {
-      setStatus('CONFIDENCE_CONFIRMED');
+    // Automatic State Machine Update
+    if (finalParsedResponse.job_status_update) {
+      setStatus(finalParsedResponse.job_status_update as JobStatus);
     }
 
     setMessages(prev => [...prev, assistantMessage]);
