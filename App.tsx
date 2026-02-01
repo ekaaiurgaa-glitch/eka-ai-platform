@@ -290,3 +290,13 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </main>
+
+      <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
+    </div>
+  );
+};
+
+export default App;
