@@ -11,7 +11,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello. I am EKA-Ai, your dedicated automobile intelligence advisor. I assist with diagnostics, repairs, service schedules, and workshop operations. \n\nTo begin, please describe the issue or service you need. If you have a specific diagnostic query, please provide the Brand, Model, Year, and Fuel type of the vehicle.",
+      content: "EKA-Ai Initialized.\n\nI provide professional automotive diagnostics and service guidance. To proceed with any diagnostic or technical advice, I require the following context:\n- Brand\n- Model\n- Year\n- Fuel Type\n\nPlease provide these details along with your query.",
       timestamp: new Date()
     }
   ]);
@@ -75,7 +75,7 @@ const App: React.FC = () => {
                   <div className="w-1.5 h-1.5 bg-[#FF6600] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                   <div className="w-1.5 h-1.5 bg-[#FF6600] rounded-full animate-bounce"></div>
                 </div>
-                <span className="text-xs font-bold text-[#FF6600] uppercase tracking-widest">Analyzing Systems...</span>
+                <span className="text-xs font-bold text-[#FF6600] uppercase tracking-widest">System Processing...</span>
               </div>
             </div>
           )}
