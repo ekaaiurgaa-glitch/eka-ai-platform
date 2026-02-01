@@ -20,7 +20,7 @@ const App: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
-      visual_content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n\nI provide professional automotive diagnostics and service guidance. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n\nYou can also input a **Diagnostic Trouble Code (DTC)** (e.g., P0420) for an expert breakdown.",
+      visual_content: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.",
       audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance or provide a DTC for code lookup.",
       language_code: "en",
       timestamp: new Date(),
@@ -179,8 +179,8 @@ const App: React.FC = () => {
 
     if (!finalParsedResponse) {
       finalParsedResponse = {
-        visual_content: `### AUDIT ALERT: GOVERNANCE BREACH DETECTED\n\n**Breach Type:** ${lastViolationReason}\n\n**Remediation Required:**\n${lastRemedy}`,
-        audio_content: `Response blocked: ${lastViolationReason}.`,
+        visual_content: "1. AUDIT ALERT: GOVERNANCE BREACH DETECTED\n   a. Breach Type: Protocol Violation\n   b. Remediation Required: System reset required. Please refine your mechanical query.",
+        audio_content: "Response blocked due to protocol breach.",
         language_code: "en",
         available_translations: ["en"],
         grounding_urls: []
@@ -202,7 +202,7 @@ const App: React.FC = () => {
       validationError: validationError
     };
     
-    if (finalParsedResponse.visual_content.includes('Probable Cause:')) {
+    if (finalParsedResponse.visual_content.toLowerCase().includes('probable cause')) {
       setStatus('CONFIDENCE_CONFIRMED');
     }
 
@@ -212,7 +212,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden">
-      <Header status={status} />
+      <Header status={status} vehicle={vehicleContext} />
       
       <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
