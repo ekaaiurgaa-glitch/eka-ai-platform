@@ -238,11 +238,14 @@ const App: React.FC = () => {
       
       <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          <VehicleContextPanel 
-            context={vehicleContext} 
-            onUpdate={setVehicleContext} 
-            onScanRecalls={handleScanRecalls}
-          />
+          {/* Conditional Visibility Logic for VehicleContextPanel */}
+          { (status !== 'CREATED' || !isContextComplete(vehicleContext)) && (
+            <VehicleContextPanel 
+              context={vehicleContext} 
+              onUpdate={setVehicleContext} 
+              onScanRecalls={handleScanRecalls}
+            />
+          )}
           
           <div className="px-4">
             {messages.map((msg) => (
