@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { VehicleContext, isContextComplete } from '../types';
 
@@ -42,79 +41,87 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   const handleLockIdentity = () => {
     setIsEditing(false);
     setShowSuccessGlow(true);
-    setTimeout(() => setShowSuccessGlow(false), 2000);
+    setTimeout(() => setShowSuccessGlow(false), 3000);
   };
 
+  // ---------------------------------------------------------
+  // VIEW MODE (LOCKED STATE) - Refined "Certificate" Style
+  // ---------------------------------------------------------
   if (!isEditing && isContextComplete(context)) {
     return (
-      <div className={`mx-4 mb-6 transition-all duration-700 ${showSuccessGlow ? 'scale-[1.02] ring-4 ring-green-500/30' : ''}`}>
-        <div className="relative group overflow-hidden p-1 bg-gradient-to-r from-green-500/20 via-[#f18a22]/20 to-transparent rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.1)]">
-          {showSuccessGlow && (
-            <div className="absolute inset-0 bg-green-500/10 animate-pulse pointer-events-none"></div>
-          )}
+      <div className={`mx-4 mb-6 transition-all duration-700 ${showSuccessGlow ? 'scale-[1.02]' : ''}`}>
+        <div className={`relative group overflow-hidden p-[1px] rounded-xl transition-all duration-1000 ${showSuccessGlow ? 'bg-gradient-to-r from-green-500 via-[#f18a22] to-green-500 animate-pulse shadow-[0_0_40px_rgba(34,197,94,0.3)]' : 'bg-[#262626]'}`}>
+          
+          <div className="bg-[#0A0A0A] border border-transparent rounded-[11px] p-5 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+            {/* Success Background Effect */}
+            {showSuccessGlow && (
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.08),transparent)] animate-in fade-in duration-1000"></div>
+            )}
 
-          <div className="bg-[#0A0A0A] border border-[#262626] rounded-[10px] p-5 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-5 w-full md:w-auto">
+              {/* Identity Token Display with Animation */}
               <div className="relative">
-                <div className="w-14 h-14 bg-black border-2 border-green-500/50 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.2)] shrink-0 overflow-hidden">
+                <div className={`w-16 h-16 bg-black border-2 rounded-xl flex items-center justify-center shrink-0 overflow-hidden transition-colors duration-500 ${showSuccessGlow ? 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'border-[#f18a22]/30'}`}>
                    {context.vehicleType === '2W' ? (
-                      <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className={`w-8 h-8 transition-colors ${showSuccessGlow ? 'text-green-500' : 'text-[#f18a22]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" />
                       </svg>
                    ) : (
-                      <svg className="w-7 h-7 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                      <svg className={`w-8 h-8 transition-colors ${showSuccessGlow ? 'text-green-500' : 'text-[#f18a22]'}`} fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
                       </svg>
                    )}
-                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/20 to-transparent h-1/2 w-full animate-[scan_2s_linear_infinite]"></div>
+                   {/* Digital Scanline Effect */}
+                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-transparent h-1/2 w-full animate-[scan_2.5s_linear_infinite]"></div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-black flex items-center justify-center shadow-lg">
-                  <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Verified Badge */}
+                <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center shadow-lg transition-colors duration-500 ${showSuccessGlow ? 'bg-green-500 scale-110' : 'bg-zinc-800'}`}>
+                  <svg className={`w-3.5 h-3.5 ${showSuccessGlow ? 'text-black' : 'text-zinc-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               </div>
 
-              <div className="flex flex-col">
+              <div className="flex flex-col relative z-20">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 transition-colors ${showSuccessGlow ? 'text-green-500' : 'text-zinc-500'}`}>
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${showSuccessGlow ? 'bg-green-400' : 'bg-zinc-700'}`}></span>
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${showSuccessGlow ? 'bg-green-500' : 'bg-zinc-600'}`}></span>
                     </span>
-                    Verified & Synced
+                    {showSuccessGlow ? 'Identity Verified & Locked' : 'Vehicle Identity Synced'}
                   </span>
                   <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
-                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Protocol 2.6 Secured</span>
+                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Protocol v1.5-Audit</span>
                 </div>
-                <h2 className="text-lg font-black text-white tracking-tighter uppercase leading-none">
-                  {context.year} <span className="text-[#f18a22]">{context.brand}</span> {context.model}
+                <h2 className="text-xl font-black text-white tracking-tighter uppercase leading-none mb-1.5">
+                  <span className="text-zinc-500">{context.year}</span> <span className="text-[#f18a22]">{context.brand}</span> {context.model}
                 </h2>
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-900 border border-[#262626] rounded text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
-                    <span className="w-1.5 h-1.5 bg-zinc-600 rounded-sm"></span>
-                    {context.fuelType} Fuel
+                    <span className="w-1.5 h-1.5 bg-[#f18a22] rounded-sm"></span>
+                    {context.fuelType} Protocol
                   </div>
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 border border-green-500/20 rounded text-[10px] font-black text-green-500 uppercase tracking-widest">
-                    Audit Certified
+                    G4G Certified
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto relative z-20">
               <button 
                 onClick={onScanRecalls}
-                className="w-full md:w-auto px-6 py-2.5 bg-green-600 text-black text-[10px] font-black uppercase tracking-[0.15em] rounded-lg hover:bg-green-500 transition-all active:scale-95 flex items-center justify-center gap-2.5 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                className="w-full md:w-auto px-6 py-3 bg-green-600 text-black text-[10px] font-black uppercase tracking-[0.15em] rounded-lg hover:bg-green-500 transition-all active:scale-95 flex items-center justify-center gap-2.5 shadow-[0_5px_20px_rgba(34,197,94,0.3)]"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                Safety Recall Audit
+                Perform Safety Audit
               </button>
               <button 
                 onClick={() => setIsEditing(true)}
-                className="w-full md:w-auto px-5 py-2.5 bg-zinc-900 border border-[#262626] rounded-lg text-[10px] text-zinc-400 font-black uppercase tracking-widest hover:border-[#f18a22] hover:text-white transition-all active:scale-95"
+                className="w-full md:w-auto px-5 py-3 bg-zinc-900 border border-[#262626] rounded-lg text-[10px] text-zinc-500 font-black uppercase tracking-widest hover:border-[#f18a22] hover:text-white transition-all active:scale-95"
               >
                 Modify Identity
               </button>
@@ -122,27 +129,37 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
           </div>
         </div>
 
-        {showSuccessGlow && (
-          <div className="mt-3 py-2 px-4 bg-green-500 rounded-lg flex items-center justify-center gap-3 animate-in fade-in slide-in-from-bottom-2">
-            <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-[10px] font-black text-black uppercase tracking-[0.2em]">Vehicle Data Successfully Synchronized with EKA-Ai Engine</span>
+        {/* Dynamic Success Alert */}
+        <div className={`mt-4 overflow-hidden transition-all duration-700 ease-out ${showSuccessGlow ? 'max-h-20 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-4'}`}>
+          <div className="py-2.5 px-4 bg-green-500 border border-green-400 rounded-lg flex items-center justify-between gap-3 shadow-[0_10px_25px_-5px_rgba(34,197,94,0.4)]">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 bg-black/20 rounded-full flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-[11px] font-black text-black uppercase tracking-[0.2em]">Vehicle State Synchronized & Audit-Gated</span>
+            </div>
+            <div className="hidden sm:block text-[9px] font-black text-black/60 uppercase tracking-widest">Encryption: AES-256</div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
+  // ---------------------------------------------------------
+  // EDIT MODE (FORM)
+  // ---------------------------------------------------------
   return (
     <div className="mx-4 mb-6 p-8 bg-[#0A0A0A] border-2 border-[#f18a22]/20 rounded-2xl shadow-2xl relative overflow-hidden group transition-all duration-300">
+      {/* Decorative Grid Background */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#f18a22_1px,transparent_1px)] [background-size:20px_20px]"></div>
 
       <div className="flex items-center gap-4 mb-8">
         <div className="w-1.5 h-6 bg-[#f18a22] shadow-[0_0_12px_rgba(241,138,34,0.5)] rounded-full"></div>
         <div className="flex flex-col">
           <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Vehicle Identity Acquisition</h3>
-          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1 italic">Context Verification Required for Diagnostic Session</p>
+          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1 italic">Governance Gate: 5-Point Contextual Lock Required</p>
         </div>
       </div>
 
@@ -194,7 +211,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             list="model-list"
             value={context.model}
             onChange={handleChange}
-            placeholder="e.g. City / Splendor"
+            placeholder="e.g. City / Pulsar"
             className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all font-medium"
           />
           <datalist id="model-list">
