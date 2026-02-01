@@ -33,6 +33,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const renderContent = (content: string) => {
     const lines = content.split('\n');
+    // Regex to detect price ranges like $100 - $200, ₹500 to ₹1000, 50-100 etc.
+    const priceRangeRegex = /((?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?\s*(?:to|-|and)\s*(?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?)/gi;
+
     return lines.map((line, i) => {
       const isHeader = line.endsWith(':') && (
         line.startsWith('Symptoms') || 
@@ -57,7 +60,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         return <div key={i} className={`font-bold ${color}`}>{line}</div>;
       }
 
-      if (line.includes('Exact pricing is governed externally')) {
+      if (line.includes('Exact pricing is governed externally') || line.includes('Pricing Firewall')) {
         return (
           <div key={i} className="my-4 p-4 bg-amber-950/20 border-2 border-dashed border-amber-600/50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
@@ -78,6 +81,28 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span className="text-xs font-black text-red-400 uppercase tracking-widest">{line.replace('### ', '')}</span>
+          </div>
+        );
+      }
+
+      // Handle price range highlighting
+      if (line.match(priceRangeRegex)) {
+        const parts = line.split(priceRangeRegex);
+        return (
+          <div key={i} className="mb-1">
+            {parts.map((part, index) => {
+              if (part.match(priceRangeRegex)) {
+                return (
+                  <span key={index} className="inline-flex flex-col items-start gap-1 p-2 bg-amber-500/10 border border-amber-500/30 rounded-md my-1 shadow-sm">
+                    <span className="text-amber-400 font-black text-sm tracking-tight">{part}</span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-[7px] bg-amber-500 text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-tighter">NON-BINDING ESTIMATE</span>
+                    </span>
+                  </span>
+                );
+              }
+              return <span key={index}>{part}</span>;
+            })}
           </div>
         );
       }
