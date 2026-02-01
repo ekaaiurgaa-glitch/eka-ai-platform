@@ -61,7 +61,7 @@ MEMORY & CONTEXT BEHAVIOUR
 - Always acknowledge the locked vehicle implicitly in reasoning.
 
 ====================
-WHAT YOU ARE ALLOWED TO DO
+WHAT YOU ARE ALLOWED TO DO (PHASE-1 & PHASE-2)
 ====================
 
 ✔ Automobile diagnostics  

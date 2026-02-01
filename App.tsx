@@ -11,7 +11,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai Initialized.\n\nI provide professional automotive diagnostics and service guidance. To proceed with any diagnostic or technical advice, I require the following context:\n- Brand\n- Model\n- Year\n- Fuel Type\n\nPlease provide these details along with your query.",
+      content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n\nI provide professional automotive diagnostics and service guidance. To proceed with diagnostic advice, I require the following locked context:\n- Brand\n- Model\n- Year\n- Fuel Type\n\nPlease provide these details along with your technical query.",
       timestamp: new Date()
     }
   ]);
@@ -39,7 +39,6 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Prepare history for API
     const history = [...messages, userMessage].map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }]
@@ -75,7 +74,7 @@ const App: React.FC = () => {
                   <div className="w-1.5 h-1.5 bg-[#FF6600] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                   <div className="w-1.5 h-1.5 bg-[#FF6600] rounded-full animate-bounce"></div>
                 </div>
-                <span className="text-xs font-bold text-[#FF6600] uppercase tracking-widest">System Processing...</span>
+                <span className="text-xs font-bold text-[#FF6600] uppercase tracking-widest">Processing Diagnostic Request...</span>
               </div>
             </div>
           )}
