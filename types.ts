@@ -15,7 +15,11 @@ export type JobStatus =
 export interface Message {
   id: string;
   role: MessageRole;
-  content: string;
+  content: string; // Keep original for compatibility/logs
+  visual_content?: string;
+  audio_content?: string;
+  language_code?: string;
+  available_translations?: string[];
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;
