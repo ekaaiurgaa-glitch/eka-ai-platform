@@ -17,6 +17,8 @@ export interface Message {
   role: MessageRole;
   content: string;
   timestamp: Date;
+  isValidated?: boolean;
+  validationError?: boolean;
 }
 
 export interface VehicleContext {

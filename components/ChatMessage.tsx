@@ -40,12 +40,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div className={`flex w-full mb-6 ${isAi ? 'justify-start' : 'justify-end'}`}>
       <div 
-        className={`max-w-[90%] md:max-w-[80%] p-5 rounded-lg border shadow-lg ${
+        className={`max-w-[90%] md:max-w-[80%] p-5 rounded-lg border shadow-lg relative ${
           isAi 
             ? 'bg-[#0A0A0A] border-[#262626] text-zinc-100' 
             : 'bg-[#121212] border-[#FF6600] text-zinc-100'
         }`}
       >
+        {isAi && message.validationError && (
+          <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl">
+            Protocol Warning: Format Violation
+          </div>
+        )}
+        
+        {isAi && !message.validationError && message.isValidated && (
+          <div className="absolute -top-2 -right-2 bg-green-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl">
+            Verified Output
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
           <div className="flex items-center gap-2">
             {isAi ? (
