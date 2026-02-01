@@ -35,24 +35,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         return <div key={i} className={`font-bold ${color}`}>{line}</div>;
       }
 
-      // 3. Pricing Firewall: Handle Disclaimer
+      // 3. Pricing Firewall: Handle Mandatory Disclaimer
       if (line.includes('Exact pricing is governed externally')) {
         return (
-          <div key={i} className="my-3 p-3 bg-zinc-900 border-l-4 border-amber-500 rounded-r-md">
-            <div className="flex items-center gap-2 mb-1">
-              <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          <div key={i} className="my-4 p-4 bg-amber-950/20 border-2 border-dashed border-amber-600/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pricing Firewall Disclaimer</span>
+              <span className="text-[11px] font-black text-amber-500 uppercase tracking-widest">Pricing Firewall (Protocol 4.1)</span>
             </div>
-            <p className="text-xs italic text-zinc-300 font-medium">{line}</p>
+            <p className="text-xs font-bold text-amber-200 leading-relaxed">{line}</p>
           </div>
         );
       }
 
-      // 4. Highlight Estimated Price Ranges
-      // Simple check for numbers/currency and keywords like "between", "range", "to"
-      const priceRegex = /(\$?\d+(?:,\d+)?(?:\.\d+)?\s*(?:to|-|and)\s*\$?\d+(?:,\d+)?(?:\.\d+)?)/gi;
+      // 4. Highlight Estimated Price Ranges with explicit "NON-BINDING" labeling
+      // Regex captures common currency symbols and range formats (e.g., ₹500 - ₹1000, $10 to $20)
+      const priceRegex = /((?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?\s*(?:to|-|and)\s*(?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?)/gi;
+      
       if (line.match(priceRegex)) {
         const parts = line.split(priceRegex);
         return (
@@ -60,13 +61,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             {parts.map((part, index) => {
               if (part.match(priceRegex)) {
                 return (
-                  <span key={index} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-amber-400 font-bold whitespace-nowrap">
-                    {part}
-                    <span className="text-[8px] bg-amber-500 text-black px-1 rounded-sm leading-tight">ESTIMATE</span>
+                  <span key={index} className="inline-flex flex-col items-start gap-1 p-2 bg-amber-500/5 border border-amber-500/30 rounded-md my-1">
+                    <span className="text-amber-400 font-black text-sm tracking-tight">
+                      {part}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-[7px] bg-amber-500 text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-tighter">
+                        NON-BINDING ESTIMATE
+                      </span>
+                      <span className="text-[7px] text-zinc-500 font-bold uppercase italic">
+                        Subject to Workshop Audit
+                      </span>
+                    </span>
                   </span>
                 );
               }
-              return part;
+              return <span key={index}>{part}</span>;
             })}
           </div>
         );
@@ -86,13 +96,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         }`}
       >
         {isAi && message.validationError && (
-          <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl">
+          <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl ring-2 ring-black">
             Protocol Warning: Format Violation
           </div>
         )}
         
         {isAi && !message.validationError && message.isValidated && (
-          <div className="absolute -top-2 -right-2 bg-green-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl">
+          <div className="absolute -top-2 -right-2 bg-green-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl ring-2 ring-black">
             Verified Output
           </div>
         )}
@@ -101,7 +111,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <div className="flex items-center gap-2">
             {isAi ? (
               <>
-                <div className="w-5 h-5 bg-[#FF6600] rounded-sm flex items-center justify-center text-[10px] font-black text-black">E</div>
+                <div className="w-5 h-5 bg-[#FF6600] rounded-sm flex items-center justify-center text-[10px] font-black text-black shadow-[0_0_10px_rgba(255,102,0,0.3)]">E</div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6600]">EKA-Ai Agent</span>
               </>
             ) : (
@@ -110,7 +120,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               </>
             )}
           </div>
-          <span className="text-[9px] text-zinc-600 font-mono">
+          <span className="text-[9px] text-zinc-600 font-mono font-bold">
             {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </span>
         </div>
