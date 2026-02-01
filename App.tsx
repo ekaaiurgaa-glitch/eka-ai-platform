@@ -20,8 +20,8 @@ const App: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
-      visual_content: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.",
-      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance or provide a DTC for code lookup.",
+      visual_content: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.\n   d. I can scan for official safety recalls and common manufacturer issues.",
+      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance, provide a DTC, or scan for official recalls.",
       language_code: "en",
       timestamp: new Date(),
       isValidated: true
@@ -210,13 +210,21 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handleScanRecalls = () => {
+    handleSendMessage("Scan for official safety recalls and common manufacturer issues for my vehicle.");
+  };
+
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden">
       <Header status={status} vehicle={vehicleContext} />
       
       <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          <VehicleContextPanel context={vehicleContext} onUpdate={setVehicleContext} />
+          <VehicleContextPanel 
+            context={vehicleContext} 
+            onUpdate={setVehicleContext} 
+            onScanRecalls={handleScanRecalls}
+          />
           
           <div className="px-4">
             {messages.map((msg) => (

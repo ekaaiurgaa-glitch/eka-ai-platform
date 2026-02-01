@@ -5,9 +5,10 @@ import { VehicleContext, isContextComplete } from '../types';
 interface VehicleContextPanelProps {
   context: VehicleContext;
   onUpdate: (updated: VehicleContext) => void;
+  onScanRecalls?: () => void;
 }
 
-const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUpdate }) => {
+const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUpdate, onScanRecalls }) => {
   const [isEditing, setIsEditing] = useState(!isContextComplete(context));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -46,12 +47,23 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             </div>
           </div>
           
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="w-full md:w-auto px-4 py-2 bg-zinc-900 border border-[#262626] rounded-lg text-[10px] text-zinc-400 font-black uppercase tracking-widest hover:border-[#FF6600] hover:text-white transition-all active:scale-95"
-          >
-            Modify Identity context
-          </button>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <button 
+              onClick={onScanRecalls}
+              className="flex-1 md:flex-none px-4 py-2 bg-[#FF6600]/10 border border-[#FF6600]/40 rounded-lg text-[10px] text-[#FF6600] font-black uppercase tracking-widest hover:bg-[#FF6600] hover:text-black transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Scan Safety Recalls
+            </button>
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 bg-zinc-900 border border-[#262626] rounded-lg text-[10px] text-zinc-400 font-black uppercase tracking-widest hover:border-[#FF6600] hover:text-white transition-all active:scale-95"
+            >
+              Modify
+            </button>
+          </div>
         </div>
       </div>
     );

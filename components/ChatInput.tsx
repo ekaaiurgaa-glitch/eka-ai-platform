@@ -43,6 +43,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
     textareaRef.current?.focus();
   };
 
+  const insertRecallHelper = () => {
+    onSend("Scan for official recalls and common reported mechanical issues for this vehicle.");
+  };
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -93,7 +97,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isListening ? "Listening to symptoms..." : "Enter symptom or DTC (e.g., P0420)..."}
-            className={`w-full bg-[#0A0A0A] text-white border border-[#262626] rounded-xl py-4 pl-4 pr-32 focus:outline-none focus:border-[#FF6600] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
+            className={`w-full bg-[#0A0A0A] text-white border border-[#262626] rounded-xl py-4 pl-4 pr-40 focus:outline-none focus:border-[#FF6600] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
               isListening ? 'ring-2 ring-[#FF6600]/40 border-[#FF6600]/60' : ''
             }`}
             disabled={isLoading}
@@ -108,6 +112,16 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
               title="Add DTC Lookup Prefix"
             >
               DTC
+            </button>
+
+            <button
+              type="button"
+              onClick={insertRecallHelper}
+              disabled={isLoading}
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#FF6600] hover:border-[#FF6600] transition-all uppercase tracking-tighter"
+              title="Scan Safety Recalls"
+            >
+              Scan
             </button>
 
             <button
@@ -145,7 +159,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
         </form>
         <div className="mt-2 flex items-center justify-between">
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
-            Audit-Grade DTC Analysis Active
+            Audit-Grade Recall & DTC Analysis Active
           </p>
           {isListening && (
             <div className="flex items-center gap-1.5 animate-pulse">
