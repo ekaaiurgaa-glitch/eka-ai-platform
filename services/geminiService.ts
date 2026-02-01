@@ -18,7 +18,12 @@ export class GeminiService {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
-      const isPartSearch = lastUserMessage.includes('part') || lastUserMessage.includes('source') || lastUserMessage.includes('oem');
+      // Enhanced intent detection for part search
+      const isPartSearch = lastUserMessage.includes('part') || 
+                           lastUserMessage.includes('source') || 
+                           lastUserMessage.includes('oem') || 
+                           lastUserMessage.includes('aftermarket') ||
+                           lastUserMessage.includes('inventory');
 
       const contextPrompt = `
 [CURRENT SYSTEM STATE]:
@@ -32,12 +37,14 @@ Model: ${context.model}
 Year: ${context.year}
 Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
 
-[INTENT SIGNAL]: ${isPartSearch ? 'IDENTIFY_AND_SOURCE_PARTS_MODE' : 'DIAGNOSTIC_MODE'}
-${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, compatibility, and vendor links using the grounding tool.' : 'Analyze symptoms and provide diagnostic reasoning.'}`;
+[INTENT SIGNAL]: ${isPartSearch ? 'PART_SOURCING_PROTOCOL_ACTIVE' : 'STANDARD_DIAGNOSTIC_PROTOCOL'}
+${isPartSearch ? 
+  'MISSION: Identify the specific automobile part. Use Google Search to find OEM part numbers, compatible vehicle models, and links to reputable suppliers. Ensure visual_assets.part_display_query is highly specific.' : 
+  'MISSION: Analyze vehicle symptoms and provide step-by-step diagnostic reasoning.'}`;
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + contextPrompt,
-        temperature: mode === 'THINKING' ? 1.0 : 0.1,
+        temperature: mode === 'THINKING' ? 0.7 : 0.1,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
         responseSchema: {
@@ -93,14 +100,17 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
         groundingChunks.forEach((chunk: any) => {
           if (chunk.web?.uri) {
             groundingUrls.push({ 
-              title: chunk.web.title || 'Technical Sourcing Data', 
+              title: chunk.web.title || 'Official Source', 
               uri: chunk.web.uri 
             });
           }
         });
       }
 
-      const result = JSON.parse(response.text || '{}');
+      const textOutput = response.text;
+      if (!textOutput) throw new Error("Empty response from AI engine.");
+      
+      const result = JSON.parse(textOutput);
       return {
         ...result,
         grounding_urls: groundingUrls
@@ -109,8 +119,8 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
       console.error("EKA-Ai Engine Error:", error);
       return {
         response_content: {
-          visual_text: "1. SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n   a. The EKA-Ai engine encountered an interruption.\n   b. Please re-issue the command.",
-          audio_text: "System error. Diagnostic engine timed out."
+          visual_text: "1. SYSTEM ERROR: PROTOCOL TIMEOUT\n   a. The EKA-Ai engine encountered a validation delay.\n   b. Please re-state your part query or diagnostic symptom.",
+          audio_text: "System error. Please retry your request."
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
@@ -125,7 +135,7 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `Speak professionally: ${text}` }] }],
+        contents: [{ parts: [{ text: `Service Advisor Tone: ${text}` }] }],
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
