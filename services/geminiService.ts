@@ -66,13 +66,14 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
         },
       });
 
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.grounding_chunks;
+      // Corrected from grounding_chunks to groundingChunks per SDK
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       const groundingUrls: { title: string; uri: string }[] = [];
       if (groundingChunks) {
         groundingChunks.forEach((chunk: any) => {
           if (chunk.web?.uri) {
             groundingUrls.push({ 
-              title: chunk.web.title || 'Technical Source', 
+              title: chunk.web.title || 'Technical Bulletin', 
               uri: chunk.web.uri 
             });
           }

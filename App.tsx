@@ -39,13 +39,23 @@ const App: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  const PROTOCOL_STEPS = [
+  const STANDARD_PROTOCOL = [
     "Verification: Domain Boundary Check",
     "Acquisition: Vehicle Context Lock",
     "Analysis: DTC & Symptom Reasoning",
     "Confidence Gating: Root Cause Validation",
     "Finalization: Safety Governance Audit"
   ];
+
+  const RECALL_PROTOCOL = [
+    "Verification: Safety Audit Initiation",
+    "Connection: Grounding Data Engine",
+    "Scan: NHTSA & Manufacturer Database",
+    "Analysis: Common Issue Pattern Logic",
+    "Verification: Audit-Grade Finalization"
+  ];
+
+  const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -58,7 +68,6 @@ const App: React.FC = () => {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    // Sync UI state if context is manually completed but AI hasn't updated status yet
     if (isContextComplete(vehicleContext) && status === 'CREATED') {
       setStatus('VEHICLE_CONTEXT_COLLECTED');
     }
@@ -69,13 +78,13 @@ const App: React.FC = () => {
     if (isLoading) {
       setLoadingStep(0);
       interval = setInterval(() => {
-        setLoadingStep((prev) => (prev < PROTOCOL_STEPS.length - 1 ? prev + 1 : prev));
-      }, 800);
+        setLoadingStep((prev) => (prev < activeProtocol.length - 1 ? prev + 1 : prev));
+      }, 700);
     } else {
       setLoadingStep(0);
     }
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [isLoading, activeProtocol]);
 
   const handlePlayAudio = async (text: string) => {
     if (isAudioPlaying) return;
@@ -136,6 +145,9 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = async (text: string) => {
+    const isRecallScan = text.toLowerCase().includes('recall') || text.toLowerCase().includes('scan');
+    setActiveProtocol(isRecallScan ? RECALL_PROTOCOL : STANDARD_PROTOCOL);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -208,7 +220,6 @@ const App: React.FC = () => {
       validationError: validationError
     };
     
-    // Automatic State Machine Update
     if (finalParsedResponse.job_status_update) {
       setStatus(finalParsedResponse.job_status_update as JobStatus);
     }
@@ -218,7 +229,7 @@ const App: React.FC = () => {
   };
 
   const handleScanRecalls = () => {
-    handleSendMessage("Scan for official safety recalls and common manufacturer issues for my vehicle.");
+    handleSendMessage("Initiate audit-grade safety scan for official recalls and common patterns for this vehicle identity.");
   };
 
   return (
@@ -246,19 +257,21 @@ const App: React.FC = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start mb-6">
-                <div className="bg-[#0A0A0A] border border-[#262626] p-5 rounded-lg flex flex-col gap-4 shadow-2xl min-w-[300px] border-l-4 border-l-[#FF6600]">
+                <div className={`bg-[#0A0A0A] border border-[#262626] p-5 rounded-lg flex flex-col gap-4 shadow-2xl min-w-[300px] border-l-4 transition-colors duration-500 ${activeProtocol === RECALL_PROTOCOL ? 'border-l-red-600' : 'border-l-[#FF6600]'}`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-ping"></div>
-                      <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest leading-none">EKA Governance Engine</span>
+                      <div className={`w-2 h-2 rounded-full animate-ping ${activeProtocol === RECALL_PROTOCOL ? 'bg-red-600' : 'bg-[#FF6600]'}`}></div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${activeProtocol === RECALL_PROTOCOL ? 'text-red-500' : 'text-[#FF6600]'}`}>
+                        {activeProtocol === RECALL_PROTOCOL ? 'EKA Safety Audit Engine' : 'EKA Governance Engine'}
+                      </span>
                     </div>
                   </div>
                   
                   <div className="flex flex-col gap-2">
-                    {PROTOCOL_STEPS.map((step, idx) => (
+                    {activeProtocol.map((step, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? 'bg-[#FF6600]' : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
-                        <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? 'text-[#FF6600]/80' : 'text-zinc-700'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? (activeProtocol === RECALL_PROTOCOL ? 'bg-red-600' : 'bg-[#FF6600]') : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
+                        <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? (activeProtocol === RECALL_PROTOCOL ? 'text-red-500/80' : 'text-[#FF6600]/80') : 'text-zinc-700'}`}>
                           {step}
                           {idx === loadingStep && (
                             <span className="ml-2 inline-flex gap-0.5">
@@ -267,7 +280,6 @@ const App: React.FC = () => {
                               <span className="animate-[bounce_1s_infinite_400ms]">.</span>
                             </span>
                           )}
-                          {idx < loadingStep && <span className="ml-2 text-[8px] opacity-60">✓ PASS</span>}
                         </span>
                       </div>
                     ))}

@@ -42,18 +42,22 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
         
-        if (title.toLowerCase().includes('dtc definition') || title.toLowerCase().includes('official recall alerts')) {
-          const isRecall = title.toLowerCase().includes('recall');
+        // Handle Recall Alerts with distinct Red High-Priority styling
+        if (title.toLowerCase().includes('recall alert') || title.toLowerCase().includes('common reported issues')) {
+          const isCritical = title.toLowerCase().includes('recall');
           return (
-            <div key={i} className={`flex items-center gap-2 mt-6 mb-3 p-3 ${isRecall ? 'bg-red-600/10 border-red-600/30' : 'bg-[#FF6600]/10 border-[#FF6600]/30'} border rounded-lg shadow-sm`}>
-              <svg className={`w-5 h-5 ${isRecall ? 'text-red-500' : 'text-[#FF6600]'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isRecall ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                )}
-              </svg>
-              <span className={`${isRecall ? 'text-red-500' : 'text-[#FF6600]'} font-black text-sm uppercase tracking-widest`}>{title}</span>
+            <div key={i} className={`flex items-center gap-2 mt-6 mb-3 p-4 ${isCritical ? 'bg-red-600/15 border-red-500/50' : 'bg-amber-600/10 border-amber-500/30'} border-2 rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.1)]`}>
+              <div className={`p-2 rounded-lg ${isCritical ? 'bg-red-600' : 'bg-amber-500'}`}>
+                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isCritical ? 'text-red-500' : 'text-amber-500'}`}>
+                  {isCritical ? 'High-Priority Safety Scan' : 'Market Intelligence Pattern'}
+                </span>
+                <span className="text-white font-black text-sm uppercase tracking-tight">{title}</span>
+              </div>
             </div>
           );
         }
@@ -92,39 +96,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         return <div key={i} className={`font-black text-xs uppercase tracking-widest mt-4 ${color}`}>{line}</div>;
       }
 
-      if (line.includes('Exact pricing is governed externally') || line.includes('Pricing Firewall')) {
-        return (
-          <div key={i} className="my-6 p-5 bg-amber-950/20 border-2 border-dashed border-amber-600/50 rounded-xl shadow-inner">
-            <div className="flex items-center gap-2 mb-3">
-              <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span className="text-xs font-black text-amber-500 uppercase tracking-[0.2em]">Governance: Pricing Firewall</span>
-            </div>
-            <p className="text-sm font-medium text-amber-100/90 italic leading-relaxed">{line}</p>
-          </div>
-        );
-      }
-
-      if (line.match(priceRangeRegex)) {
-        const parts = line.split(priceRangeRegex);
-        return (
-          <div key={i} className="mb-2 text-sm text-zinc-300 leading-relaxed">
-            {parts.map((part, index) => {
-              if (part.match(priceRangeRegex)) {
-                return (
-                  <span key={index} className="inline-flex flex-col items-center gap-0.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded mx-1 align-middle">
-                    <span className="text-amber-400 font-black text-base tracking-tight">{part}</span>
-                    <span className="text-[7px] bg-amber-500 text-black px-1.5 py-0 rounded-sm font-black uppercase tracking-tighter">NON-BINDING ESTIMATE</span>
-                  </span>
-                );
-              }
-              return <span key={index}>{part}</span>;
-            })}
-          </div>
-        );
-      }
-
       return <div key={i} className="mb-2 text-sm text-zinc-300 leading-relaxed">{line}</div>;
     });
   };
@@ -133,7 +104,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const showContextForm = isAi && message.id === 'welcome' && vehicleContext && !isContextComplete(vehicleContext);
   const showOrangeBorder = isAi && message.ui_triggers?.show_orange_border;
 
-  // Visual Assets Display
   const renderVisualAssets = () => {
     if (!message.visual_assets) return null;
     const { vehicle_display_query, part_display_query } = message.visual_assets;
@@ -153,9 +123,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
             <div className="p-4 relative">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest">Reference Profile</span>
+                <span className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest">Diagnostic Reference</span>
                 <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
-                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Visual Identity</span>
+                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Visual Profile</span>
               </div>
               <h4 className="text-sm font-black text-white uppercase tracking-tight">{vehicle_display_query}</h4>
             </div>
@@ -173,7 +143,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 />
              </div>
              <div className="flex flex-col">
-               <span className="text-[8px] font-black text-[#FF6600] uppercase tracking-widest mb-0.5">Component Scan</span>
+               <span className="text-[8px] font-black text-[#FF6600] uppercase tracking-widest mb-0.5">Component Focus</span>
                <h5 className="text-xs font-black text-white uppercase tracking-tight">{part_display_query}</h5>
              </div>
            </div>
@@ -247,7 +217,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="mt-8 pt-4 border-t border-white/5">
             <h5 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
               <span className="w-1 h-3 bg-zinc-700"></span>
-              Verified Technical Bulletins
+              Verified Documentation
             </h5>
             <div className="flex flex-wrap gap-2">
               {message.grounding_urls.map((url, idx) => (
@@ -272,7 +242,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <form onSubmit={handleContextSubmit} className="mt-8 p-6 bg-black/60 border-2 border-[#FF6600]/20 rounded-2xl animate-in fade-in zoom-in duration-500 shadow-inner">
             <h4 className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
               <span className="w-2 h-2 bg-[#FF6600] rounded-full shadow-[0_0_8px_#FF6600]"></span>
-              Critical: Context Lock Required
+              Critical: Identity Verification
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
