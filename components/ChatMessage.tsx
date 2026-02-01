@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Message, VehicleContext, isContextComplete } from '../types';
 
@@ -41,6 +42,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
         
+        // Special UI for Recalls/Issues
         if (title.toLowerCase().includes('recall alert') || title.toLowerCase().includes('common reported issues')) {
           const isCritical = title.toLowerCase().includes('recall');
           return (
@@ -54,6 +56,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isCritical ? 'text-red-500' : 'text-amber-500'}`}>
                   {isCritical ? 'High-Priority Safety Scan' : 'Market Intelligence Pattern'}
                 </span>
+                <span className="text-white font-black text-sm uppercase tracking-tight">{title}</span>
+              </div>
+            </div>
+          );
+        }
+
+        // Special UI for Part Sourcing Title
+        if (title.toLowerCase().includes('part sourcing') || title.toLowerCase().includes('inventory')) {
+          return (
+            <div key={i} className="flex items-center gap-2 mt-6 mb-3 p-4 bg-blue-600/10 border-blue-500/30 border-2 rounded-xl">
+              <div className="p-2 rounded-lg bg-blue-600">
+                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Inventory & Logistics Scan</span>
                 <span className="text-white font-black text-sm uppercase tracking-tight">{title}</span>
               </div>
             </div>
@@ -85,15 +104,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         );
       }
 
-      const riskMatch = trimmedLine.match(/Risk Level:\s*(Low|Medium|High)/i);
-      if (riskMatch) {
-        const level = riskMatch[1].toLowerCase();
-        let color = 'text-green-500';
-        if (level === 'medium') color = 'text-yellow-500';
-        if (level === 'high') color = 'text-red-500';
-        return <div key={i} className={`font-black text-xs uppercase tracking-widest mt-4 ${color}`}>{line}</div>;
-      }
-
       return <div key={i} className="mb-2 text-sm text-zinc-300 leading-relaxed">{line}</div>;
     });
   };
@@ -114,7 +124,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                <img 
                  src={`https://source.unsplash.com/featured/?${encodeURIComponent(vehicle_display_query)}`} 
                  alt={vehicle_display_query}
-                 // Ensure object-cover is present so the image crops nicely instead of stretching
                  className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-700 group-hover:scale-105"
                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1000'; }}
                />
@@ -216,23 +225,39 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="mt-8 pt-4 border-t border-white/5">
             <h5 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
               <span className="w-1 h-3 bg-zinc-700"></span>
-              Verified Documentation
+              Verified Documentation & Suppliers
             </h5>
-            <div className="flex flex-wrap gap-2">
-              {message.grounding_urls.map((url, idx) => (
-                <a 
-                  key={idx} 
-                  href={url.uri} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[10px] px-3 py-1.5 bg-[#121212] border border-[#262626] text-zinc-400 hover:border-[#FF6600] hover:text-[#FF6600] rounded-md font-bold transition-all flex items-center gap-2 group"
-                >
-                  <svg className="w-3 h-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10 a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  {url.title}
-                </a>
-              ))}
+            <div className="flex flex-col gap-2">
+              {message.grounding_urls.map((url, idx) => {
+                const isPartSupplier = url.title.toLowerCase().includes('part') || url.uri.toLowerCase().includes('oem') || url.uri.toLowerCase().includes('parts');
+                return (
+                  <a 
+                    key={idx} 
+                    href={url.uri} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`text-[11px] px-4 py-3 bg-[#121212] border ${isPartSupplier ? 'border-blue-500/30 hover:border-blue-500' : 'border-[#262626] hover:border-[#FF6600]'} text-zinc-300 rounded-xl font-bold transition-all flex items-center justify-between group`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-lg ${isPartSupplier ? 'bg-blue-600/20 text-blue-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                        {isPartSupplier ? (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="truncate max-w-[200px] md:max-w-md">{url.title}</span>
+                    </div>
+                    <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}
