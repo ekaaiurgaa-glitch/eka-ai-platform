@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Message, VehicleContext, isContextComplete } from '../types';
 
@@ -115,6 +114,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                <img 
                  src={`https://source.unsplash.com/featured/?${encodeURIComponent(vehicle_display_query)}`} 
                  alt={vehicle_display_query}
+                 // Ensure object-cover is present so the image crops nicely instead of stretching
                  className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-700 group-hover:scale-105"
                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1000'; }}
                />
