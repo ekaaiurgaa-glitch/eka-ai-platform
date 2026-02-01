@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { VehicleContext, isContextComplete } from '../types';
 
@@ -42,6 +43,46 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     setIsEditing(false);
     setShowSuccessGlow(true);
     setTimeout(() => setShowSuccessGlow(false), 3000);
+  };
+
+  const getFuelIcon = (fuel: string) => {
+    const iconClass = "w-3 h-3 transition-all duration-300";
+    switch (fuel) {
+      case 'Petrol':
+        return (
+          <svg className={`${iconClass} text-orange-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 11l-4-4m0 4l4-4" />
+          </svg>
+        );
+      case 'Diesel':
+        return (
+          <svg className={`${iconClass} text-zinc-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 11h4" />
+          </svg>
+        );
+      case 'Electric':
+        return (
+          <svg className={`${iconClass} text-blue-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        );
+      case 'CNG':
+        return (
+          <svg className={`${iconClass} text-green-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+          </svg>
+        );
+      case 'Hybrid':
+        return (
+          <svg className={`${iconClass} text-emerald-400`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
   };
 
   // ---------------------------------------------------------
@@ -99,8 +140,10 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                 </h2>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-900 border border-[#262626] rounded text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
-                    <span className="w-1.5 h-1.5 bg-[#f18a22] rounded-sm"></span>
-                    {context.fuelType} Protocol
+                    <div className="flex items-center gap-1">
+                      {getFuelIcon(context.fuelType)}
+                      {context.fuelType} Protocol
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 border border-green-500/20 rounded text-[10px] font-black text-green-500 uppercase tracking-widest">
                     G4G Certified
@@ -235,16 +278,24 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.15em] ml-1">Fuel</label>
-          <select 
-            name="fuelType"
-            value={context.fuelType}
-            onChange={handleChange}
-            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all appearance-none cursor-pointer font-medium"
-          >
-            <option value="">Select</option>
-            {DATA_STORE.fuels.map(f => <option key={f} value={f}>{f}</option>)}
-          </select>
+          <div className="flex items-center gap-1.5 ml-1">
+            <label className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.15em]">Fuel</label>
+            {getFuelIcon(context.fuelType)}
+          </div>
+          <div className="relative">
+            <select 
+              name="fuelType"
+              value={context.fuelType}
+              onChange={handleChange}
+              className="w-full bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all appearance-none cursor-pointer font-medium"
+            >
+              <option value="">Select</option>
+              {DATA_STORE.fuels.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-600">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+          </div>
         </div>
       </div>
 
