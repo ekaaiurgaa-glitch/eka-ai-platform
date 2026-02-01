@@ -94,20 +94,40 @@ const App: React.FC = () => {
   };
 
   /**
-   * Checks for severe protocol violations in the visual content.
+   * Checks for severe protocol violations in the visual content and provides remediation.
    */
-  const checkProtocolViolations = (content: string): { violated: boolean; reason?: string } => {
+  const checkProtocolViolations = (content: string): { violated: boolean; reason?: string; remedy?: string } => {
     const forbidden = [
-      { term: 'chatbot', reason: 'Identity Breach: AI identified as chatbot instead of EKA-Ai Agent.' },
-      { term: 'large language model', reason: 'Identity Breach: Technical self-reference detected.' },
-      { term: 'assistant', reason: 'Identity Breach: Generic terminology used.' },
-      { term: 'storytelling', reason: 'Domain Violation: Non-automotive operational mode detected.' },
-      { term: 'price is exactly', reason: 'Financial Governance: Fixed pricing detected.' }
+      { 
+        term: 'chatbot', 
+        reason: 'Identity Breach: AI identified as generic chatbot.', 
+        remedy: 'Restoring EKA-Ai agent identity. Please re-state your vehicle query focusing on technical symptoms.' 
+      },
+      { 
+        term: 'large language model', 
+        reason: 'Identity Breach: Technical self-reference detected.', 
+        remedy: 'System reset required. Ensure vehicle identification (Brand/Model/Year) is fully provided in the top panel.' 
+      },
+      { 
+        term: 'assistant', 
+        reason: 'Identity Breach: Generic terminology used.', 
+        remedy: 'Switching back to Service Advisor mode. Please describe the mechanical symptom again.' 
+      },
+      { 
+        term: 'storytelling', 
+        reason: 'Domain Violation: Non-automotive operational mode detected.', 
+        remedy: 'EKA-Ai only operates on vehicle diagnostics. Please ask a car-repair related question.' 
+      },
+      { 
+        term: 'price is exactly', 
+        reason: 'Financial Governance: Fixed pricing detected.', 
+        remedy: 'Pricing is governed by local workshop labor rates. Please use the "Next Required Input" to confirm diagnostic next steps instead of cost.' 
+      }
     ];
 
     for (const item of forbidden) {
       if (content.toLowerCase().includes(item.term)) {
-        return { violated: true, reason: item.reason };
+        return { violated: true, reason: item.reason, remedy: item.remedy };
       }
     }
     return { violated: false };
@@ -132,6 +152,8 @@ const App: React.FC = () => {
     let attempts = 0;
     let finalParsedResponse = null;
     let validationError = false;
+    let lastViolationReason = "";
+    let lastRemedy = "";
 
     while (attempts < 2) {
       const responseText = await geminiService.sendMessage(currentHistory, vehicleContext);
@@ -155,26 +177,26 @@ const App: React.FC = () => {
         validationError = false;
         break;
       } else {
-        console.warn(`[PROTOCOL ALERT]: ${violation.reason}. Retrying...`);
+        lastViolationReason = violation.reason || "Unknown Breach";
+        lastRemedy = violation.remedy || "Refine query.";
+        console.warn(`[PROTOCOL ALERT]: ${lastViolationReason}. Retrying...`);
         attempts++;
         validationError = true;
         
-        // Append corrective instruction to history for the retry
         currentHistory.push({
           role: 'user',
-          parts: [{ text: `[GOVERNANCE SIGNAL]: Your previous response contained a protocol violation: "${violation.reason}". RE-ISSUE the diagnostic response immediately following EKA-Ai Constitution strictly. No apologies, just the correct diagnostic output.` }]
+          parts: [{ text: `[GOVERNANCE SIGNAL]: Your previous response contained a protocol violation: "${lastViolationReason}". RE-ISSUE the diagnostic response immediately following EKA-Ai Constitution strictly. No apologies, just the correct diagnostic output.` }]
         });
 
-        // Small delay to visually indicate "Gating" phase during retry
         await new Promise(r => setTimeout(r, 1000));
-        setLoadingStep(3); // Visual focus on Confidence Gating
+        setLoadingStep(3); 
       }
     }
 
     if (!finalParsedResponse) {
       finalParsedResponse = {
-        visual_content: "CRITICAL: Response blocked by Safety Governance Audit. Please refine your query.",
-        audio_content: "Safety governance audit blocked response. Refining query required.",
+        visual_content: `### AUDIT ALERT: GOVERNANCE BREACH DETECTED\n\n**Breach Type:** ${lastViolationReason}\n\n**Status:** Blocked by Safety Governance Audit (Phase 1).\n\n**Remediation Required:**\n${lastRemedy}\n\n*Note: EKA-Ai is restricted to automotive-only diagnostics. Generic AI responses are automatically purged.*`,
+        audio_content: `Diagnostic response blocked due to governance breach: ${lastViolationReason}. Please refine your input as requested.`,
         language_code: "en",
         available_translations: ["en"]
       };

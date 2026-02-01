@@ -19,11 +19,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
         line.startsWith('Probable Cause') || 
         line.startsWith('Recommended Action') || 
         line.startsWith('Risk Level') || 
-        line.startsWith('Next Required Input')
+        line.startsWith('Next Required Input') ||
+        line.startsWith('**Breach Type**') ||
+        line.startsWith('**Remediation Required**')
       );
 
       if (isHeader) {
-        return <div key={i} className="text-[#FF6600] font-bold mt-4 mb-1 text-xs uppercase tracking-wider">{line}</div>;
+        const color = line.includes('Breach') ? 'text-red-500' : 'text-[#FF6600]';
+        return <div key={i} className={`${color} font-bold mt-4 mb-1 text-xs uppercase tracking-wider`}>{line}</div>;
       }
       
       const isRisk = line.includes('Low') || line.includes('Medium') || line.includes('High');
@@ -44,6 +47,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
               <span className="text-[11px] font-black text-amber-500 uppercase tracking-widest">Pricing Firewall (Protocol 4.1)</span>
             </div>
             <p className="text-xs font-bold text-amber-200 leading-relaxed">{line}</p>
+          </div>
+        );
+      }
+
+      if (line.startsWith('### AUDIT ALERT')) {
+        return (
+          <div key={i} className="flex items-center gap-2 mb-2 p-2 bg-red-900/20 border-l-4 border-red-500 rounded">
+            <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="text-xs font-black text-red-400 uppercase tracking-widest">{line.replace('### ', '')}</span>
           </div>
         );
       }
@@ -81,7 +95,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
     <div className={`flex w-full mb-6 ${isAi ? 'justify-start' : 'justify-end'}`}>
       <div 
         className={`max-w-[90%] md:max-w-[80%] p-5 rounded-lg border shadow-lg relative ${
-          isAi ? 'bg-[#0A0A0A] border-[#262626] text-zinc-100' : 'bg-[#121212] border-[#FF6600] text-zinc-100'
+          isAi 
+            ? message.validationError 
+              ? 'bg-[#1a0a0a] border-red-900/50 text-zinc-100' 
+              : 'bg-[#0A0A0A] border-[#262626] text-zinc-100' 
+            : 'bg-[#121212] border-[#FF6600] text-zinc-100'
         }`}
       >
         {isAi && (
@@ -101,7 +119,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
               </button>
             )}
             <div className={`text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-xl ring-2 ring-black ${message.validationError ? 'bg-red-600' : 'bg-green-600'}`}>
-              {message.validationError ? 'Protocol Warning' : 'Verified Output'}
+              {message.validationError ? 'Audit Breach' : 'Verified Output'}
             </div>
           </div>
         )}
@@ -110,8 +128,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
           <div className="flex items-center gap-2">
             {isAi ? (
               <>
-                <div className="w-5 h-5 bg-[#FF6600] rounded-sm flex items-center justify-center text-[10px] font-black text-black">E</div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#FF6600]">EKA-Ai Agent</span>
+                <div className={`w-5 h-5 ${message.validationError ? 'bg-red-600' : 'bg-[#FF6600]'} rounded-sm flex items-center justify-center text-[10px] font-black text-black`}>E</div>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${message.validationError ? 'text-red-400' : 'text-[#FF6600]'}`}>EKA-Ai Agent</span>
                 {message.language_code && (
                   <span className="text-[8px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-bold uppercase">{message.language_code}</span>
                 )}
@@ -125,7 +143,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
           </span>
         </div>
         
-        <div className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
+        <div className={`text-sm leading-relaxed whitespace-pre-wrap font-medium ${message.validationError ? 'text-red-100/90' : 'text-zinc-100'}`}>
           {isAi ? renderContent(displayContent) : displayContent}
         </div>
       </div>
