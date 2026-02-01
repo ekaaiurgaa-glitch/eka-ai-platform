@@ -20,6 +20,7 @@ export interface Message {
   audio_content?: string;
   language_code?: string;
   available_translations?: string[];
+  grounding_urls?: { title: string; uri: string }[];
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;

@@ -33,11 +33,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const renderContent = (content: string) => {
     const lines = content.split('\n');
-    // Regex to detect price ranges like $100 - $200, ₹500 to ₹1000, 50-100 etc.
     const priceRangeRegex = /((?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?\s*(?:to|-|and)\s*(?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?)/gi;
 
     return lines.map((line, i) => {
       const isHeader = line.endsWith(':') && (
+        line.startsWith('DTC Definition') || 
         line.startsWith('Symptoms') || 
         line.startsWith('Probable Cause') || 
         line.startsWith('Recommended Action') || 
@@ -48,6 +48,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       );
 
       if (isHeader) {
+        if (line.startsWith('DTC Definition')) {
+          return (
+            <div key={i} className="flex items-center gap-2 mt-4 mb-2 p-2 bg-[#FF6600]/10 border border-[#FF6600]/30 rounded">
+              <svg className="w-4 h-4 text-[#FF6600]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span className="text-[#FF6600] font-black text-xs uppercase tracking-widest">{line}</span>
+            </div>
+          );
+        }
         const color = line.includes('Breach') ? 'text-red-500' : 'text-[#FF6600]';
         return <div key={i} className={`${color} font-bold mt-4 mb-1 text-xs uppercase tracking-wider`}>{line}</div>;
       }
@@ -74,18 +84,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         );
       }
 
-      if (line.startsWith('### AUDIT ALERT')) {
+      if (line.startsWith('### AUDIT ALERT') || line.startsWith('### SYSTEM ERROR')) {
+        const isError = line.includes('ERROR');
         return (
-          <div key={i} className="flex items-center gap-2 mb-2 p-2 bg-red-900/20 border-l-4 border-red-500 rounded">
-            <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div key={i} className={`flex items-center gap-2 mb-2 p-2 ${isError ? 'bg-orange-900/20 border-orange-500' : 'bg-red-900/20 border-red-500'} border-l-4 rounded`}>
+            <svg className={`w-5 h-5 ${isError ? 'text-orange-500' : 'text-red-500'} shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span className="text-xs font-black text-red-400 uppercase tracking-widest">{line.replace('### ', '')}</span>
+            <span className={`text-xs font-black ${isError ? 'text-orange-400' : 'text-red-400'} uppercase tracking-widest`}>{line.replace('### ', '')}</span>
           </div>
         );
       }
 
-      // Handle price range highlighting
       if (line.match(priceRangeRegex)) {
         const parts = line.split(priceRangeRegex);
         return (
@@ -166,6 +176,28 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         <div className={`text-sm leading-relaxed whitespace-pre-wrap font-medium ${message.validationError ? 'text-red-100/90' : 'text-zinc-100'}`}>
           {isAi ? renderContent(displayContent) : displayContent}
         </div>
+
+        {isAi && message.grounding_urls && message.grounding_urls.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-white/5">
+            <h5 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">Technical Bulletins & Verification:</h5>
+            <div className="flex flex-wrap gap-2">
+              {message.grounding_urls.map((url, idx) => (
+                <a 
+                  key={idx} 
+                  href={url.uri} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[9px] px-2 py-1 bg-zinc-800 hover:bg-[#FF6600] hover:text-black rounded font-bold transition-all flex items-center gap-1.5 border border-transparent hover:border-white/10"
+                >
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  {url.title}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {showContextForm && (
           <form onSubmit={handleContextSubmit} className="mt-6 p-4 bg-black/40 border border-[#262626] rounded-lg animate-in fade-in zoom-in duration-300">

@@ -1,10 +1,11 @@
 
-import { GoogleGenAI, Modality, Type } from "@google/genai";
+import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { EKA_CONSTITUTION } from "../constants";
 import { VehicleContext } from "../types";
 
 export class GeminiService {
-  private textModel: string = 'gemini-3-flash-preview';
+  // Use pro model for complex diagnostic and DTC lookup tasks
+  private textModel: string = 'gemini-3-pro-preview';
   private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
   async sendMessage(history: { role: string; parts: { text: string }[] }[], context?: VehicleContext) {
@@ -23,8 +24,9 @@ export class GeminiService {
         contents: history,
         config: {
           systemInstruction: EKA_CONSTITUTION + contextPrompt,
-          temperature: 0,
+          temperature: 0.1,
           responseMimeType: "application/json",
+          tools: [{ googleSearch: {} }],
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -41,15 +43,34 @@ export class GeminiService {
         },
       });
 
-      return response.text;
+      // Extract grounding metadata for DTC verification
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      const groundingUrls: { title: string; uri: string }[] = [];
+      if (groundingChunks) {
+        groundingChunks.forEach(chunk => {
+          if (chunk.web?.uri) {
+            groundingUrls.push({ 
+              title: chunk.web.title || 'Technical Source', 
+              uri: chunk.web.uri 
+            });
+          }
+        });
+      }
+
+      const result = JSON.parse(response.text);
+      return {
+        ...result,
+        grounding_urls: groundingUrls
+      };
     } catch (error) {
-      console.error("Gemini API Error:", error);
-      return JSON.stringify({
-        visual_content: "CRITICAL: Diagnostic engine unreachable. Please verify vehicle context.",
-        audio_content: "Diagnostic engine unreachable.",
+      console.error("EKA-Ai Engine Error:", error);
+      return {
+        visual_content: "### SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n\nThe EKA-Ai diagnostic engine encountered an unexpected interruption. Please ensure your vehicle context is locked and re-issue the command.",
+        audio_content: "System error. Diagnostic engine timed out. Please try again.",
         language_code: "en",
-        available_translations: ["en"]
-      });
+        available_translations: ["en"],
+        grounding_urls: []
+      };
     }
   }
 
@@ -75,7 +96,7 @@ export class GeminiService {
       }
       return null;
     } catch (error) {
-      console.error("TTS Error:", error);
+      console.error("TTS Protocol Error:", error);
       return null;
     }
   }

@@ -20,8 +20,8 @@ const App: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
-      visual_content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n\nI provide professional automotive diagnostics and service guidance. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n\nPlease provide these details using the form below or the panel at the top.",
-      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance.",
+      visual_content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n\nI provide professional automotive diagnostics and service guidance. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n\nYou can also input a **Diagnostic Trouble Code (DTC)** (e.g., P0420) for an expert breakdown.",
+      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance or provide a DTC for code lookup.",
       language_code: "en",
       timestamp: new Date(),
       isValidated: true
@@ -38,7 +38,7 @@ const App: React.FC = () => {
   const PROTOCOL_STEPS = [
     "Verification: Domain Boundary Check",
     "Acquisition: Vehicle Context Lock",
-    "Analysis: Diagnostic Reasoning",
+    "Analysis: DTC & Symptom Reasoning",
     "Confidence Gating: Root Cause Validation",
     "Finalization: Safety Governance Audit"
   ];
@@ -153,24 +153,12 @@ const App: React.FC = () => {
     let lastRemedy = "";
 
     while (attempts < 2) {
-      const responseText = await geminiService.sendMessage(currentHistory, vehicleContext);
+      const responseData = await geminiService.sendMessage(currentHistory, vehicleContext);
       
-      let parsed;
-      try {
-        parsed = JSON.parse(responseText);
-      } catch (e) {
-        parsed = {
-          visual_content: responseText,
-          audio_content: "Response structure error.",
-          language_code: "en",
-          available_translations: ["en"]
-        };
-      }
-
-      const violation = checkProtocolViolations(parsed.visual_content);
+      const violation = checkProtocolViolations(responseData.visual_content);
       
       if (!violation.violated) {
-        finalParsedResponse = parsed;
+        finalParsedResponse = responseData;
         validationError = false;
         break;
       } else {
@@ -194,7 +182,8 @@ const App: React.FC = () => {
         visual_content: `### AUDIT ALERT: GOVERNANCE BREACH DETECTED\n\n**Breach Type:** ${lastViolationReason}\n\n**Remediation Required:**\n${lastRemedy}`,
         audio_content: `Response blocked: ${lastViolationReason}.`,
         language_code: "en",
-        available_translations: ["en"]
+        available_translations: ["en"],
+        grounding_urls: []
       };
       validationError = true;
     }
@@ -207,6 +196,7 @@ const App: React.FC = () => {
       audio_content: finalParsedResponse.audio_content,
       language_code: finalParsedResponse.language_code,
       available_translations: finalParsedResponse.available_translations,
+      grounding_urls: finalParsedResponse.grounding_urls,
       timestamp: new Date(),
       isValidated: !validationError,
       validationError: validationError
