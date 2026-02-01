@@ -93,6 +93,26 @@ const App: React.FC = () => {
     }
   };
 
+  /**
+   * Checks for severe protocol violations in the visual content.
+   */
+  const checkProtocolViolations = (content: string): { violated: boolean; reason?: string } => {
+    const forbidden = [
+      { term: 'chatbot', reason: 'Identity Breach: AI identified as chatbot instead of EKA-Ai Agent.' },
+      { term: 'large language model', reason: 'Identity Breach: Technical self-reference detected.' },
+      { term: 'assistant', reason: 'Identity Breach: Generic terminology used.' },
+      { term: 'storytelling', reason: 'Domain Violation: Non-automotive operational mode detected.' },
+      { term: 'price is exactly', reason: 'Financial Governance: Fixed pricing detected.' }
+    ];
+
+    for (const item of forbidden) {
+      if (content.toLowerCase().includes(item.term)) {
+        return { violated: true, reason: item.reason };
+      }
+    }
+    return { violated: false };
+  };
+
   const handleSendMessage = async (text: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -104,38 +124,77 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    const history = [...messages, userMessage].map(m => ({
+    let currentHistory = [...messages, userMessage].map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }]
     }));
 
-    const responseText = await geminiService.sendMessage(history, vehicleContext);
-    
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseText);
-    } catch (e) {
-      parsedResponse = {
-        visual_content: responseText,
-        audio_content: "Response received but structure check failed.",
+    let attempts = 0;
+    let finalParsedResponse = null;
+    let validationError = false;
+
+    while (attempts < 2) {
+      const responseText = await geminiService.sendMessage(currentHistory, vehicleContext);
+      
+      let parsed;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (e) {
+        parsed = {
+          visual_content: responseText,
+          audio_content: "Response received but structure check failed.",
+          language_code: "en",
+          available_translations: ["en"]
+        };
+      }
+
+      const violation = checkProtocolViolations(parsed.visual_content);
+      
+      if (!violation.violated) {
+        finalParsedResponse = parsed;
+        validationError = false;
+        break;
+      } else {
+        console.warn(`[PROTOCOL ALERT]: ${violation.reason}. Retrying...`);
+        attempts++;
+        validationError = true;
+        
+        // Append corrective instruction to history for the retry
+        currentHistory.push({
+          role: 'user',
+          parts: [{ text: `[GOVERNANCE SIGNAL]: Your previous response contained a protocol violation: "${violation.reason}". RE-ISSUE the diagnostic response immediately following EKA-Ai Constitution strictly. No apologies, just the correct diagnostic output.` }]
+        });
+
+        // Small delay to visually indicate "Gating" phase during retry
+        await new Promise(r => setTimeout(r, 1000));
+        setLoadingStep(3); // Visual focus on Confidence Gating
+      }
+    }
+
+    if (!finalParsedResponse) {
+      finalParsedResponse = {
+        visual_content: "CRITICAL: Response blocked by Safety Governance Audit. Please refine your query.",
+        audio_content: "Safety governance audit blocked response. Refining query required.",
         language_code: "en",
         available_translations: ["en"]
       };
+      validationError = true;
     }
 
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content: parsedResponse.visual_content,
-      visual_content: parsedResponse.visual_content,
-      audio_content: parsedResponse.audio_content,
-      language_code: parsedResponse.language_code,
-      available_translations: parsedResponse.available_translations,
+      content: finalParsedResponse.visual_content,
+      visual_content: finalParsedResponse.visual_content,
+      audio_content: finalParsedResponse.audio_content,
+      language_code: finalParsedResponse.language_code,
+      available_translations: finalParsedResponse.available_translations,
       timestamp: new Date(),
-      isValidated: true
+      isValidated: !validationError,
+      validationError: validationError
     };
     
-    if (parsedResponse.visual_content.includes('Probable Cause:') && parsedResponse.visual_content.includes('Recommended Action:')) {
+    if (finalParsedResponse.visual_content.includes('Probable Cause:') && finalParsedResponse.visual_content.includes('Recommended Action:')) {
       setStatus('CONFIDENCE_CONFIRMED');
     }
 
