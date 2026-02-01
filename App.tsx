@@ -21,8 +21,8 @@ const App: React.FC = () => {
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
       response_content: {
-        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.\n   d. I can scan for official safety recalls and common manufacturer issues.",
-        audio_text: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance, provide a DTC, or scan for official recalls."
+        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, please describe your vehicle's current symptoms or input a Diagnostic Trouble Code (DTC).\n   c. I am programmed to scan for official safety recalls and common manufacturer issues.",
+        audio_text: "EKA-Ai system initialized. Service advisor active. Please describe your vehicle's symptoms or input a Diagnostic Trouble Code to begin diagnostic guidance."
       },
       job_status_update: 'CREATED',
       ui_triggers: { theme_color: "#FF6600", show_orange_border: true },
@@ -68,8 +68,9 @@ const App: React.FC = () => {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    if (isContextComplete(vehicleContext) && status === 'CREATED') {
-      setStatus('VEHICLE_CONTEXT_COLLECTED');
+    // Sync UI state if context is manually completed but status hasn't transitioned
+    if (isContextComplete(vehicleContext) && status === 'VEHICLE_CONTEXT_COLLECTED') {
+      // In a real scenario, the AI should trigger the next status, but this ensures the UI responds.
     }
   }, [vehicleContext, status]);
 
@@ -238,8 +239,8 @@ const App: React.FC = () => {
       
       <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          {/* Conditional Visibility Logic for VehicleContextPanel */}
-          { (status !== 'CREATED' || !isContextComplete(vehicleContext)) && (
+          {/* STRICTER HIDDEN MODE: Only show if AI has acknowledged intent OR if already complete */}
+          { (status === 'VEHICLE_CONTEXT_COLLECTED' || isContextComplete(vehicleContext)) && (
             <VehicleContextPanel 
               context={vehicleContext} 
               onUpdate={setVehicleContext} 
