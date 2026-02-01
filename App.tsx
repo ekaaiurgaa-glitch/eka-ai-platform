@@ -17,8 +17,17 @@ const App: React.FC = () => {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [status, setStatus] = useState<JobStatus>('CREATED');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const PROTOCOL_STEPS = [
+    "Verification: Domain Boundary Check",
+    "Acquisition: Vehicle Context Lock",
+    "Analysis: Diagnostic Reasoning",
+    "Confidence Gating: Root Cause Validation",
+    "Finalization: Safety Governance Audit"
+  ];
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -29,6 +38,19 @@ const App: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isLoading) {
+      setLoadingStep(0);
+      interval = setInterval(() => {
+        setLoadingStep((prev) => (prev < PROTOCOL_STEPS.length - 1 ? prev + 1 : prev));
+      }, 800);
+    } else {
+      setLoadingStep(0);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const DIAGNOSTIC_HEADERS = [
     'Symptoms:',
@@ -77,13 +99,13 @@ const App: React.FC = () => {
    */
   const checkProtocolViolations = (content: string): boolean => {
     const forbidden = [
-      'CRITICAL:',             // Service connectivity/engine errors
-      'hallucination',         // Self-admission of guessing
-      'storytelling',          // Non-deterministic output
-      'as an AI model',        // Identity breach
-      'I am a chatbot',        // Identity breach
-      'I am a large language', // Identity breach
-      'exact price is',        // Pricing firewall breach
+      'CRITICAL:',             
+      'hallucination',         
+      'storytelling',          
+      'as an AI model',        
+      'I am a chatbot',        
+      'I am a large language', 
+      'exact price is',        
     ];
     return forbidden.some(term => content.toLowerCase().includes(term.toLowerCase()));
   };
@@ -147,25 +169,19 @@ const App: React.FC = () => {
       return await geminiService.sendMessage(history);
     };
 
-    // --- PASS 1: INITIAL REQUEST ---
     let rawAiResponse = await getAiResponse([...messages, userMessage]);
     let aiResponse = extractDiagnosticBlock(rawAiResponse);
     let isValid = validateResponse(aiResponse);
 
-    // --- PASS 2: FORMAT RETRY ---
     if (!isValid) {
-      console.warn("EKA-Ai: Format violation. Retrying...");
       const retryFormatPrompt = "[SYSTEM GOVERNANCE SIGNAL]: Your response violated diagnostic structure. RE-ISSUE now using ONLY the mandated headers: Symptoms, Probable Cause, Recommended Action, Risk Level, Next Required Input. No other text.";
       const retryRaw = await getAiResponse([...messages, userMessage], retryFormatPrompt);
       aiResponse = extractDiagnosticBlock(retryRaw);
       isValid = validateResponse(aiResponse);
     }
 
-    // --- PASS 3: PROTOCOL VIOLATION CHECK (Post-Validation) ---
-    // Even if format is valid, check for 'CRITICAL' errors or identity leaks
     let hasViolation = checkProtocolViolations(aiResponse);
     if (isValid && hasViolation) {
-      console.warn("EKA-Ai: Protocol violation detected. Triggering correction retry...");
       const retryViolationPrompt = "[SYSTEM GOVERNANCE SIGNAL]: Protocol breach detected. Correct the following errors: 1. No identity disclosure (You are EKA-Ai only). 2. No exact pricing. 3. Ensure engine connectivity. RE-ISSUE professional diagnostic response now.";
       const violationRetryRaw = await getAiResponse([...messages, userMessage], retryViolationPrompt);
       aiResponse = extractDiagnosticBlock(violationRetryRaw);
@@ -173,7 +189,6 @@ const App: React.FC = () => {
       hasViolation = checkProtocolViolations(aiResponse);
     }
 
-    // State Machine Transitions
     if (status === 'CREATED' && (text.toLowerCase().includes('brand') || text.split(' ').length > 3)) {
       setStatus('VEHICLE_CONTEXT_COLLECTED');
     }
@@ -206,16 +221,42 @@ const App: React.FC = () => {
           ))}
           {isLoading && (
             <div className="flex justify-start mb-6">
-              <div className="bg-[#0A0A0A] border border-[#262626] p-4 rounded-lg flex items-center gap-4 shadow-2xl">
-                <div className="flex space-x-1.5">
-                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse"></div>
+              <div className="bg-[#0A0A0A] border border-[#262626] p-5 rounded-lg flex flex-col gap-4 shadow-2xl min-w-[300px] border-l-4 border-l-[#FF6600]">
+                <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-ping"></div>
+                    <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest leading-none">EKA Governance Engine</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-zinc-600">AUDIT_LOG_V1.4</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest leading-none">EKA Governance Engine</span>
-                  <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-tight mt-0.5">Auditing Protocol & Safety Gates...</span>
+                
+                <div className="flex flex-col gap-2">
+                  {PROTOCOL_STEPS.map((step, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? 'bg-[#FF6600]' : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
+                      <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? 'text-[#FF6600]/80' : 'text-zinc-700'}`}>
+                        {step}
+                        {idx === loadingStep && (
+                          <span className="ml-2 inline-flex gap-0.5">
+                            <span className="animate-[bounce_1s_infinite_0ms]">.</span>
+                            <span className="animate-[bounce_1s_infinite_200ms]">.</span>
+                            <span className="animate-[bounce_1s_infinite_400ms]">.</span>
+                          </span>
+                        )}
+                        {idx < loadingStep && <span className="ml-2 text-[8px] opacity-60">✓ PASS</span>}
+                      </span>
+                    </div>
+                  ))}
                 </div>
+
+                {loadingStep === 3 && (
+                  <div className="mt-2 py-1.5 px-3 bg-[#FF6600]/10 border border-[#FF6600]/20 rounded flex items-center gap-2 animate-pulse">
+                    <svg className="w-3 h-3 text-[#FF6600]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-[8px] font-black text-[#FF6600] uppercase tracking-tighter">Confidence Gating: Evaluating context depth...</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
