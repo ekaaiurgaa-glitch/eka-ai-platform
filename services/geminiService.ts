@@ -7,7 +7,6 @@ export class GeminiService {
 
   async sendMessage(history: { role: string; parts: { text: string }[] }[]) {
     try {
-      // Re-initialize to ensure latest API key context
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
       const response = await ai.models.generateContent({
@@ -15,17 +14,16 @@ export class GeminiService {
         contents: history,
         config: {
           systemInstruction: EKA_CONSTITUTION,
-          temperature: 0.1, // Near-zero temperature for deterministic output
+          temperature: 0, // Absolute deterministic
           topP: 0.1,
-          topK: 1,
+          topK: 1,      // Forces model to choose highest probability token only
         },
       });
 
-      return response.text || "I encountered an error processing your request. Please try again.";
+      return response.text || "I operate strictly within the automobile service and repair domain. Please provide valid vehicle context.";
     } catch (error) {
       console.error("Gemini API Error:", error);
-      // In case of error, provide a domain-strict fallback
-      return "I operate strictly within the automobile service and repair domain. Please provide valid vehicle context or describe a mechanical symptom.";
+      return "CRITICAL: Diagnostic engine unreachable. Please verify vehicle context and resubmit request.";
     }
   }
 }

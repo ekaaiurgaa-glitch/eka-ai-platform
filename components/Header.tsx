@@ -1,7 +1,12 @@
 
 import React from 'react';
+import { JobStatus } from '../types';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  status?: JobStatus;
+}
+
+const Header: React.FC<HeaderProps> = ({ status = 'CREATED' }) => {
   return (
     <header className="flex items-center justify-between px-6 py-4 bg-[#000000] border-b border-[#262626] sticky top-0 z-50">
       <div className="flex items-center gap-3">
@@ -9,13 +14,20 @@ const Header: React.FC = () => {
           G4
         </div>
         <div className="flex flex-col">
-          <span className="text-white font-bold tracking-tighter text-lg leading-tight">EKA-AI</span>
-          <span className="text-[#FF6600] text-[10px] font-semibold uppercase tracking-widest">By Go4Garage</span>
+          <span className="text-white font-bold tracking-tighter text-lg leading-tight uppercase">EKA-AI</span>
+          <span className="text-[#FF6600] text-[10px] font-semibold uppercase tracking-widest">Intelligence Agent</span>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <span className="hidden md:block text-[#737373] text-xs font-medium uppercase tracking-widest">Phase-1 Live</span>
-        <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+      
+      <div className="flex items-center gap-3 bg-[#0A0A0A] border border-[#262626] px-3 py-1.5 rounded-full">
+        <div className="w-2 h-2 rounded-full bg-[#FF6600] animate-pulse"></div>
+        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+          State: <span className="text-white">{status.replace(/_/g, ' ')}</span>
+        </span>
+      </div>
+
+      <div className="hidden md:flex items-center gap-2">
+        <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-widest">Audit-Grade Active</span>
       </div>
     </header>
   );
