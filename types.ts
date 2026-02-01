@@ -26,8 +26,12 @@ export interface Message {
 }
 
 export interface VehicleContext {
-  brand?: string;
-  model?: string;
-  year?: string;
-  fuelType?: string;
+  brand: string;
+  model: string;
+  year: string;
+  fuelType: string;
 }
+
+export const isContextComplete = (ctx: VehicleContext): boolean => {
+  return !!(ctx.brand && ctx.model && ctx.year && ctx.fuelType);
+};

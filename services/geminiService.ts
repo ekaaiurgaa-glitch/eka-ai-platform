@@ -1,20 +1,28 @@
 
 import { GoogleGenAI, Modality, Type } from "@google/genai";
 import { EKA_CONSTITUTION } from "../constants";
+import { VehicleContext } from "../types";
 
 export class GeminiService {
   private textModel: string = 'gemini-3-flash-preview';
   private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
-  async sendMessage(history: { role: string; parts: { text: string }[] }[]) {
+  async sendMessage(history: { role: string; parts: { text: string }[] }[], context?: VehicleContext) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+
+      const contextPrompt = context && context.brand ? 
+        `\n\n[LOCKED VEHICLE CONTEXT]:
+        Brand: ${context.brand}
+        Model: ${context.model}
+        Year: ${context.year}
+        Fuel: ${context.fuelType}` : '';
 
       const response = await ai.models.generateContent({
         model: this.textModel,
         contents: history,
         config: {
-          systemInstruction: EKA_CONSTITUTION,
+          systemInstruction: EKA_CONSTITUTION + contextPrompt,
           temperature: 0,
           responseMimeType: "application/json",
           responseSchema: {
