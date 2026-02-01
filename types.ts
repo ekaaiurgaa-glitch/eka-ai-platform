@@ -15,11 +15,19 @@ export type JobStatus =
 export interface Message {
   id: string;
   role: MessageRole;
-  content: string; // Keep original for compatibility/logs
-  visual_content?: string;
-  audio_content?: string;
-  language_code?: string;
-  available_translations?: string[];
+  content: string; // Used for User messages and fallback
+  response_content?: {
+    visual_text: string;
+    audio_text: string;
+  };
+  ui_triggers?: {
+    theme_color: string;
+    show_orange_border: boolean;
+  };
+  visual_assets?: {
+    vehicle_display_query: string;
+    part_display_query: string | null;
+  };
   grounding_urls?: { title: string; uri: string }[];
   timestamp: Date;
   isValidated?: boolean;

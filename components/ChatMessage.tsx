@@ -38,12 +38,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return lines.map((line, i) => {
       const trimmedLine = line.trim();
       
-      // Handle Main Pointers (1., 2., 3.)
       const mainPointerMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
         
-        // Special case for DTC or Recall blocks
         if (title.toLowerCase().includes('dtc definition') || title.toLowerCase().includes('official recall alerts')) {
           const isRecall = title.toLowerCase().includes('recall');
           return (
@@ -60,7 +58,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           );
         }
 
-        // Audit or System Error handling in clean text
         if (title.toUpperCase().includes('AUDIT ALERT') || title.toUpperCase().includes('SYSTEM ERROR')) {
           const isError = title.toUpperCase().includes('ERROR');
           return (
@@ -76,7 +73,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         return <div key={i} className="text-[#FF6600] font-black text-xs uppercase tracking-wider mt-6 mb-2 border-b border-[#262626] pb-1">{line}</div>;
       }
 
-      // Handle Sub-Pointers (a., b., c.)
       const subPointerMatch = trimmedLine.match(/^[a-z]\.\s+(.*)/);
       if (subPointerMatch) {
         return (
@@ -87,7 +83,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         );
       }
 
-      // Handle Risk Level highlighting
       const riskMatch = trimmedLine.match(/Risk Level:\s*(Low|Medium|High)/i);
       if (riskMatch) {
         const level = riskMatch[1].toLowerCase();
@@ -97,7 +92,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         return <div key={i} className={`font-black text-xs uppercase tracking-widest mt-4 ${color}`}>{line}</div>;
       }
 
-      // Handle Pricing Firewall
       if (line.includes('Exact pricing is governed externally') || line.includes('Pricing Firewall')) {
         return (
           <div key={i} className="my-6 p-5 bg-amber-950/20 border-2 border-dashed border-amber-600/50 rounded-xl shadow-inner">
@@ -112,7 +106,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         );
       }
 
-      // Price Range Highlighting (Inline)
       if (line.match(priceRangeRegex)) {
         const parts = line.split(priceRangeRegex);
         return (
@@ -136,8 +129,58 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     });
   };
 
-  const displayContent = isAi ? (message.visual_content || message.content) : message.content;
+  const displayContent = isAi ? (message.response_content?.visual_text || message.content) : message.content;
   const showContextForm = isAi && message.id === 'welcome' && vehicleContext && !isContextComplete(vehicleContext);
+  const showOrangeBorder = isAi && message.ui_triggers?.show_orange_border;
+
+  // Visual Assets Display
+  const renderVisualAssets = () => {
+    if (!message.visual_assets) return null;
+    const { vehicle_display_query, part_display_query } = message.visual_assets;
+    
+    return (
+      <div className="mt-8 flex flex-col gap-6">
+        {vehicle_display_query && (
+          <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-2xl transition-all hover:border-[#FF6600]/30">
+            <div className="aspect-[16/9] w-full bg-zinc-900/50 relative overflow-hidden">
+               <img 
+                 src={`https://source.unsplash.com/featured/?${encodeURIComponent(vehicle_display_query)}`} 
+                 alt={vehicle_display_query}
+                 className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-700 group-hover:scale-105"
+                 onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=1000'; }}
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+            </div>
+            <div className="p-4 relative">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest">Reference Profile</span>
+                <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
+                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Visual Identity</span>
+              </div>
+              <h4 className="text-sm font-black text-white uppercase tracking-tight">{vehicle_display_query}</h4>
+            </div>
+          </div>
+        )}
+
+        {part_display_query && (
+           <div className="group relative overflow-hidden rounded-xl border border-white/5 bg-[#121212] flex items-center p-4 gap-4 transition-all hover:border-[#FF6600]/20">
+             <div className="w-16 h-16 rounded-lg bg-zinc-900 overflow-hidden shrink-0 border border-white/5">
+                <img 
+                  src={`https://source.unsplash.com/featured/?${encodeURIComponent(part_display_query)}`} 
+                  alt={part_display_query}
+                  className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                  onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=400'; }}
+                />
+             </div>
+             <div className="flex flex-col">
+               <span className="text-[8px] font-black text-[#FF6600] uppercase tracking-widest mb-0.5">Component Scan</span>
+               <h5 className="text-xs font-black text-white uppercase tracking-tight">{part_display_query}</h5>
+             </div>
+           </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={`flex w-full mb-8 ${isAi ? 'justify-start' : 'justify-end'}`}>
@@ -146,15 +189,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           isAi 
             ? message.validationError 
               ? 'bg-[#1a0a0a] border-red-900/50 text-zinc-100' 
-              : 'bg-[#0A0A0A] border-[#262626] text-zinc-100' 
+              : `bg-[#0A0A0A] ${showOrangeBorder ? 'border-[#FF6600]' : 'border-[#262626]'} text-zinc-100` 
             : 'bg-[#121212] border-[#FF6600] text-zinc-100'
         }`}
       >
         {isAi && (
           <div className="absolute -top-3 -right-3 flex gap-2">
-            {message.audio_content && (
+            {message.response_content?.audio_text && (
               <button 
-                onClick={() => onPlayAudio?.(message.audio_content!)}
+                onClick={() => onPlayAudio?.(message.response_content!.audio_text)}
                 className={`p-2 rounded-full ring-4 ring-black shadow-2xl transition-all ${isAudioPlaying ? 'bg-[#FF6600] animate-pulse scale-110' : 'bg-zinc-800 hover:bg-[#FF6600] hover:scale-110'}`}
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,6 +241,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           {isAi ? renderContent(displayContent) : <div className="text-zinc-200 text-sm leading-relaxed">{displayContent}</div>}
         </div>
 
+        {isAi && renderVisualAssets()}
+
         {isAi && message.grounding_urls && message.grounding_urls.length > 0 && (
           <div className="mt-8 pt-4 border-t border-white/5">
             <h5 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
@@ -214,7 +259,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                   className="text-[10px] px-3 py-1.5 bg-[#121212] border border-[#262626] text-zinc-400 hover:border-[#FF6600] hover:text-[#FF6600] rounded-md font-bold transition-all flex items-center gap-2 group"
                 >
                   <svg className="w-3 h-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10 a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                   {url.title}
                 </a>

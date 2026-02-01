@@ -20,9 +20,13 @@ const App: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
-      visual_content: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.\n   d. I can scan for official safety recalls and common manufacturer issues.",
-      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance, provide a DTC, or scan for official recalls.",
-      language_code: "en",
+      response_content: {
+        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n   c. You can also input a Diagnostic Trouble Code (DTC) for an expert breakdown.\n   d. I can scan for official safety recalls and common manufacturer issues.",
+        audio_text: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance, provide a DTC, or scan for official recalls."
+      },
+      ui_triggers: { theme_color: "#FF6600", show_orange_border: true },
+      visual_assets: { vehicle_display_query: "Modern Car Diagnostic Interface", part_display_query: null },
+      // Removed non-existent language_code property to fix line 29 error
       timestamp: new Date(),
       isValidated: true
     }
@@ -143,19 +147,18 @@ const App: React.FC = () => {
 
     let currentHistory = [...messages, userMessage].map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }]
+      parts: [{ text: m.content || m.response_content?.visual_text || '' }]
     }));
 
     let attempts = 0;
     let finalParsedResponse = null;
     let validationError = false;
     let lastViolationReason = "";
-    let lastRemedy = "";
 
     while (attempts < 2) {
       const responseData = await geminiService.sendMessage(currentHistory, vehicleContext);
       
-      const violation = checkProtocolViolations(responseData.visual_content);
+      const violation = checkProtocolViolations(responseData.response_content.visual_text);
       
       if (!violation.violated) {
         finalParsedResponse = responseData;
@@ -163,7 +166,6 @@ const App: React.FC = () => {
         break;
       } else {
         lastViolationReason = violation.reason || "Unknown Breach";
-        lastRemedy = violation.remedy || "Refine query.";
         attempts++;
         validationError = true;
         
@@ -179,10 +181,12 @@ const App: React.FC = () => {
 
     if (!finalParsedResponse) {
       finalParsedResponse = {
-        visual_content: "1. AUDIT ALERT: GOVERNANCE BREACH DETECTED\n   a. Breach Type: Protocol Violation\n   b. Remediation Required: System reset required. Please refine your mechanical query.",
-        audio_content: "Response blocked due to protocol breach.",
-        language_code: "en",
-        available_translations: ["en"],
+        response_content: {
+          visual_text: "1. AUDIT ALERT: GOVERNANCE BREACH DETECTED\n   a. Breach Type: Protocol Violation\n   b. Remediation Required: System reset required.",
+          audio_text: "Response blocked due to protocol breach."
+        },
+        ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
+        visual_assets: { vehicle_display_query: "Protocol Violation", part_display_query: null },
         grounding_urls: []
       };
       validationError = true;
@@ -191,18 +195,17 @@ const App: React.FC = () => {
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content: finalParsedResponse.visual_content,
-      visual_content: finalParsedResponse.visual_content,
-      audio_content: finalParsedResponse.audio_content,
-      language_code: finalParsedResponse.language_code,
-      available_translations: finalParsedResponse.available_translations,
+      content: finalParsedResponse.response_content.visual_text,
+      response_content: finalParsedResponse.response_content,
+      ui_triggers: finalParsedResponse.ui_triggers,
+      visual_assets: finalParsedResponse.visual_assets,
       grounding_urls: finalParsedResponse.grounding_urls,
       timestamp: new Date(),
       isValidated: !validationError,
       validationError: validationError
     };
     
-    if (finalParsedResponse.visual_content.toLowerCase().includes('probable cause')) {
+    if (finalParsedResponse.response_content.visual_text.toLowerCase().includes('probable cause')) {
       setStatus('CONFIDENCE_CONFIRMED');
     }
 

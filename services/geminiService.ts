@@ -4,13 +4,13 @@ import { EKA_CONSTITUTION } from "../constants";
 import { VehicleContext } from "../types";
 
 export class GeminiService {
-  // Use pro model for complex diagnostic and DTC lookup tasks
   private textModel: string = 'gemini-3-pro-preview';
   private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
   async sendMessage(history: { role: string; parts: { text: string }[] }[], context?: VehicleContext) {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Use process.env.API_KEY directly when initializing GoogleGenAI
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const contextPrompt = context && context.brand ? 
         `\n\n[LOCKED VEHICLE CONTEXT]:
@@ -30,20 +30,36 @@ export class GeminiService {
           responseSchema: {
             type: Type.OBJECT,
             properties: {
-              visual_content: { type: Type.STRING },
-              audio_content: { type: Type.STRING },
-              language_code: { type: Type.STRING },
-              available_translations: { 
-                type: Type.ARRAY,
-                items: { type: Type.STRING }
+              response_content: {
+                type: Type.OBJECT,
+                properties: {
+                  visual_text: { type: Type.STRING },
+                  audio_text: { type: Type.STRING }
+                },
+                required: ["visual_text", "audio_text"]
+              },
+              ui_triggers: {
+                type: Type.OBJECT,
+                properties: {
+                  theme_color: { type: Type.STRING },
+                  show_orange_border: { type: Type.BOOLEAN }
+                },
+                required: ["theme_color", "show_orange_border"]
+              },
+              visual_assets: {
+                type: Type.OBJECT,
+                properties: {
+                  vehicle_display_query: { type: Type.STRING },
+                  part_display_query: { type: Type.STRING, nullable: true }
+                },
+                required: ["vehicle_display_query", "part_display_query"]
               }
             },
-            required: ["visual_content", "audio_content", "language_code", "available_translations"]
+            required: ["response_content", "ui_triggers", "visual_assets"]
           }
         },
       });
 
-      // Extract grounding metadata for DTC verification
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       const groundingUrls: { title: string; uri: string }[] = [];
       if (groundingChunks) {
@@ -57,7 +73,8 @@ export class GeminiService {
         });
       }
 
-      const result = JSON.parse(response.text);
+      // Use response.text property to extract output
+      const result = JSON.parse(response.text || '{}');
       return {
         ...result,
         grounding_urls: groundingUrls
@@ -65,10 +82,12 @@ export class GeminiService {
     } catch (error) {
       console.error("EKA-Ai Engine Error:", error);
       return {
-        visual_content: "### SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n\nThe EKA-Ai diagnostic engine encountered an unexpected interruption. Please ensure your vehicle context is locked and re-issue the command.",
-        audio_content: "System error. Diagnostic engine timed out. Please try again.",
-        language_code: "en",
-        available_translations: ["en"],
+        response_content: {
+          visual_text: "1. SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n   a. The EKA-Ai engine encountered an interruption.\n   b. Please re-issue the command.",
+          audio_text: "System error. Diagnostic engine timed out."
+        },
+        ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
+        visual_assets: { vehicle_display_query: "Vehicle Error", part_display_query: null },
         grounding_urls: []
       };
     }
@@ -76,10 +95,11 @@ export class GeminiService {
 
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+      // Use process.env.API_KEY directly when initializing GoogleGenAI
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `Speak this professionally as EKA-Ai: ${text}` }] }],
+        contents: [{ parts: [{ text: `Speak professionally: ${text}` }] }],
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
@@ -101,6 +121,7 @@ export class GeminiService {
     }
   }
 
+  // Implementation of base64 decoding as recommended
   private decodeBase64(base64: string): Uint8Array {
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
@@ -110,6 +131,7 @@ export class GeminiService {
     return bytes;
   }
 
+  // Implementation of audio decoding for raw PCM data from Gemini API
   async decodeAudioData(
     data: Uint8Array,
     ctx: AudioContext,
