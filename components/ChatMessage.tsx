@@ -9,10 +9,11 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isAi = message.role === 'assistant';
 
-  // Function to stylize structured output
+  // Function to stylize structured output and enforce Pricing Firewall visuals
   const renderContent = (content: string) => {
     const lines = content.split('\n');
     return lines.map((line, i) => {
+      // 1. Check for Diagnostic Headers
       const isHeader = line.endsWith(':') && (
         line.startsWith('Symptoms') || 
         line.startsWith('Probable Cause') || 
@@ -25,12 +26,50 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         return <div key={i} className="text-[#FF6600] font-bold mt-4 mb-1 text-xs uppercase tracking-wider">{line}</div>;
       }
       
+      // 2. Check for Risk Levels
       const isRisk = line.includes('Low') || line.includes('Medium') || line.includes('High');
       if (line.startsWith('Risk Level') || (isRisk && lines[i-1]?.startsWith('Risk Level'))) {
         let color = 'text-green-500';
         if (line.includes('Medium')) color = 'text-yellow-500';
         if (line.includes('High')) color = 'text-red-500';
         return <div key={i} className={`font-bold ${color}`}>{line}</div>;
+      }
+
+      // 3. Pricing Firewall: Handle Disclaimer
+      if (line.includes('Exact pricing is governed externally')) {
+        return (
+          <div key={i} className="my-3 p-3 bg-zinc-900 border-l-4 border-amber-500 rounded-r-md">
+            <div className="flex items-center gap-2 mb-1">
+              <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Pricing Firewall Disclaimer</span>
+            </div>
+            <p className="text-xs italic text-zinc-300 font-medium">{line}</p>
+          </div>
+        );
+      }
+
+      // 4. Highlight Estimated Price Ranges
+      // Simple check for numbers/currency and keywords like "between", "range", "to"
+      const priceRegex = /(\$?\d+(?:,\d+)?(?:\.\d+)?\s*(?:to|-|and)\s*\$?\d+(?:,\d+)?(?:\.\d+)?)/gi;
+      if (line.match(priceRegex)) {
+        const parts = line.split(priceRegex);
+        return (
+          <div key={i} className="mb-0.5">
+            {parts.map((part, index) => {
+              if (part.match(priceRegex)) {
+                return (
+                  <span key={index} className="inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-amber-400 font-bold whitespace-nowrap">
+                    {part}
+                    <span className="text-[8px] bg-amber-500 text-black px-1 rounded-sm leading-tight">ESTIMATE</span>
+                  </span>
+                );
+              }
+              return part;
+            })}
+          </div>
+        );
       }
 
       return <div key={i} className="mb-0.5">{line}</div>;

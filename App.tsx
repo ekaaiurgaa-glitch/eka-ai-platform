@@ -30,6 +30,10 @@ const App: React.FC = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  /**
+   * Enhanced validation logic to enforce EKA-Ai Constitution.
+   * Handles: Domain Rejections, Context Requests, Clarifications, and Full Diagnostics.
+   */
   const validateResponse = (content: string): boolean => {
     const diagnosticHeaders = [
       'Symptoms:',
@@ -39,21 +43,41 @@ const App: React.FC = () => {
       'Next Required Input:'
     ];
     
-    const isRefusal = content.includes("strictly within the automobile") || content.includes("I am EKA-Ai");
-    const isContextRequest = content.includes("Brand") && content.includes("Model") && content.includes("Year");
+    const trimmed = content.trim();
+
+    // 1. Gate 1 Rejections (Domain)
+    const isRefusal = 
+      trimmed.includes("strictly within the automobile") || 
+      trimmed.includes("I am EKA-Ai") ||
+      trimmed.includes("cannot assist with non-automotive") ||
+      trimmed.includes("safety governance");
+    if (isRefusal) return true;
+
+    // 2. System/Admin Messages
+    const isSystem = trimmed.includes("INITIALIZED") || trimmed.includes("reset");
+    if (isSystem) return true;
+
+    // 3. Diagnostic Identification
+    const hasAnyDiagnosticToken = diagnosticHeaders.some(h => trimmed.includes(h));
     
-    // If it's one of the gate rejections or requests, it's considered valid format
-    if (isRefusal || isContextRequest) return true;
+    if (hasAnyDiagnosticToken) {
+      // If the AI starts a diagnosis, it MUST include all 5 headers for audit safety.
+      return diagnosticHeaders.every(h => trimmed.includes(h));
+    }
+
+    // 4. Clarification / Context Request (Gate 2 & 3)
+    // If it's a question and NOT attempting a diagnosis, it's valid.
+    const isQuestion = trimmed.includes("?");
+    const isRequestingContext = (trimmed.includes("Brand") || trimmed.includes("Model") || trimmed.includes("Year") || trimmed.includes("Fuel"));
     
-    // If it's a diagnostic attempt (usually contains "Symptoms" or long text), it must have ALL headers
-    const hasAnyHeader = diagnosticHeaders.some(h => content.includes(h));
-    const hasAllHeaders = diagnosticHeaders.every(h => content.includes(h));
-    
-    // If it looks like a diagnosis but misses headers, it's invalid.
-    // If it's a simple clarification question without any headers, we treat it as valid.
-    if (hasAnyHeader) return hasAllHeaders;
-    
-    return true; // Simple responses/clarifications are allowed
+    if (isQuestion || isRequestingContext) {
+      // Valid if it's a short, professional query/clarification.
+      // Long responses without headers are flagged as "storytelling".
+      return trimmed.length < 600; 
+    }
+
+    // 5. Fallback for short confirmation/acknowledgment
+    return trimmed.length < 150;
   };
 
   const handleSendMessage = async (text: string) => {
@@ -80,22 +104,24 @@ const App: React.FC = () => {
 
     // Automatic Re-formatting Request (One-time retry)
     if (!isValid) {
-      console.warn("EKA-Ai: Response failed validation. Requesting reformat...");
+      console.warn("EKA-Ai: Protocol violation detected. Requesting immediate compliance reformat...");
       const retryPrompt: Message = {
         id: 'retry-prompt',
         role: 'user',
-        content: "[SYSTEM SIGNAL]: Your previous response did not strictly follow the mandatory diagnostic structure. Re-issue the diagnostic now including all fields: Symptoms, Probable Cause, Recommended Action, Risk Level, and Next Required Input.",
+        content: "[SYSTEM GOVERNANCE SIGNAL]: Your response violated strict diagnostic structure. RE-ISSUE now. If diagnosing, you MUST use all headers: Symptoms, Probable Cause, Recommended Action, Risk Level, Next Required Input. No preamble. No storytelling.",
         timestamp: new Date()
       };
       aiResponse = await getAiResponse([...messages, userMessage, retryPrompt]);
       isValid = validateResponse(aiResponse);
     }
 
-    // Update state machine
+    // State Machine Transitions
     if (status === 'CREATED' && (text.toLowerCase().includes('brand') || text.split(' ').length > 3)) {
       setStatus('VEHICLE_CONTEXT_COLLECTED');
     }
-    if (aiResponse.includes('Probable Cause:')) {
+    
+    // Explicit state check for successful diagnosis
+    if (aiResponse.includes('Probable Cause:') && aiResponse.includes('Recommended Action:')) {
       setStatus('CONFIDENCE_CONFIRMED');
     }
 
@@ -125,11 +151,11 @@ const App: React.FC = () => {
             <div className="flex justify-start mb-6">
               <div className="bg-[#0A0A0A] border border-[#262626] p-4 rounded-lg flex items-center gap-4">
                 <div className="flex space-x-1.5">
-                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+                  <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse"></div>
                 </div>
-                <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest">Running Governance Checks...</span>
+                <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest">Applying Audit Governance...</span>
               </div>
             </div>
           )}
