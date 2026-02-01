@@ -9,6 +9,7 @@ import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
   const [vehicleContext, setVehicleContext] = useState<VehicleContext>({
+    vehicleType: '',
     brand: '',
     model: '',
     year: '',
@@ -21,7 +22,7 @@ const App: React.FC = () => {
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
       response_content: {
-        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, please describe your vehicle's current symptoms or input a Diagnostic Trouble Code (DTC).\n   c. I am programmed to scan for official safety recalls and common manufacturer issues.",
+        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, please describe your vehicle symptoms or DTC.\n   c. Note: I require vehicle identification (Type 2W/4W, Brand, Model, Year, Fuel).\n   d. I can also scan for official safety recalls and common manufacturer issues.",
         audio_text: "EKA-Ai system initialized. Service advisor active. Please describe your vehicle's symptoms or input a Diagnostic Trouble Code to begin diagnostic guidance."
       },
       job_status_update: 'CREATED',
@@ -68,9 +69,8 @@ const App: React.FC = () => {
   }, [messages, isLoading]);
 
   useEffect(() => {
-    // Sync UI state if context is manually completed but status hasn't transitioned
-    if (isContextComplete(vehicleContext) && status === 'VEHICLE_CONTEXT_COLLECTED') {
-      // In a real scenario, the AI should trigger the next status, but this ensures the UI responds.
+    if (isContextComplete(vehicleContext) && status === 'CREATED') {
+      // In the real flow, the AI should recognize this, but this helps the local UI state.
     }
   }, [vehicleContext, status]);
 
@@ -239,7 +239,6 @@ const App: React.FC = () => {
       
       <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          {/* STRICTER HIDDEN MODE: Only show if AI has acknowledged intent OR if already complete */}
           { (status === 'VEHICLE_CONTEXT_COLLECTED' || isContextComplete(vehicleContext)) && (
             <VehicleContextPanel 
               context={vehicleContext} 
@@ -291,13 +290,3 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </main>
-
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
-    </div>
-  );
-};
-
-export default App;

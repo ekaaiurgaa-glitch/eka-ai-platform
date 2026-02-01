@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { VehicleContext, isContextComplete } from '../types';
 
@@ -21,15 +22,13 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         <div className="bg-[#0A0A0A] border border-[#262626] rounded-[10px] p-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="w-12 h-12 bg-black border border-[#FF6600]/30 rounded-lg flex items-center justify-center shadow-inner shrink-0 group">
-              <svg className="w-6 h-6 text-[#FF6600] group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-              </svg>
+              <span className="text-[10px] font-black text-[#FF6600]">{context.vehicleType}</span>
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[9px] font-black text-[#FF6600] uppercase tracking-[0.2em] animate-pulse">Synchronized</span>
                 <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
-                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Protocol 2.4 Active</span>
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Protocol 2.5 Active</span>
               </div>
               <h2 className="text-sm font-black text-white tracking-tight uppercase">
                 {context.year} <span className="text-[#FF6600]">{context.brand}</span> {context.model}
@@ -84,7 +83,20 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Type</label>
+          <select 
+            name="vehicleType"
+            value={context.vehicleType}
+            onChange={handleChange}
+            className="bg-black border border-[#262626] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/20 transition-all appearance-none"
+          >
+            <option value="">Select</option>
+            <option value="2W">2W (Bike)</option>
+            <option value="4W">4W (Car)</option>
+          </select>
+        </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Brand</label>
           <input 
@@ -116,7 +128,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Fuel Type</label>
+          <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Fuel</label>
           <select 
             name="fuelType"
             value={context.fuelType}

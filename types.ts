@@ -15,7 +15,7 @@ export type JobStatus =
 export interface Message {
   id: string;
   role: MessageRole;
-  content: string; // Used for User messages and fallback
+  content: string; 
   response_content?: {
     visual_text: string;
     audio_text: string;
@@ -36,6 +36,7 @@ export interface Message {
 }
 
 export interface VehicleContext {
+  vehicleType: '2W' | '4W' | '';
   brand: string;
   model: string;
   year: string;
@@ -43,5 +44,5 @@ export interface VehicleContext {
 }
 
 export const isContextComplete = (ctx: VehicleContext): boolean => {
-  return !!(ctx.brand && ctx.model && ctx.year && ctx.fuelType);
+  return !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
 };

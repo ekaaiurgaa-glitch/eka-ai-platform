@@ -23,6 +23,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const updated = {
+      vehicleType: formData.get('vehicleType') as any,
       brand: formData.get('brand') as string,
       model: formData.get('model') as string,
       year: formData.get('year') as string,
@@ -41,7 +42,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
         
-        // Handle Recall Alerts with distinct Red High-Priority styling
         if (title.toLowerCase().includes('recall alert') || title.toLowerCase().includes('common reported issues')) {
           const isCritical = title.toLowerCase().includes('recall');
           return (
@@ -243,21 +243,37 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <span className="w-2 h-2 bg-[#FF6600] rounded-full shadow-[0_0_8px_#FF6600]"></span>
               Critical: Identity Verification
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Type</label>
+                <select name="vehicleType" required className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all">
+                  <option value="">Select</option>
+                  <option value="2W">2W</option>
+                  <option value="4W">4W</option>
+                </select>
+              </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Brand</label>
-                <input name="brand" required placeholder="e.g. Honda" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/30 transition-all" />
+                <input name="brand" required placeholder="Honda" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Model</label>
-                <input name="model" required placeholder="e.g. Civic" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/30 transition-all" />
+                <input name="model" required placeholder="Civic" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Year</label>
-                <input name="year" required placeholder="e.g. 2019" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/30 transition-all" />
+                <input name="year" required placeholder="2019" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Fuel</label>
+                <select name="fuelType" required className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all">
+                   <option value="Petrol">Petrol</option>
+                   <option value="Diesel">Diesel</option>
+                   <option value="Electric">Electric</option>
+                </select>
               </div>
             </div>
-            <button type="submit" className="mt-6 w-full py-3 bg-[#FF6600] text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#e55c00] active:scale-[0.98] transition-all shadow-xl">
+            <button type="submit" className="mt-6 w-full py-3 bg-[#FF6600] text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#e55c00] transition-all shadow-xl">
               Initialize Context Synchronizer
             </button>
           </form>
