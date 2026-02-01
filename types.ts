@@ -3,13 +3,12 @@ export type MessageRole = 'user' | 'assistant';
 
 export type JobStatus = 
   | 'CREATED' 
-  | 'CONFIDENCE_CONFIRMED'
   | 'VEHICLE_CONTEXT_COLLECTED' 
-  | 'DIAGNOSIS_READY'
-  | 'ESTIMATE_READY'
-  | 'CUSTOMER_APPROVED' 
+  | 'CONFIDENCE_CONFIRMED' 
+  | 'READY_FOR_PRICING' 
   | 'IN_PROGRESS' 
   | 'PDI_COMPLETED' 
+  | 'CUSTOMER_APPROVED' 
   | 'INVOICED' 
   | 'CLOSED';
 
