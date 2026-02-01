@@ -105,8 +105,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isListening ? "Listening to symptoms..." : "Enter symptom, DTC or part name..."}
-            className={`w-full bg-[#0A0A0A] text-white border border-[#262626] rounded-xl py-4 pl-4 pr-48 focus:outline-none focus:border-[#FF6600] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
-              isListening ? 'ring-2 ring-[#FF6600]/40 border-[#FF6600]/60' : ''
+            className={`w-full bg-[#0A0A0A] text-white border border-[#262626] rounded-xl py-4 pl-4 pr-48 focus:outline-none focus:border-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
+              isListening ? 'ring-2 ring-[#f18a22]/40 border-[#f18a22]/60' : ''
             }`}
             disabled={isLoading}
           />
@@ -116,7 +116,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
               type="button"
               onClick={insertDTCHelper}
               disabled={isLoading}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#FF6600] hover:border-[#FF6600] transition-all uppercase tracking-tighter"
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#f18a22] hover:border-[#f18a22] transition-all uppercase tracking-tighter"
               title="Add DTC Lookup Prefix"
             >
               DTC
@@ -136,7 +136,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
               type="button"
               onClick={insertRecallHelper}
               disabled={isLoading}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#FF6600] hover:border-[#FF6600] transition-all uppercase tracking-tighter"
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#f18a22] hover:border-[#f18a22] transition-all uppercase tracking-tighter"
               title="Scan Safety Recalls"
             >
               Scan
@@ -160,7 +160,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="p-2 rounded-lg bg-[#FF6600] text-black hover:bg-[#e55c00] disabled:bg-zinc-800 disabled:text-zinc-600 transition-all shadow-lg active:scale-95"
+              className="p-2 rounded-lg bg-[#f18a22] text-black hover:bg-[#d97a1d] disabled:bg-zinc-800 disabled:text-zinc-600 transition-all shadow-lg active:scale-95"
             >
               {isLoading ? (
                 <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">

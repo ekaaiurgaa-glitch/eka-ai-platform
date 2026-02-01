@@ -11,15 +11,22 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+      const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
+      const isPartSearch = lastUserMessage.includes('part') || lastUserMessage.includes('source') || lastUserMessage.includes('oem');
+
       const contextPrompt = `
 [CURRENT SYSTEM STATE]:
 Current Status: ${currentStatus}
 ${context && context.brand ? `
 Locked Vehicle Context:
+Type: ${context.vehicleType}
 Brand: ${context.brand}
 Model: ${context.model}
 Year: ${context.year}
-Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
+Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
+
+[INTENT SIGNAL]: ${isPartSearch ? 'IDENTIFY_AND_SOURCE_PARTS_MODE' : 'DIAGNOSTIC_MODE'}
+${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, compatibility, and vendor links using the grounding tool.' : 'Analyze symptoms and provide diagnostic reasoning.'}`;
 
       const response = await ai.models.generateContent({
         model: this.textModel,
@@ -48,9 +55,10 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
                 type: Type.OBJECT,
                 properties: {
                   theme_color: { type: Type.STRING },
+                  brand_identity: { type: Type.STRING },
                   show_orange_border: { type: Type.BOOLEAN }
                 },
-                required: ["theme_color", "show_orange_border"]
+                required: ["theme_color", "brand_identity", "show_orange_border"]
               },
               visual_assets: {
                 type: Type.OBJECT,
@@ -66,14 +74,13 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
         },
       });
 
-      // Corrected from grounding_chunks to groundingChunks per SDK
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       const groundingUrls: { title: string; uri: string }[] = [];
       if (groundingChunks) {
         groundingChunks.forEach((chunk: any) => {
           if (chunk.web?.uri) {
             groundingUrls.push({ 
-              title: chunk.web.title || 'Technical Bulletin', 
+              title: chunk.web.title || 'Technical Sourcing Data', 
               uri: chunk.web.uri 
             });
           }
@@ -93,7 +100,7 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
           audio_text: "System error. Diagnostic engine timed out."
         },
         job_status_update: currentStatus,
-        ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
+        ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
         visual_assets: { vehicle_display_query: "Vehicle Error", part_display_query: null },
         grounding_urls: []
       };
@@ -117,12 +124,9 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
       });
 
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (base64Audio) {
-        return this.decodeBase64(base64Audio);
-      }
+      if (base64Audio) return this.decodeBase64(base64Audio);
       return null;
     } catch (error) {
-      console.error("TTS Protocol Error:", error);
       return null;
     }
   }
@@ -145,7 +149,6 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}`;
     const dataInt16 = new Int16Array(data.buffer);
     const frameCount = dataInt16.length / numChannels;
     const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
     for (let channel = 0; channel < numChannels; channel++) {
       const channelData = buffer.getChannelData(channel);
       for (let i = 0; i < frameCount; i++) {

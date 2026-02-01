@@ -22,11 +22,11 @@ const App: React.FC = () => {
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
       response_content: {
-        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, please describe your vehicle symptoms or DTC.\n   c. Note: I require vehicle identification (Type 2W/4W, Brand, Model, Year, Fuel).\n   d. I can also scan for official safety recalls and common manufacturer issues.",
+        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. To proceed, please describe your vehicle symptoms or DTC.\n   c. Note: I require vehicle identification (Type 2W/4W, Brand, Model, Year, Fuel).\n   d. I can also scan for official safety recalls and source OEM/Aftermarket parts.",
         audio_text: "EKA-Ai system initialized. Service advisor active. Please describe your vehicle's symptoms or input a Diagnostic Trouble Code to begin diagnostic guidance."
       },
       job_status_update: 'CREATED',
-      ui_triggers: { theme_color: "#FF6600", show_orange_border: true },
+      ui_triggers: { theme_color: "#f18a22", show_orange_border: true },
       visual_assets: { vehicle_display_query: "Modern Car Diagnostic Interface", part_display_query: null },
       timestamp: new Date(),
       isValidated: true
@@ -56,6 +56,14 @@ const App: React.FC = () => {
     "Verification: Audit-Grade Finalization"
   ];
 
+  const PART_PROTOCOL = [
+    "Verification: Part Sourcing Request",
+    "Indexing: OEM Component Database",
+    "Grounding: Global Inventory Scan",
+    "Verification: Compatibility & Price Logic",
+    "Finalization: Supplier Trust Audit"
+  ];
+
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
 
   const scrollToBottom = () => {
@@ -67,12 +75,6 @@ const App: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
-
-  useEffect(() => {
-    if (isContextComplete(vehicleContext) && status === 'CREATED') {
-      // In the real flow, the AI should recognize this, but this helps the local UI state.
-    }
-  }, [vehicleContext, status]);
 
   useEffect(() => {
     let interval: any;
@@ -124,16 +126,6 @@ const App: React.FC = () => {
         term: 'assistant', 
         reason: 'Identity Breach: Generic terminology used.', 
         remedy: 'Switching back to Service Advisor mode. Please describe the mechanical symptom again.' 
-      },
-      { 
-        term: 'storytelling', 
-        reason: 'Domain Violation: Non-automotive operational mode detected.', 
-        remedy: 'EKA-Ai only operates on vehicle diagnostics. Please ask a car-repair related question.' 
-      },
-      { 
-        term: 'price is exactly', 
-        reason: 'Financial Governance: Fixed pricing detected.', 
-        remedy: 'Pricing is governed by local workshop labor rates. Please focus on diagnostic next steps.' 
       }
     ];
 
@@ -146,8 +138,13 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = async (text: string) => {
-    const isRecallScan = text.toLowerCase().includes('recall') || text.toLowerCase().includes('scan');
-    setActiveProtocol(isRecallScan ? RECALL_PROTOCOL : STANDARD_PROTOCOL);
+    const lowerText = text.toLowerCase();
+    const isRecallScan = lowerText.includes('recall') || lowerText.includes('safety scan');
+    const isPartSearch = lowerText.includes('part') || lowerText.includes('source') || lowerText.includes('oem') || lowerText.includes('aftermarket');
+
+    if (isRecallScan) setActiveProtocol(RECALL_PROTOCOL);
+    else if (isPartSearch) setActiveProtocol(PART_PROTOCOL);
+    else setActiveProtocol(STANDARD_PROTOCOL);
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -167,36 +164,29 @@ const App: React.FC = () => {
     let attempts = 0;
     let finalParsedResponse = null;
     let validationError = false;
-    let lastViolationReason = "";
 
     while (attempts < 2) {
       const responseData = await geminiService.sendMessage(currentHistory, vehicleContext, status);
-      
       const violation = checkProtocolViolations(responseData.response_content.visual_text);
       
       if (!violation.violated) {
         finalParsedResponse = responseData;
-        validationError = false;
         break;
       } else {
-        lastViolationReason = violation.reason || "Unknown Breach";
         attempts++;
         validationError = true;
-        
         currentHistory.push({
           role: 'user',
-          parts: [{ text: `[GOVERNANCE SIGNAL]: Your previous response contained a protocol violation: "${lastViolationReason}". RE-ISSUE diagnostic response strictly following EKA-Ai Constitution.` }]
+          parts: [{ text: `[GOVERNANCE SIGNAL]: Protocol violation: "${violation.reason}". RE-ISSUE strictly.` }]
         });
-
-        await new Promise(r => setTimeout(r, 1000));
-        setLoadingStep(3); 
+        await new Promise(r => setTimeout(r, 800));
       }
     }
 
     if (!finalParsedResponse) {
       finalParsedResponse = {
         response_content: {
-          visual_text: "1. AUDIT ALERT: GOVERNANCE BREACH DETECTED\n   a. Breach Type: Protocol Violation\n   b. Remediation Required: System reset required.",
+          visual_text: "1. AUDIT ALERT: GOVERNANCE BREACH\n   a. Breach Type: Protocol Violation\n   b. Remedy: Identity Reset.",
           audio_text: "Response blocked due to protocol breach."
         },
         job_status_update: status,
@@ -221,9 +211,7 @@ const App: React.FC = () => {
       validationError: validationError
     };
     
-    if (finalParsedResponse.job_status_update) {
-      setStatus(finalParsedResponse.job_status_update as JobStatus);
-    }
+    if (finalParsedResponse.job_status_update) setStatus(finalParsedResponse.job_status_update as JobStatus);
 
     setMessages(prev => [...prev, assistantMessage]);
     setIsLoading(false);
@@ -231,6 +219,24 @@ const App: React.FC = () => {
 
   const handleScanRecalls = () => {
     handleSendMessage("Initiate audit-grade safety scan for official recalls and common patterns for this vehicle identity.");
+  };
+
+  const getLoadingColor = () => {
+    if (activeProtocol === RECALL_PROTOCOL) return 'border-l-red-600';
+    if (activeProtocol === PART_PROTOCOL) return 'border-l-blue-600';
+    return 'border-l-[#f18a22]';
+  };
+
+  const getLoadingLabel = () => {
+    if (activeProtocol === RECALL_PROTOCOL) return 'EKA Safety Audit Engine';
+    if (activeProtocol === PART_PROTOCOL) return 'EKA Logistics & Sourcing Engine';
+    return 'EKA Governance Engine';
+  };
+
+  const getLoadingTextColor = () => {
+    if (activeProtocol === RECALL_PROTOCOL) return 'text-red-500';
+    if (activeProtocol === PART_PROTOCOL) return 'text-blue-500';
+    return 'text-[#f18a22]';
   };
 
   return (
@@ -260,12 +266,12 @@ const App: React.FC = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start mb-6">
-                <div className={`bg-[#0A0A0A] border border-[#262626] p-5 rounded-lg flex flex-col gap-4 shadow-2xl min-w-[300px] border-l-4 transition-colors duration-500 ${activeProtocol === RECALL_PROTOCOL ? 'border-l-red-600' : 'border-l-[#FF6600]'}`}>
+                <div className={`bg-[#0A0A0A] border border-[#262626] p-5 rounded-lg flex flex-col gap-4 shadow-2xl min-w-[320px] border-l-4 transition-all duration-500 ${getLoadingColor()}`}>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full animate-ping ${activeProtocol === RECALL_PROTOCOL ? 'bg-red-600' : 'bg-[#FF6600]'}`}></div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${activeProtocol === RECALL_PROTOCOL ? 'text-red-500' : 'text-[#FF6600]'}`}>
-                        {activeProtocol === RECALL_PROTOCOL ? 'EKA Safety Audit Engine' : 'EKA Governance Engine'}
+                      <div className={`w-2 h-2 rounded-full animate-ping ${getLoadingTextColor().replace('text-', 'bg-')}`}></div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${getLoadingTextColor()}`}>
+                        {getLoadingLabel()}
                       </span>
                     </div>
                   </div>
@@ -273,8 +279,8 @@ const App: React.FC = () => {
                   <div className="flex flex-col gap-2">
                     {activeProtocol.map((step, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? (activeProtocol === RECALL_PROTOCOL ? 'bg-red-600' : 'bg-[#FF6600]') : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
-                        <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? (activeProtocol === RECALL_PROTOCOL ? 'text-red-500/80' : 'text-[#FF6600]/80') : 'text-zinc-700'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? getLoadingTextColor().replace('text-', 'bg-') : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
+                        <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? 'text-zinc-400' : 'text-zinc-700'}`}>
                           {step}
                           {idx === loadingStep && (
                             <span className="ml-2 inline-flex gap-0.5">

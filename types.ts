@@ -23,6 +23,7 @@ export interface Message {
   job_status_update?: JobStatus;
   ui_triggers?: {
     theme_color: string;
+    brand_identity: string;
     show_orange_border: boolean;
   };
   visual_assets?: {

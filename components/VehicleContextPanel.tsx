@@ -45,21 +45,16 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     setTimeout(() => setShowSuccessGlow(false), 2000);
   };
 
-  // ---------------------------------------------------------
-  // VIEW MODE (LOCKED STATE)
-  // ---------------------------------------------------------
   if (!isEditing && isContextComplete(context)) {
     return (
       <div className={`mx-4 mb-6 transition-all duration-700 ${showSuccessGlow ? 'scale-[1.02] ring-4 ring-green-500/30' : ''}`}>
-        <div className="relative group overflow-hidden p-1 bg-gradient-to-r from-green-500/20 via-[#FF6600]/20 to-transparent rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.1)]">
-          {/* Animated Background Pulse */}
+        <div className="relative group overflow-hidden p-1 bg-gradient-to-r from-green-500/20 via-[#f18a22]/20 to-transparent rounded-xl shadow-[0_0_30px_rgba(34,197,94,0.1)]">
           {showSuccessGlow && (
             <div className="absolute inset-0 bg-green-500/10 animate-pulse pointer-events-none"></div>
           )}
 
           <div className="bg-[#0A0A0A] border border-[#262626] rounded-[10px] p-5 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-5 w-full md:w-auto">
-              {/* Identity Token Display */}
               <div className="relative">
                 <div className="w-14 h-14 bg-black border-2 border-green-500/50 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.2)] shrink-0 overflow-hidden">
                    {context.vehicleType === '2W' ? (
@@ -71,7 +66,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                         <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
                       </svg>
                    )}
-                   {/* Digital Verification Scanline */}
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/20 to-transparent h-1/2 w-full animate-[scan_2s_linear_infinite]"></div>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-black flex items-center justify-center shadow-lg">
@@ -94,7 +88,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                   <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Protocol 2.6 Secured</span>
                 </div>
                 <h2 className="text-lg font-black text-white tracking-tighter uppercase leading-none">
-                  {context.year} <span className="text-[#FF6600]">{context.brand}</span> {context.model}
+                  {context.year} <span className="text-[#f18a22]">{context.brand}</span> {context.model}
                 </h2>
                 <div className="flex items-center gap-3 mt-2">
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-900 border border-[#262626] rounded text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
@@ -120,7 +114,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
               </button>
               <button 
                 onClick={() => setIsEditing(true)}
-                className="w-full md:w-auto px-5 py-2.5 bg-zinc-900 border border-[#262626] rounded-lg text-[10px] text-zinc-400 font-black uppercase tracking-widest hover:border-[#FF6600] hover:text-white transition-all active:scale-95"
+                className="w-full md:w-auto px-5 py-2.5 bg-zinc-900 border border-[#262626] rounded-lg text-[10px] text-zinc-400 font-black uppercase tracking-widest hover:border-[#f18a22] hover:text-white transition-all active:scale-95"
               >
                 Modify Identity
               </button>
@@ -128,7 +122,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
           </div>
         </div>
 
-        {/* Success Feedback Banner */}
         {showSuccessGlow && (
           <div className="mt-3 py-2 px-4 bg-green-500 rounded-lg flex items-center justify-center gap-3 animate-in fade-in slide-in-from-bottom-2">
             <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,16 +134,12 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     );
   }
 
-  // ---------------------------------------------------------
-  // EDIT MODE (FORM)
-  // ---------------------------------------------------------
   return (
-    <div className="mx-4 mb-6 p-8 bg-[#0A0A0A] border-2 border-[#FF6600]/20 rounded-2xl shadow-2xl relative overflow-hidden group transition-all duration-300">
-      {/* Decorative Grid Background */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#FF6600_1px,transparent_1px)] [background-size:20px_20px]"></div>
+    <div className="mx-4 mb-6 p-8 bg-[#0A0A0A] border-2 border-[#f18a22]/20 rounded-2xl shadow-2xl relative overflow-hidden group transition-all duration-300">
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#f18a22_1px,transparent_1px)] [background-size:20px_20px]"></div>
 
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-1.5 h-6 bg-[#FF6600] shadow-[0_0_12px_rgba(255,102,0,0.5)] rounded-full"></div>
+        <div className="w-1.5 h-6 bg-[#f18a22] shadow-[0_0_12px_rgba(241,138,34,0.5)] rounded-full"></div>
         <div className="flex flex-col">
           <h3 className="text-sm font-black text-white uppercase tracking-[0.3em]">Vehicle Identity Acquisition</h3>
           <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1 italic">Context Verification Required for Diagnostic Session</p>
@@ -162,7 +151,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
          <div className="flex gap-4">
             <button 
                onClick={() => handleTypeSelect('2W')}
-               className={`flex-1 py-4 rounded-xl border-2 flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${context.vehicleType === '2W' ? 'bg-[#FF6600] border-[#FF6600] text-black shadow-[0_0_20px_rgba(255,102,0,0.2)]' : 'bg-black border-[#262626] text-zinc-500 hover:border-[#FF6600]/40'}`}
+               className={`flex-1 py-4 rounded-xl border-2 flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${context.vehicleType === '2W' ? 'bg-[#f18a22] border-[#f18a22] text-black shadow-[0_0_20px_rgba(241,138,34,0.2)]' : 'bg-black border-[#262626] text-zinc-500 hover:border-[#f18a22]/40'}`}
             >
                <svg className={`w-5 h-5 ${context.vehicleType === '2W' ? 'text-black' : 'text-zinc-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" />
@@ -171,7 +160,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             </button>
             <button 
                onClick={() => handleTypeSelect('4W')}
-               className={`flex-1 py-4 rounded-xl border-2 flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${context.vehicleType === '4W' ? 'bg-[#FF6600] border-[#FF6600] text-black shadow-[0_0_20px_rgba(255,102,0,0.2)]' : 'bg-black border-[#262626] text-zinc-500 hover:border-[#FF6600]/40'}`}
+               className={`flex-1 py-4 rounded-xl border-2 flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${context.vehicleType === '4W' ? 'bg-[#f18a22] border-[#f18a22] text-black shadow-[0_0_20px_rgba(241,138,34,0.2)]' : 'bg-black border-[#262626] text-zinc-500 hover:border-[#f18a22]/40'}`}
             >
                <svg className={`w-5 h-5 ${context.vehicleType === '4W' ? 'text-black' : 'text-zinc-600'}`} fill="currentColor" viewBox="0 0 24 24">
                  <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z"/>
@@ -191,7 +180,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             value={context.brand}
             onChange={handleChange}
             placeholder={context.vehicleType === '2W' ? "Hero / Honda" : "Maruti / Toyota"}
-            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/20 transition-all font-medium"
+            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all font-medium"
           />
           <datalist id="brand-list">
              {brandSuggestions.map(b => <option key={b} value={b} />)}
@@ -206,7 +195,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             value={context.model}
             onChange={handleChange}
             placeholder="e.g. City / Splendor"
-            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/20 transition-all font-medium"
+            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all font-medium"
           />
           <datalist id="model-list">
              {DATA_STORE.models_common.map(m => <option key={m} value={m} />)}
@@ -221,7 +210,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             value={context.year}
             onChange={handleChange}
             placeholder="2024"
-            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/20 transition-all font-medium"
+            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-800 focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all font-medium"
           />
           <datalist id="year-list">
              {DATA_STORE.years.map(y => <option key={y} value={y} />)}
@@ -234,7 +223,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             name="fuelType"
             value={context.fuelType}
             onChange={handleChange}
-            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#FF6600] focus:ring-1 focus:ring-[#FF6600]/20 transition-all appearance-none cursor-pointer font-medium"
+            className="bg-black border border-[#262626] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#f18a22] focus:ring-1 focus:ring-[#f18a22]/20 transition-all appearance-none cursor-pointer font-medium"
           >
             <option value="">Select</option>
             {DATA_STORE.fuels.map(f => <option key={f} value={f}>{f}</option>)}
@@ -245,7 +234,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       {isContextComplete(context) && (
         <button 
           onClick={handleLockIdentity}
-          className="mt-10 w-full py-4 bg-[#FF6600] text-black text-[12px] font-black uppercase tracking-[0.3em] rounded-xl hover:bg-[#e55c00] active:scale-[0.98] transition-all shadow-[0_15px_40px_-10px_rgba(255,102,0,0.5)] flex items-center justify-center gap-3 group relative overflow-hidden"
+          className="mt-10 w-full py-4 bg-[#f18a22] text-black text-[12px] font-black uppercase tracking-[0.3em] rounded-xl hover:bg-[#d97a1d] active:scale-[0.98] transition-all shadow-[0_15px_40px_-10px_rgba(241,138,34,0.5)] flex items-center justify-center gap-3 group relative overflow-hidden"
         >
           <span className="relative z-10 flex items-center gap-3">
             <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,7 +242,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             </svg>
             Lock Identity & Initialize Session
           </span>
-          {/* Subtle reflection animation on hover */}
           <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-20 group-hover:animate-[shine_0.75s]"></div>
         </button>
       )}

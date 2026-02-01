@@ -42,7 +42,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
         
-        // Special UI for Recalls/Issues
         if (title.toLowerCase().includes('recall alert') || title.toLowerCase().includes('common reported issues')) {
           const isCritical = title.toLowerCase().includes('recall');
           return (
@@ -62,7 +61,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           );
         }
 
-        // Special UI for Part Sourcing Title
         if (title.toLowerCase().includes('part sourcing') || title.toLowerCase().includes('inventory')) {
           return (
             <div key={i} className="flex items-center gap-2 mt-6 mb-3 p-4 bg-blue-600/10 border-blue-500/30 border-2 rounded-xl">
@@ -91,14 +89,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           );
         }
 
-        return <div key={i} className="text-[#FF6600] font-black text-xs uppercase tracking-wider mt-6 mb-2 border-b border-[#262626] pb-1">{line}</div>;
+        return <div key={i} className="text-[#f18a22] font-black text-xs uppercase tracking-wider mt-6 mb-2 border-b border-[#262626] pb-1">{line}</div>;
       }
 
       const subPointerMatch = trimmedLine.match(/^[a-z]\.\s+(.*)/);
       if (subPointerMatch) {
         return (
           <div key={i} className="ml-4 mb-2 flex items-start gap-2">
-            <span className="text-[#FF6600] font-bold text-xs mt-0.5">•</span>
+            <span className="text-[#f18a22] font-bold text-xs mt-0.5">•</span>
             <span className="text-zinc-300 text-sm leading-relaxed">{subPointerMatch[1]}</span>
           </div>
         );
@@ -119,7 +117,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return (
       <div className="mt-8 flex flex-col gap-6">
         {vehicle_display_query && (
-          <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-2xl transition-all hover:border-[#FF6600]/30">
+          <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-2xl transition-all hover:border-[#f18a22]/30">
             <div className="h-48 md:h-64 w-full bg-zinc-900/50 relative overflow-hidden">
                <img 
                  src={`https://source.unsplash.com/featured/?${encodeURIComponent(vehicle_display_query)}`} 
@@ -131,7 +129,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
             <div className="p-4 relative">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] font-black text-[#FF6600] uppercase tracking-widest">Diagnostic Reference</span>
+                <span className="text-[9px] font-black text-[#f18a22] uppercase tracking-widest">Diagnostic Reference</span>
                 <span className="w-1 h-1 bg-zinc-700 rounded-full"></span>
                 <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Visual Profile</span>
               </div>
@@ -141,7 +139,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         )}
 
         {part_display_query && (
-           <div className="group relative overflow-hidden rounded-xl border border-white/5 bg-[#121212] flex items-center p-4 gap-4 transition-all hover:border-[#FF6600]/20">
+           <div className="group relative overflow-hidden rounded-xl border border-white/5 bg-[#121212] flex items-center p-4 gap-4 transition-all hover:border-[#f18a22]/20">
              <div className="w-16 h-16 rounded-lg bg-zinc-900 overflow-hidden shrink-0 border border-white/5">
                 <img 
                   src={`https://source.unsplash.com/featured/?${encodeURIComponent(part_display_query)}`} 
@@ -151,7 +149,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 />
              </div>
              <div className="flex flex-col">
-               <span className="text-[8px] font-black text-[#FF6600] uppercase tracking-widest mb-0.5">Component Focus</span>
+               <span className="text-[8px] font-black text-[#f18a22] uppercase tracking-widest mb-0.5">Component Focus</span>
                <h5 className="text-xs font-black text-white uppercase tracking-tight">{part_display_query}</h5>
              </div>
            </div>
@@ -167,8 +165,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           isAi 
             ? message.validationError 
               ? 'bg-[#1a0a0a] border-red-900/50 text-zinc-100' 
-              : `bg-[#0A0A0A] ${showOrangeBorder ? 'border-[#FF6600]' : 'border-[#262626]'} text-zinc-100` 
-            : 'bg-[#121212] border-[#FF6600] text-zinc-100'
+              : `bg-[#0A0A0A] ${showOrangeBorder ? 'border-[#f18a22]' : 'border-[#262626]'} text-zinc-100` 
+            : 'bg-[#121212] border-[#f18a22] text-zinc-100'
         }`}
       >
         {isAi && (
@@ -176,7 +174,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.response_content?.audio_text && (
               <button 
                 onClick={() => onPlayAudio?.(message.response_content!.audio_text)}
-                className={`p-2 rounded-full ring-4 ring-black shadow-2xl transition-all ${isAudioPlaying ? 'bg-[#FF6600] animate-pulse scale-110' : 'bg-zinc-800 hover:bg-[#FF6600] hover:scale-110'}`}
+                className={`p-2 rounded-full ring-4 ring-black shadow-2xl transition-all ${isAudioPlaying ? 'bg-[#f18a22] animate-pulse scale-110' : 'bg-zinc-800 hover:bg-[#f18a22] hover:scale-110'}`}
               >
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isAudioPlaying ? (
@@ -197,9 +195,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="flex items-center gap-3">
             {isAi ? (
               <>
-                <div className={`w-6 h-6 ${message.validationError ? 'bg-red-600' : 'bg-[#FF6600]'} rounded-lg flex items-center justify-center text-[12px] font-black text-black shadow-md`}>E</div>
+                <div className={`w-6 h-6 ${message.validationError ? 'bg-red-600' : 'bg-[#f18a22]'} rounded-lg flex items-center justify-center text-[12px] font-black text-black shadow-md`}>E</div>
                 <div className="flex flex-col">
-                   <span className={`text-[11px] font-black uppercase tracking-widest ${message.validationError ? 'text-red-400' : 'text-[#FF6600]'}`}>EKA-Ai Agent</span>
+                   <span className={`text-[11px] font-black uppercase tracking-widest ${message.validationError ? 'text-red-400' : 'text-[#f18a22]'}`}>EKA-Ai Agent</span>
                    <span className="text-[8px] text-zinc-500 font-bold uppercase">Automobile Intelligence</span>
                 </div>
               </>
@@ -236,7 +234,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     href={url.uri} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className={`text-[11px] px-4 py-3 bg-[#121212] border ${isPartSupplier ? 'border-blue-500/30 hover:border-blue-500' : 'border-[#262626] hover:border-[#FF6600]'} text-zinc-300 rounded-xl font-bold transition-all flex items-center justify-between group`}
+                    className={`text-[11px] px-4 py-3 bg-[#121212] border ${isPartSupplier ? 'border-blue-500/30 hover:border-blue-500' : 'border-[#262626] hover:border-[#f18a22]'} text-zinc-300 rounded-xl font-bold transition-all flex items-center justify-between group`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`p-1.5 rounded-lg ${isPartSupplier ? 'bg-blue-600/20 text-blue-400' : 'bg-zinc-800 text-zinc-400'}`}>
@@ -263,15 +261,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         )}
 
         {showContextForm && (
-          <form onSubmit={handleContextSubmit} className="mt-8 p-6 bg-black/60 border-2 border-[#FF6600]/20 rounded-2xl animate-in fade-in zoom-in duration-500 shadow-inner">
-            <h4 className="text-[11px] font-black text-[#FF6600] uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
-              <span className="w-2 h-2 bg-[#FF6600] rounded-full shadow-[0_0_8px_#FF6600]"></span>
+          <form onSubmit={handleContextSubmit} className="mt-8 p-6 bg-black/60 border-2 border-[#f18a22]/20 rounded-2xl animate-in fade-in zoom-in duration-500 shadow-inner">
+            <h4 className="text-[11px] font-black text-[#f18a22] uppercase tracking-[0.25em] mb-6 flex items-center gap-3">
+              <span className="w-2 h-2 bg-[#f18a22] rounded-full shadow-[0_0_8px_#f18a22]"></span>
               Critical: Identity Verification
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Type</label>
-                <select name="vehicleType" required className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all">
+                <select name="vehicleType" required className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all">
                   <option value="">Select</option>
                   <option value="2W">2W</option>
                   <option value="4W">4W</option>
@@ -279,26 +277,26 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Brand</label>
-                <input name="brand" required placeholder="Honda" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all" />
+                <input name="brand" required placeholder="Honda" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Model</label>
-                <input name="model" required placeholder="Civic" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all" />
+                <input name="model" required placeholder="Civic" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Year</label>
-                <input name="year" required placeholder="2019" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all" />
+                <input name="year" required placeholder="2019" className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Fuel</label>
-                <select name="fuelType" required className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#FF6600] transition-all">
+                <select name="fuelType" required className="bg-[#121212] border border-[#262626] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all">
                    <option value="Petrol">Petrol</option>
                    <option value="Diesel">Diesel</option>
                    <option value="Electric">Electric</option>
                 </select>
               </div>
             </div>
-            <button type="submit" className="mt-6 w-full py-3 bg-[#FF6600] text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#e55c00] transition-all shadow-xl">
+            <button type="submit" className="mt-6 w-full py-3 bg-[#f18a22] text-black text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#e55c00] transition-all shadow-xl">
               Initialize Context Synchronizer
             </button>
           </form>
