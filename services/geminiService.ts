@@ -13,6 +13,7 @@ export class GeminiService {
 
       const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
       const isPartSearch = lastUserMessage.includes('part') || lastUserMessage.includes('source') || lastUserMessage.includes('oem');
+      const isMgQuery = lastUserMessage.includes('mg ') || lastUserMessage.includes('fleet') || lastUserMessage.includes('contract');
 
       const contextPrompt = `
 [CURRENT SYSTEM STATE]:
@@ -23,10 +24,10 @@ Type: ${context.vehicleType}
 Brand: ${context.brand}
 Model: ${context.model}
 Year: ${context.year}
-Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
+Fuel: ${context.fuelType}` : 'Vehicle context not yet fully locked.'}
 
-[INTENT SIGNAL]: ${isPartSearch ? 'IDENTIFY_AND_SOURCE_PARTS_MODE' : 'DIAGNOSTIC_MODE'}
-${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, compatibility, and vendor links using the grounding tool.' : 'Analyze symptoms and provide diagnostic reasoning.'}`;
+[INTENT SIGNAL]: ${isMgQuery ? 'FLEET_MG_CALCULATION_MODE' : (isPartSearch ? 'IDENTIFY_AND_SOURCE_PARTS_MODE' : 'DIAGNOSTIC_GOVERNANCE_MODE')}
+${isMgQuery ? 'Focus on MG Model parameters (AKY, PKR, actual KM) and penalty/bonus logic.' : 'Focus on symptomatic analysis and state transition governance.'}`;
 
       const response = await ai.models.generateContent({
         model: this.textModel,
@@ -49,7 +50,7 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
               },
               job_status_update: { 
                 type: Type.STRING,
-                description: "Must be one of the JobStatus enums defined in constitution."
+                description: "Must be one of: CREATED, CONFIDENCE_CONFIRMED, VEHICLE_CONTEXT_COLLECTED, DIAGNOSIS_READY, ESTIMATE_READY, CUSTOMER_APPROVED, IN_PROGRESS, PDI_COMPLETED, INVOICED, CLOSED"
               },
               ui_triggers: {
                 type: Type.OBJECT,
@@ -80,7 +81,7 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
         groundingChunks.forEach((chunk: any) => {
           if (chunk.web?.uri) {
             groundingUrls.push({ 
-              title: chunk.web.title || 'Technical Sourcing Data', 
+              title: chunk.web.title || 'Data Source', 
               uri: chunk.web.uri 
             });
           }
@@ -96,8 +97,8 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
       console.error("EKA-Ai Engine Error:", error);
       return {
         response_content: {
-          visual_text: "1. SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n   a. The EKA-Ai engine encountered an interruption.\n   b. Please re-issue the command.",
-          audio_text: "System error. Diagnostic engine timed out."
+          visual_text: "1. GOVERNANCE BREACH: SYSTEM TIMEOUT\n   a. The EKA-Ai engine encountered an interruption during audit.\n   b. Please re-issue your request with full vehicle parameters.",
+          audio_text: "System timeout. Please re issue your request."
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
@@ -112,7 +113,7 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `Speak professionally: ${text}` }] }],
+        contents: [{ parts: [{ text: `Speak in a professional G4G tone: ${text}` }] }],
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
