@@ -1,15 +1,35 @@
 
-import React, { useState } from 'react';
-import { Message } from '../types';
+import React from 'react';
+import { Message, VehicleContext, isContextComplete } from '../types';
 
 interface ChatMessageProps {
   message: Message;
   onPlayAudio?: (text: string) => void;
   isAudioPlaying?: boolean;
+  vehicleContext?: VehicleContext;
+  onUpdateContext?: (context: VehicleContext) => void;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudioPlaying }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ 
+  message, 
+  onPlayAudio, 
+  isAudioPlaying, 
+  vehicleContext,
+  onUpdateContext 
+}) => {
   const isAi = message.role === 'assistant';
+
+  const handleContextSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const updated = {
+      brand: formData.get('brand') as string,
+      model: formData.get('model') as string,
+      year: formData.get('year') as string,
+      fuelType: formData.get('fuelType') as string || (vehicleContext?.fuelType || ''),
+    };
+    if (onUpdateContext) onUpdateContext(updated);
+  };
 
   const renderContent = (content: string) => {
     const lines = content.split('\n');
@@ -62,34 +82,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
         );
       }
 
-      const priceRegex = /((?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?\s*(?:to|-|and)\s*(?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?)/gi;
-      
-      if (line.match(priceRegex)) {
-        const parts = line.split(priceRegex);
-        return (
-          <div key={i} className="mb-0.5">
-            {parts.map((part, index) => {
-              if (part.match(priceRegex)) {
-                return (
-                  <span key={index} className="inline-flex flex-col items-start gap-1 p-2 bg-amber-500/5 border border-amber-500/30 rounded-md my-1">
-                    <span className="text-amber-400 font-black text-sm tracking-tight">{part}</span>
-                    <span className="flex items-center gap-1">
-                      <span className="text-[7px] bg-amber-500 text-black px-1.5 py-0.5 rounded-sm font-black uppercase tracking-tighter">NON-BINDING ESTIMATE</span>
-                    </span>
-                  </span>
-                );
-              }
-              return <span key={index}>{part}</span>;
-            })}
-          </div>
-        );
-      }
-
       return <div key={i} className="mb-0.5">{line}</div>;
     });
   };
 
   const displayContent = isAi ? (message.visual_content || message.content) : message.content;
+  const showContextForm = isAi && message.id === 'welcome' && vehicleContext && !isContextComplete(vehicleContext);
 
   return (
     <div className={`flex w-full mb-6 ${isAi ? 'justify-start' : 'justify-end'}`}>
@@ -130,9 +128,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
               <>
                 <div className={`w-5 h-5 ${message.validationError ? 'bg-red-600' : 'bg-[#FF6600]'} rounded-sm flex items-center justify-center text-[10px] font-black text-black`}>E</div>
                 <span className={`text-[10px] font-black uppercase tracking-widest ${message.validationError ? 'text-red-400' : 'text-[#FF6600]'}`}>EKA-Ai Agent</span>
-                {message.language_code && (
-                  <span className="text-[8px] px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400 font-bold uppercase">{message.language_code}</span>
-                )}
               </>
             ) : (
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Service Request</span>
@@ -146,6 +141,32 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onPlayAudio, isAudio
         <div className={`text-sm leading-relaxed whitespace-pre-wrap font-medium ${message.validationError ? 'text-red-100/90' : 'text-zinc-100'}`}>
           {isAi ? renderContent(displayContent) : displayContent}
         </div>
+
+        {showContextForm && (
+          <form onSubmit={handleContextSubmit} className="mt-6 p-4 bg-black/40 border border-[#262626] rounded-lg animate-in fade-in zoom-in duration-300">
+            <h4 className="text-[10px] font-black text-[#FF6600] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#FF6600] rounded-full"></span>
+              Identity Lock Required
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] font-bold text-zinc-500 uppercase">Brand</label>
+                <input name="brand" required placeholder="e.g. Honda" className="bg-black border border-[#262626] rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#FF6600]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] font-bold text-zinc-500 uppercase">Model</label>
+                <input name="model" required placeholder="e.g. Civic" className="bg-black border border-[#262626] rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#FF6600]" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[8px] font-bold text-zinc-500 uppercase">Year</label>
+                <input name="year" required placeholder="e.g. 2019" className="bg-black border border-[#262626] rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#FF6600]" />
+              </div>
+            </div>
+            <button type="submit" className="mt-4 w-full py-2 bg-[#FF6600] text-black text-[9px] font-black uppercase tracking-widest rounded hover:bg-[#e55c00] transition-colors">
+              Synchronize Vehicle Context
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

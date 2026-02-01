@@ -20,8 +20,8 @@ const App: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
-      visual_content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n\nI provide professional automotive diagnostics and service guidance. To proceed, I require the following locked context:\n- Brand\n- Model\n- Year\n- Fuel Type\n\nYou can use the identification panel above to lock these details.",
-      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's identification details in the panel above to begin.",
+      visual_content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n\nI provide professional automotive diagnostics and service guidance. To proceed, I require your vehicle's identification (Brand, Model, and Year).\n\nPlease provide these details using the form below or the panel at the top.",
+      audio_content: "EKA-Ai system initialized. Service advisor active. Please provide your vehicle's brand, model, and year to begin diagnostic guidance.",
       language_code: "en",
       timestamp: new Date(),
       isValidated: true
@@ -93,9 +93,6 @@ const App: React.FC = () => {
     }
   };
 
-  /**
-   * Checks for severe protocol violations in the visual content and provides remediation.
-   */
   const checkProtocolViolations = (content: string): { violated: boolean; reason?: string; remedy?: string } => {
     const forbidden = [
       { 
@@ -106,7 +103,7 @@ const App: React.FC = () => {
       { 
         term: 'large language model', 
         reason: 'Identity Breach: Technical self-reference detected.', 
-        remedy: 'System reset required. Ensure vehicle identification (Brand/Model/Year) is fully provided in the top panel.' 
+        remedy: 'System reset required. Ensure vehicle identification (Brand/Model/Year) is fully provided.' 
       },
       { 
         term: 'assistant', 
@@ -121,7 +118,7 @@ const App: React.FC = () => {
       { 
         term: 'price is exactly', 
         reason: 'Financial Governance: Fixed pricing detected.', 
-        remedy: 'Pricing is governed by local workshop labor rates. Please use the "Next Required Input" to confirm diagnostic next steps instead of cost.' 
+        remedy: 'Pricing is governed by local workshop labor rates. Please focus on diagnostic next steps.' 
       }
     ];
 
@@ -164,7 +161,7 @@ const App: React.FC = () => {
       } catch (e) {
         parsed = {
           visual_content: responseText,
-          audio_content: "Response received but structure check failed.",
+          audio_content: "Response structure error.",
           language_code: "en",
           available_translations: ["en"]
         };
@@ -179,13 +176,12 @@ const App: React.FC = () => {
       } else {
         lastViolationReason = violation.reason || "Unknown Breach";
         lastRemedy = violation.remedy || "Refine query.";
-        console.warn(`[PROTOCOL ALERT]: ${lastViolationReason}. Retrying...`);
         attempts++;
         validationError = true;
         
         currentHistory.push({
           role: 'user',
-          parts: [{ text: `[GOVERNANCE SIGNAL]: Your previous response contained a protocol violation: "${lastViolationReason}". RE-ISSUE the diagnostic response immediately following EKA-Ai Constitution strictly. No apologies, just the correct diagnostic output.` }]
+          parts: [{ text: `[GOVERNANCE SIGNAL]: Your previous response contained a protocol violation: "${lastViolationReason}". RE-ISSUE diagnostic response strictly following EKA-Ai Constitution.` }]
         });
 
         await new Promise(r => setTimeout(r, 1000));
@@ -195,8 +191,8 @@ const App: React.FC = () => {
 
     if (!finalParsedResponse) {
       finalParsedResponse = {
-        visual_content: `### AUDIT ALERT: GOVERNANCE BREACH DETECTED\n\n**Breach Type:** ${lastViolationReason}\n\n**Status:** Blocked by Safety Governance Audit (Phase 1).\n\n**Remediation Required:**\n${lastRemedy}\n\n*Note: EKA-Ai is restricted to automotive-only diagnostics. Generic AI responses are automatically purged.*`,
-        audio_content: `Diagnostic response blocked due to governance breach: ${lastViolationReason}. Please refine your input as requested.`,
+        visual_content: `### AUDIT ALERT: GOVERNANCE BREACH DETECTED\n\n**Breach Type:** ${lastViolationReason}\n\n**Remediation Required:**\n${lastRemedy}`,
+        audio_content: `Response blocked: ${lastViolationReason}.`,
         language_code: "en",
         available_translations: ["en"]
       };
@@ -216,7 +212,7 @@ const App: React.FC = () => {
       validationError: validationError
     };
     
-    if (finalParsedResponse.visual_content.includes('Probable Cause:') && finalParsedResponse.visual_content.includes('Recommended Action:')) {
+    if (finalParsedResponse.visual_content.includes('Probable Cause:')) {
       setStatus('CONFIDENCE_CONFIRMED');
     }
 
@@ -239,6 +235,8 @@ const App: React.FC = () => {
                 message={msg} 
                 onPlayAudio={handlePlayAudio}
                 isAudioPlaying={isAudioPlaying}
+                vehicleContext={vehicleContext}
+                onUpdateContext={setVehicleContext}
               />
             ))}
             {isLoading && (
