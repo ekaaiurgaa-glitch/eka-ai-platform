@@ -33,8 +33,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const renderContent = (content: string) => {
     const lines = content.split('\n');
-    const priceRangeRegex = /((?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?\s*(?:to|-|and)\s*(?:[\$₹£€]\s?)?\d+(?:,\d+)*(?:\.\d+)?)/gi;
-
+    
     return lines.map((line, i) => {
       const trimmedLine = line.trim();
       
@@ -112,7 +111,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <div className="mt-8 flex flex-col gap-6">
         {vehicle_display_query && (
           <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a0a] shadow-2xl transition-all hover:border-[#FF6600]/30">
-            <div className="aspect-[16/9] w-full bg-zinc-900/50 relative overflow-hidden">
+            <div className="h-48 md:h-64 w-full bg-zinc-900/50 relative overflow-hidden">
                <img 
                  src={`https://source.unsplash.com/featured/?${encodeURIComponent(vehicle_display_query)}`} 
                  alt={vehicle_display_query}
