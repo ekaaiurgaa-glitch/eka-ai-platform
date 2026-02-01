@@ -12,6 +12,8 @@ export type JobStatus =
   | 'INVOICED' 
   | 'CLOSED';
 
+export type IntelligenceMode = 'FAST' | 'THINKING';
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -34,6 +36,7 @@ export interface Message {
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;
+  intelligenceMode?: IntelligenceMode;
 }
 
 export interface VehicleContext {

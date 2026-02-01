@@ -1,13 +1,19 @@
 
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { EKA_CONSTITUTION } from "../constants";
-import { VehicleContext, JobStatus } from "../types";
+import { VehicleContext, JobStatus, IntelligenceMode } from "../types";
 
 export class GeminiService {
-  private textModel: string = 'gemini-3-pro-preview';
+  private fastModel: string = 'gemini-2.5-flash-lite-latest';
+  private thinkingModel: string = 'gemini-3-pro-preview';
   private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
-  async sendMessage(history: { role: string; parts: { text: string }[] }[], context?: VehicleContext, currentStatus: JobStatus = 'CREATED') {
+  async sendMessage(
+    history: { role: string; parts: { text: string }[] }[], 
+    context?: VehicleContext, 
+    currentStatus: JobStatus = 'CREATED',
+    mode: IntelligenceMode = 'FAST'
+  ) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -17,6 +23,7 @@ export class GeminiService {
       const contextPrompt = `
 [CURRENT SYSTEM STATE]:
 Current Status: ${currentStatus}
+[INTELLIGENCE MODE]: ${mode}
 ${context && context.brand ? `
 Locked Vehicle Context:
 Type: ${context.vehicleType}
@@ -28,50 +35,56 @@ Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
 [INTENT SIGNAL]: ${isPartSearch ? 'IDENTIFY_AND_SOURCE_PARTS_MODE' : 'DIAGNOSTIC_MODE'}
 ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, compatibility, and vendor links using the grounding tool.' : 'Analyze symptoms and provide diagnostic reasoning.'}`;
 
-      const response = await ai.models.generateContent({
-        model: this.textModel,
-        contents: history,
-        config: {
-          systemInstruction: EKA_CONSTITUTION + contextPrompt,
-          temperature: 0.1,
-          responseMimeType: "application/json",
-          tools: [{ googleSearch: {} }],
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              response_content: {
-                type: Type.OBJECT,
-                properties: {
-                  visual_text: { type: Type.STRING },
-                  audio_text: { type: Type.STRING }
-                },
-                required: ["visual_text", "audio_text"]
+      const config: any = {
+        systemInstruction: EKA_CONSTITUTION + contextPrompt,
+        temperature: mode === 'THINKING' ? 1.0 : 0.1,
+        responseMimeType: "application/json",
+        tools: [{ googleSearch: {} }],
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            response_content: {
+              type: Type.OBJECT,
+              properties: {
+                visual_text: { type: Type.STRING },
+                audio_text: { type: Type.STRING }
               },
-              job_status_update: { 
-                type: Type.STRING,
-                description: "Must be one of the JobStatus enums defined in constitution."
-              },
-              ui_triggers: {
-                type: Type.OBJECT,
-                properties: {
-                  theme_color: { type: Type.STRING },
-                  brand_identity: { type: Type.STRING },
-                  show_orange_border: { type: Type.BOOLEAN }
-                },
-                required: ["theme_color", "brand_identity", "show_orange_border"]
-              },
-              visual_assets: {
-                type: Type.OBJECT,
-                properties: {
-                  vehicle_display_query: { type: Type.STRING },
-                  part_display_query: { type: Type.STRING, nullable: true }
-                },
-                required: ["vehicle_display_query", "part_display_query"]
-              }
+              required: ["visual_text", "audio_text"]
             },
-            required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
-          }
-        },
+            job_status_update: { 
+              type: Type.STRING,
+              description: "Must be one of the JobStatus enums defined in constitution."
+            },
+            ui_triggers: {
+              type: Type.OBJECT,
+              properties: {
+                theme_color: { type: Type.STRING },
+                brand_identity: { type: Type.STRING },
+                show_orange_border: { type: Type.BOOLEAN }
+              },
+              required: ["theme_color", "brand_identity", "show_orange_border"]
+            },
+            visual_assets: {
+              type: Type.OBJECT,
+              properties: {
+                vehicle_display_query: { type: Type.STRING },
+                part_display_query: { type: Type.STRING, nullable: true }
+              },
+              required: ["vehicle_display_query", "part_display_query"]
+            }
+          },
+          required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
+        }
+      };
+
+      if (mode === 'THINKING') {
+        config.thinkingConfig = { thinkingBudget: 32768 };
+      }
+
+      const response = await ai.models.generateContent({
+        model: mode === 'THINKING' ? this.thinkingModel : this.fastModel,
+        contents: history,
+        config: config,
       });
 
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
