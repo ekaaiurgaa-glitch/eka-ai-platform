@@ -46,7 +46,6 @@ const App: React.FC = () => {
     let startIndex = -1;
     let endIndex = -1;
 
-    // Find the very first header
     for (let i = 0; i < lines.length; i++) {
       if (DIAGNOSTIC_HEADERS.some(h => lines[i].trim().startsWith(h))) {
         startIndex = i;
@@ -54,13 +53,11 @@ const App: React.FC = () => {
       }
     }
 
-    if (startIndex === -1) return content; // No diagnostic headers found, return as is (could be a clarification)
+    if (startIndex === -1) return content;
 
-    // Find the last header and its content
     for (let i = lines.length - 1; i >= 0; i--) {
-      if (lines[i].trim().startsWith(DIAGNOSTIC_HEADERS[4])) { // Next Required Input:
+      if (lines[i].trim().startsWith(DIAGNOSTIC_HEADERS[4])) {
         endIndex = i;
-        // Find the actual end of the content for the last header
         let j = i + 1;
         while (j < lines.length && lines[j].trim() !== '' && !DIAGNOSTIC_HEADERS.some(h => lines[j].trim().startsWith(h))) {
           endIndex = j;
@@ -70,9 +67,25 @@ const App: React.FC = () => {
       }
     }
 
-    if (endIndex === -1) return content; // Malformed, validateResponse will catch it
+    if (endIndex === -1) return content;
 
     return lines.slice(startIndex, endIndex + 1).join('\n').trim();
+  };
+
+  /**
+   * Checks for severe protocol violations or system errors.
+   */
+  const checkProtocolViolations = (content: string): boolean => {
+    const forbidden = [
+      'CRITICAL:',             // Service connectivity/engine errors
+      'hallucination',         // Self-admission of guessing
+      'storytelling',          // Non-deterministic output
+      'as an AI model',        // Identity breach
+      'I am a chatbot',        // Identity breach
+      'I am a large language', // Identity breach
+      'exact price is',        // Pricing firewall breach
+    ];
+    return forbidden.some(term => content.toLowerCase().includes(term.toLowerCase()));
   };
 
   /**
@@ -81,7 +94,6 @@ const App: React.FC = () => {
   const validateResponse = (content: string): boolean => {
     const trimmed = content.trim();
 
-    // 1. Gate 1 Rejections (Domain)
     const isRefusal = 
       trimmed.includes("strictly within the automobile") || 
       trimmed.includes("I am EKA-Ai") ||
@@ -89,19 +101,15 @@ const App: React.FC = () => {
       trimmed.includes("safety governance");
     if (isRefusal) return true;
 
-    // 2. System/Admin Messages
     const isSystem = trimmed.includes("INITIALIZED") || trimmed.includes("reset");
     if (isSystem) return true;
 
-    // 3. Diagnostic Identification
     const hasAnyDiagnosticToken = DIAGNOSTIC_HEADERS.some(h => trimmed.includes(h));
     
     if (hasAnyDiagnosticToken) {
-      // If the AI starts a diagnosis, it MUST include all 5 headers
       return DIAGNOSTIC_HEADERS.every(h => trimmed.includes(h));
     }
 
-    // 4. Clarification / Context Request (Gate 2 & 3)
     const isQuestion = trimmed.includes("?");
     const isRequestingContext = (trimmed.includes("Brand") || trimmed.includes("Model") || trimmed.includes("Year") || trimmed.includes("Fuel"));
     
@@ -123,34 +131,46 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    const getAiResponse = async (currentHistory: Message[]) => {
-      const history = currentHistory.map(m => ({
+    const getAiResponse = async (historyMessages: Message[], systemPrompt?: string) => {
+      const history = historyMessages.map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
         parts: [{ text: m.content }]
       }));
+      
+      if (systemPrompt) {
+        history.push({
+          role: 'user',
+          parts: [{ text: systemPrompt }]
+        });
+      }
+
       return await geminiService.sendMessage(history);
     };
 
+    // --- PASS 1: INITIAL REQUEST ---
     let rawAiResponse = await getAiResponse([...messages, userMessage]);
-    
-    // Step 1: Attempt to extract diagnostic block to remove "fluff"
     let aiResponse = extractDiagnosticBlock(rawAiResponse);
-    
-    // Step 2: Validate the result
     let isValid = validateResponse(aiResponse);
 
-    // Automatic Re-formatting Request (One-time retry)
+    // --- PASS 2: FORMAT RETRY ---
     if (!isValid) {
-      console.warn("EKA-Ai: Protocol violation detected. Requesting immediate compliance reformat...");
-      const retryPrompt: Message = {
-        id: 'retry-prompt',
-        role: 'user',
-        content: "[SYSTEM GOVERNANCE SIGNAL]: Your response violated strict diagnostic structure. RE-ISSUE now. Use ONLY the headers: Symptoms, Probable Cause, Recommended Action, Risk Level, and Next Required Input. Remove all preamble, introductions, and closing remarks.",
-        timestamp: new Date()
-      };
-      const retryRaw = await getAiResponse([...messages, userMessage, retryPrompt]);
+      console.warn("EKA-Ai: Format violation. Retrying...");
+      const retryFormatPrompt = "[SYSTEM GOVERNANCE SIGNAL]: Your response violated diagnostic structure. RE-ISSUE now using ONLY the mandated headers: Symptoms, Probable Cause, Recommended Action, Risk Level, Next Required Input. No other text.";
+      const retryRaw = await getAiResponse([...messages, userMessage], retryFormatPrompt);
       aiResponse = extractDiagnosticBlock(retryRaw);
       isValid = validateResponse(aiResponse);
+    }
+
+    // --- PASS 3: PROTOCOL VIOLATION CHECK (Post-Validation) ---
+    // Even if format is valid, check for 'CRITICAL' errors or identity leaks
+    let hasViolation = checkProtocolViolations(aiResponse);
+    if (isValid && hasViolation) {
+      console.warn("EKA-Ai: Protocol violation detected. Triggering correction retry...");
+      const retryViolationPrompt = "[SYSTEM GOVERNANCE SIGNAL]: Protocol breach detected. Correct the following errors: 1. No identity disclosure (You are EKA-Ai only). 2. No exact pricing. 3. Ensure engine connectivity. RE-ISSUE professional diagnostic response now.";
+      const violationRetryRaw = await getAiResponse([...messages, userMessage], retryViolationPrompt);
+      aiResponse = extractDiagnosticBlock(violationRetryRaw);
+      isValid = validateResponse(aiResponse);
+      hasViolation = checkProtocolViolations(aiResponse);
     }
 
     // State Machine Transitions
@@ -168,7 +188,7 @@ const App: React.FC = () => {
       content: aiResponse,
       timestamp: new Date(),
       isValidated: true,
-      validationError: !isValid
+      validationError: !isValid || hasViolation
     };
 
     setMessages(prev => [...prev, assistantMessage]);
@@ -186,13 +206,16 @@ const App: React.FC = () => {
           ))}
           {isLoading && (
             <div className="flex justify-start mb-6">
-              <div className="bg-[#0A0A0A] border border-[#262626] p-4 rounded-lg flex items-center gap-4">
+              <div className="bg-[#0A0A0A] border border-[#262626] p-4 rounded-lg flex items-center gap-4 shadow-2xl">
                 <div className="flex space-x-1.5">
                   <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.3s]"></div>
                   <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.15s]"></div>
                   <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse"></div>
                 </div>
-                <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest">Enforcing Diagnostic Structure...</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest leading-none">EKA Governance Engine</span>
+                  <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-tight mt-0.5">Auditing Protocol & Safety Gates...</span>
+                </div>
               </div>
             </div>
           )}
