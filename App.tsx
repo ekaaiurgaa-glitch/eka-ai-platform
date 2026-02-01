@@ -30,19 +30,55 @@ const App: React.FC = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  const DIAGNOSTIC_HEADERS = [
+    'Symptoms:',
+    'Probable Cause:',
+    'Recommended Action:',
+    'Risk Level:',
+    'Next Required Input:'
+  ];
+
+  /**
+   * Trims extraneous text before and after the diagnostic block if headers are present.
+   */
+  const extractDiagnosticBlock = (content: string): string => {
+    const lines = content.split('\n');
+    let startIndex = -1;
+    let endIndex = -1;
+
+    // Find the very first header
+    for (let i = 0; i < lines.length; i++) {
+      if (DIAGNOSTIC_HEADERS.some(h => lines[i].trim().startsWith(h))) {
+        startIndex = i;
+        break;
+      }
+    }
+
+    if (startIndex === -1) return content; // No diagnostic headers found, return as is (could be a clarification)
+
+    // Find the last header and its content
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].trim().startsWith(DIAGNOSTIC_HEADERS[4])) { // Next Required Input:
+        endIndex = i;
+        // Find the actual end of the content for the last header
+        let j = i + 1;
+        while (j < lines.length && lines[j].trim() !== '' && !DIAGNOSTIC_HEADERS.some(h => lines[j].trim().startsWith(h))) {
+          endIndex = j;
+          j++;
+        }
+        break;
+      }
+    }
+
+    if (endIndex === -1) return content; // Malformed, validateResponse will catch it
+
+    return lines.slice(startIndex, endIndex + 1).join('\n').trim();
+  };
+
   /**
    * Enhanced validation logic to enforce EKA-Ai Constitution.
-   * Handles: Domain Rejections, Context Requests, Clarifications, and Full Diagnostics.
    */
   const validateResponse = (content: string): boolean => {
-    const diagnosticHeaders = [
-      'Symptoms:',
-      'Probable Cause:',
-      'Recommended Action:',
-      'Risk Level:',
-      'Next Required Input:'
-    ];
-    
     const trimmed = content.trim();
 
     // 1. Gate 1 Rejections (Domain)
@@ -58,25 +94,21 @@ const App: React.FC = () => {
     if (isSystem) return true;
 
     // 3. Diagnostic Identification
-    const hasAnyDiagnosticToken = diagnosticHeaders.some(h => trimmed.includes(h));
+    const hasAnyDiagnosticToken = DIAGNOSTIC_HEADERS.some(h => trimmed.includes(h));
     
     if (hasAnyDiagnosticToken) {
-      // If the AI starts a diagnosis, it MUST include all 5 headers for audit safety.
-      return diagnosticHeaders.every(h => trimmed.includes(h));
+      // If the AI starts a diagnosis, it MUST include all 5 headers
+      return DIAGNOSTIC_HEADERS.every(h => trimmed.includes(h));
     }
 
     // 4. Clarification / Context Request (Gate 2 & 3)
-    // If it's a question and NOT attempting a diagnosis, it's valid.
     const isQuestion = trimmed.includes("?");
     const isRequestingContext = (trimmed.includes("Brand") || trimmed.includes("Model") || trimmed.includes("Year") || trimmed.includes("Fuel"));
     
     if (isQuestion || isRequestingContext) {
-      // Valid if it's a short, professional query/clarification.
-      // Long responses without headers are flagged as "storytelling".
       return trimmed.length < 600; 
     }
 
-    // 5. Fallback for short confirmation/acknowledgment
     return trimmed.length < 150;
   };
 
@@ -99,7 +131,12 @@ const App: React.FC = () => {
       return await geminiService.sendMessage(history);
     };
 
-    let aiResponse = await getAiResponse([...messages, userMessage]);
+    let rawAiResponse = await getAiResponse([...messages, userMessage]);
+    
+    // Step 1: Attempt to extract diagnostic block to remove "fluff"
+    let aiResponse = extractDiagnosticBlock(rawAiResponse);
+    
+    // Step 2: Validate the result
     let isValid = validateResponse(aiResponse);
 
     // Automatic Re-formatting Request (One-time retry)
@@ -108,10 +145,11 @@ const App: React.FC = () => {
       const retryPrompt: Message = {
         id: 'retry-prompt',
         role: 'user',
-        content: "[SYSTEM GOVERNANCE SIGNAL]: Your response violated strict diagnostic structure. RE-ISSUE now. If diagnosing, you MUST use all headers: Symptoms, Probable Cause, Recommended Action, Risk Level, Next Required Input. No preamble. No storytelling.",
+        content: "[SYSTEM GOVERNANCE SIGNAL]: Your response violated strict diagnostic structure. RE-ISSUE now. Use ONLY the headers: Symptoms, Probable Cause, Recommended Action, Risk Level, and Next Required Input. Remove all preamble, introductions, and closing remarks.",
         timestamp: new Date()
       };
-      aiResponse = await getAiResponse([...messages, userMessage, retryPrompt]);
+      const retryRaw = await getAiResponse([...messages, userMessage, retryPrompt]);
+      aiResponse = extractDiagnosticBlock(retryRaw);
       isValid = validateResponse(aiResponse);
     }
 
@@ -120,7 +158,6 @@ const App: React.FC = () => {
       setStatus('VEHICLE_CONTEXT_COLLECTED');
     }
     
-    // Explicit state check for successful diagnosis
     if (aiResponse.includes('Probable Cause:') && aiResponse.includes('Recommended Action:')) {
       setStatus('CONFIDENCE_CONFIRMED');
     }
@@ -155,7 +192,7 @@ const App: React.FC = () => {
                   <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse [animation-delay:-0.15s]"></div>
                   <div className="w-2 h-2 bg-[#FF6600] rounded-full animate-pulse"></div>
                 </div>
-                <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest">Applying Audit Governance...</span>
+                <span className="text-[10px] font-black text-[#FF6600] uppercase tracking-widest">Enforcing Diagnostic Structure...</span>
               </div>
             </div>
           )}
