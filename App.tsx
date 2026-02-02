@@ -189,34 +189,43 @@ const App: React.FC = () => {
 
   /**
    * SILENT MODE SWITCHING (Deterministic Protocol Implementation)
+   * Refactored to update states immediately without conversational filler.
    */
   const handleModeChange = (mode: OperatingMode) => {
+    // 1. Update states immediately
     setOperatingMode(mode);
     
     let intakePrompt = "";
     let entryStatus: JobStatus = 'CREATED';
     let brandId = 'G4G_IGNITION';
+    let protocol = STANDARD_PROTOCOL;
 
     switch (mode) {
       case 0:
         intakePrompt = "EKA-Ai Online. Awaiting ignition directive.";
         entryStatus = 'IGNITION_TRIAGE';
         brandId = 'G4G_IGNITION';
+        protocol = STANDARD_PROTOCOL;
         break;
       case 1:
         intakePrompt = "Workshop Mode Active. Please enter the Vehicle Registration Number.";
         entryStatus = 'AUTH_INTAKE';
         brandId = 'G4G_WORKSHOP';
+        protocol = JOBCARD_PROTOCOL;
         break;
       case 2:
         intakePrompt = "Fleet Mode Active. Please enter Fleet ID and Billing Month.";
         entryStatus = 'CONTRACT_VALIDATION';
         brandId = 'G4G_FLEET';
+        protocol = MG_PROTOCOL;
         break;
     }
 
+    // 2. Immediate logical updates
     setStatus(entryStatus);
+    setActiveProtocol(protocol);
     
+    // 3. Direct functional prompt without meta-narrative
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
