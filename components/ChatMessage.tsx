@@ -27,7 +27,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         return (
           <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#f18a22]/10 border border-[#f18a22]/30 rounded text-[#f18a22] font-black text-[11px] shadow-[0_0_10px_rgba(241,138,34,0.1)] mx-0.5 group/range">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M13 11l-4-4m0 4l4-4" />
             </svg>
             {part}
             <span className="text-[7px] opacity-60 uppercase tracking-tighter">(Est. Range)</span>
@@ -44,6 +44,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       const trimmedLine = line.trim();
       if (!trimmedLine) return <div key={i} className="h-2"></div>;
       
+      // High Voltage Warning Detection
+      if (trimmedLine.toUpperCase().includes('WARNING: HIGH VOLTAGE SYSTEM')) {
+        return (
+          <div key={i} className="my-6 p-6 bg-red-600/10 border-2 border-red-500 rounded-2xl flex items-center gap-4 animate-pulse shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+            <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-[11px] font-black text-red-500 uppercase tracking-[0.3em] block mb-1">HV Safety Protocol Active</span>
+              <p className="text-white font-black text-sm uppercase leading-tight tracking-tight">{trimmedLine}</p>
+            </div>
+          </div>
+        );
+      }
+
       const mainPointerMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
@@ -90,18 +107,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           );
         }
 
-        if (title.toUpperCase().includes('AUDIT ALERT') || title.toUpperCase().includes('SYSTEM ERROR')) {
-          const isError = title.toUpperCase().includes('ERROR');
-          return (
-            <div key={i} className={`flex items-center gap-2 mt-4 mb-2 p-3 ${isError ? 'bg-orange-950/30 border-orange-500' : 'bg-red-950/30 border-red-500'} border-l-4 rounded-md`}>
-              <svg className={`w-5 h-5 ${isError ? 'text-orange-500' : 'text-red-500'} shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span className={`text-xs font-black ${isError ? 'text-orange-400' : 'text-red-400'} uppercase tracking-widest`}>{title}</span>
-            </div>
-          );
-        }
-
         return (
           <div key={i} className="mt-8 mb-4 group/section">
             <div className="flex items-center gap-3">
@@ -144,9 +149,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
             <div className="p-6 relative">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.3em]">Vehicle Profile</span>
+                <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.3em]">Visual Ecosystem Identity</span>
                 <div className="w-1.5 h-1.5 bg-zinc-700 rounded-full"></div>
-                <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Visual Diagnostic Identity</span>
+                <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">G4G Central OS</span>
               </div>
               <h4 className="text-lg font-black text-white uppercase tracking-tight">{vehicle_display_query}</h4>
             </div>
@@ -156,17 +161,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            <div className="group relative overflow-hidden rounded-3xl border border-blue-500/30 bg-[#0A0C14] flex flex-col md:flex-row items-stretch gap-0 transition-all hover:border-blue-500/60 shadow-[0_20px_50px_rgba(59,130,246,0.15)]">
              <div className="w-full md:w-56 h-56 bg-zinc-900 overflow-hidden shrink-0 relative">
                 <img src={`https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=600&q=${encodeURIComponent(part_display_query + ' automobile part')}`} alt={part_display_query} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-125" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=600'; }} />
-                <div className="absolute top-3 left-3 px-3 py-1.5 bg-blue-600/90 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-xl">Part Identified</div>
+                <div className="absolute top-3 left-3 px-3 py-1.5 bg-blue-600/90 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-xl">Component Lock</div>
              </div>
              <div className="flex flex-col p-8 justify-center bg-gradient-to-br from-transparent to-blue-900/10">
                <span className="text-[11px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3 flex items-center gap-2">
                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_#3b82f6]"></div>
-                 Component Profile
+                 Technical Profile
                </span>
                <h5 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-4">{part_display_query}</h5>
                <div className="flex flex-wrap gap-3">
-                 <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">Spec Verified</span>
-                 <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">Global Standards</span>
+                 <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">Inventory Checked</span>
+                 <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">HSN Verified</span>
                </div>
              </div>
            </div>
@@ -184,15 +189,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             {message.intelligenceMode === 'THINKING' && (
               <div className="text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-[0.15em] shadow-2xl ring-4 ring-black bg-purple-600 text-white flex items-center gap-2 animate-pulse">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-                Expert Reasoning
+                Deep Reasoning
               </div>
             )}
-            {message.response_content?.audio_text && (
-              <button onClick={() => onPlayAudio?.(message.response_content!.audio_text)} className={`p-3 rounded-full ring-4 ring-black shadow-2xl transition-all ${isAudioPlaying ? 'bg-[#f18a22] animate-pulse scale-110' : 'bg-zinc-800 hover:bg-[#f18a22] hover:scale-110'}`}>
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">{isAudioPlaying ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1.000 1.555.832l3.197-2.132a1 1 0 000-1.664z" />}</svg>
-              </button>
-            )}
-            <div className={`text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-[0.15em] shadow-2xl ring-4 ring-black ${message.validationError ? 'bg-red-600' : 'bg-green-600'}`}>{message.validationError ? 'Audit Fault' : 'EKA Verified'}</div>
+            <div className={`text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-[0.15em] shadow-2xl ring-4 ring-black ${message.validationError ? 'bg-red-600' : 'bg-green-600'}`}>{message.validationError ? 'OS Conflict' : 'Governance Verified'}</div>
           </div>
         )}
 
@@ -202,17 +202,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
               <>
                 <div className={`w-10 h-10 ${message.validationError ? 'bg-red-600' : 'bg-[#f18a22]'} rounded-2xl flex items-center justify-center text-lg font-black text-black shadow-xl ring-2 ring-white/10`}>e</div>
                 <div className="flex flex-col">
-                   <span className={`text-sm font-black uppercase tracking-[0.25em] ${message.validationError ? 'text-red-400' : 'text-[#f18a22]'}`}>EKA-Ai Service Governor</span>
+                   <span className={`text-sm font-black uppercase tracking-[0.25em] ${message.validationError ? 'text-red-400' : 'text-[#f18a22]'}`}>EKA-Ai Central OS</span>
                    <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest flex items-center gap-2">
                      <div className="w-1.5 h-1.5 bg-zinc-700 rounded-full"></div>
-                     Protocol Secured
+                     Ecosystem Secure
                    </span>
                 </div>
               </>
             ) : (
               <div className="flex flex-col">
-                <span className="text-sm font-black uppercase tracking-[0.25em] text-zinc-500">Workshop Operator</span>
-                <span className="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">Inbound Signal Feed</span>
+                <span className="text-sm font-black uppercase tracking-[0.25em] text-zinc-500">Workshop/Fleet Operator</span>
+                <span className="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">Inbound Governance signal</span>
               </div>
             )}
           </div>

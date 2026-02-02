@@ -23,14 +23,14 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai Online. Governance Protocols Active. Go4Garage Ecosystem Synced. Awaiting Mode Selection.",
+      content: "EKA-Ai Online. Connected to Go4Garage Ecosystem (GST/URGAA/Ignition). Awaiting Mode Selection.",
       response_content: {
-        visual_text: "1. EKA-Ai ONLINE. GOVERNANCE PROTOCOLS ACTIVE.\n   a. Ecosystem Sync: GST, URGAA, Ignition.\n   b. Mode 0: Ignition/Consumer & Charging Locating.\n   c. Mode 1: Workshop (GST) Job Card Workflows.\n   d. Mode 2: Fleet (MG) Settlement Intelligence.",
-        audio_text: "EKA-Ai Online. Governance Protocols Active. Go4Garage Ecosystem Synced. Awaiting Mode Selection."
+        visual_text: "1. EKA-Ai ONLINE. GOVERNANCE PROTOCOLS ACTIVE.\n   a. Identity: Central Operating System for GST, URGAA, and Ignition.\n   b. Mode 0: Ignition (Consumer) & URGAA Charger Locating.\n   c. Mode 1: Workshop (GST) Job Card & Inventory Gating.\n   d. Mode 2: Fleet (MG) Utilization & SLA Governance.",
+        audio_text: "EKA-Ai Online. Connected to Go4Garage Ecosystem (GST, URGAA, and Ignition). Awaiting Mode Selection."
       },
       job_status_update: 'CREATED',
       ui_triggers: { theme_color: "#f18a22", show_orange_border: true },
-      visual_assets: { vehicle_display_query: "Modern EV Ecosystem Dashboard", part_display_query: null },
+      visual_assets: { vehicle_display_query: "Enterprise EV Operating System Dashboard", part_display_query: null },
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -45,34 +45,34 @@ const App: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const STANDARD_PROTOCOL = [
-    "Verification: Ignition/URGAA Boundary",
-    "Acquisition: Identity Context Lock",
-    "Analysis: Symptom/Range Logic",
-    "Synthesis: Ecosystem Handover Check",
+    "Verification: Domain Boundary Auth",
+    "Locating: URGAA Robin/Albatross Query",
+    "Triage: Symptom/Range Anxiety Check",
+    "Validation: Emergency RSA Gating",
     "Audit: Governance Finalization"
   ];
 
   const JOBCARD_PROTOCOL = [
-    "Verification: Workshop GST Access",
-    "Governance: Auth & Intake Logic",
-    "Analysis: Diagnostics Wisdom",
-    "Audit: Estimate HSN Compliance",
-    "Quality: PDI Checklist Verification"
+    "Verification: GST Workshop Identity",
+    "Normalization: GST Service Coding",
+    "Gating: Regional Dead Inventory Check",
+    "Compliance: HSN Estimate Validation",
+    "Finalization: PDI Checklist Verification"
   ];
 
   const MG_PROTOCOL = [
-    "Verification: Fleet MG Contract",
+    "Verification: Fleet MG Contract Terms",
     "Analysis: Actual vs Assured Tracking",
-    "Logic: Uptime/Penalty Governance",
-    "Synthesis: Settlement Reporting",
-    "Finalization: Reporting Cycle Audit"
+    "Logic: SLA Breach Verification",
+    "Synthesis: Settlement Logic Statement",
+    "Audit: Reporting Cycle Closure"
   ];
 
   const THINKING_PROTOCOL = [
-    "Deep Intelligence: Ecosystem Synapse",
-    "Analysis: Logic Node Branching",
-    "Synthesis: Complex Pattern Integration",
-    "Validation: Expert-Grade Audit"
+    "Synapse: Deep Logic Node Branching",
+    "Analysis: Complex Ecosystem Integration",
+    "Synthesis: Pattern Recognition Loop",
+    "Validation: Expert-Grade Solution Audit"
   ];
 
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
@@ -178,7 +178,7 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       role: 'assistant',
-      content: `[GOVERNANCE SIGNAL]: Operating Mode switched to ${modeName}. Initializing ecosystem protocols.`,
+      content: `[OS SIGNAL]: Identity switched to ${modeName}. Loading specific governance logic.`,
       timestamp: new Date(),
       operatingMode: mode
     }]);
@@ -202,42 +202,42 @@ const App: React.FC = () => {
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden">
       <Header status={status} vehicle={vehicleContext} />
       
-      {/* Ecosystem Engine & Operating Mode Toggles */}
+      {/* OS Mode & Intelligence Engine Toggles */}
       <div className="bg-[#0A0A0A] border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="flex bg-black border border-white/10 rounded-lg p-0.5">
+          <div className="flex bg-black border border-white/10 rounded-lg p-0.5 shadow-inner">
             <button 
               onClick={() => setIntelligenceMode('FAST')}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              Fast AI
+              Core AI
             </button>
             <button 
               onClick={() => setIntelligenceMode('THINKING')}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              Thinking
+              Expert
             </button>
           </div>
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
-          <div className="flex bg-black border border-white/10 rounded-lg p-0.5">
+          <div className="flex bg-black border border-white/10 rounded-lg p-0.5 shadow-inner">
             <button 
               onClick={() => handleModeChange(0)}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
               title="Ignition / URGAA Mode"
             >
               Ignition
             </button>
             <button 
               onClick={() => handleModeChange(1)}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-blue-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
               title="GST Workshop Mode"
             >
               Workshop
             </button>
             <button 
               onClick={() => handleModeChange(2)}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-emerald-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
               title="Fleet MG Model Mode"
             >
               Fleet
@@ -245,7 +245,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em]">
-           Governor: <span className="text-white">{operatingMode === 0 ? 'IGNITION' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
+           Governor: <span className="text-white">{operatingMode === 0 ? 'IGNITION/URGAA' : operatingMode === 1 ? 'GST WORKSHOP' : 'FLEET MG'}</span>
         </div>
       </div>
 

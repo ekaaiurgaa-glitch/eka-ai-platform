@@ -18,21 +18,23 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+      const isEV = context?.fuelType === 'Electric' || context?.fuelType === 'Hybrid';
+
       const modeInstruction = `
-[GOVERNANCE CONTEXT]:
-Ecosystem Mode: MODE ${opMode} (${opMode === 0 ? 'IGNITION/URGAA' : opMode === 1 ? 'GST WORKSHOP' : 'FLEET MG'})
-Intelligence: ${intelMode}
-State: ${currentStatus}
+[GOVERNANCE SIGNAL]:
+Ecosystem Domain: MODE ${opMode} (${opMode === 0 ? 'IGNITION/URGAA' : opMode === 1 ? 'GST WORKSHOP' : 'FLEET MG'})
+Current State: ${currentStatus}
+Intel Mode: ${intelMode}
 
-${context && context.brand ? `
-Vehicle Identity:
-${context.vehicleType} | ${context.brand} | ${context.model} | ${context.year} | ${context.fuelType}` : 'Context Acquisition Pending.'}
+[VEHICLE IDENTITY]:
+${context && context.brand ? `${context.vehicleType} | ${context.brand} | ${context.model} | ${context.fuelType}` : 'Identification Pending'}
 
-[SPECIAL INSTRUCTIONS]:
-- If EV context is detected: Apply HV Safety Protocols.
-- If Mode 0 and "Range/Charging" mentioned: Refer to URGAA (Robin/Albatross).
-- If Mode 1: Enforce HSN Compliance and Inventory Gating.
-- If Mode 2: Focus on Actual vs Assured utilization logic.
+[CRITICAL PROTOCOLS]:
+${isEV ? '- MANDATORY: Preface all technical advice with the High Voltage (HV) PPE warning.' : ''}
+- MODE 0: If range anxiety mentioned, prioritize URGAA network search (Robin/Albatross).
+- MODE 1: Apply Dead Inventory and HSN compliance logic.
+- MODE 2: Apply SLA breach and utilization shortfall logic.
+- DATA TAGGING: Tag Energy/Outlook data as "Simulated".
 `;
 
       const config: any = {
@@ -53,7 +55,7 @@ ${context.vehicleType} | ${context.brand} | ${context.model} | ${context.year} |
             },
             job_status_update: { 
               type: Type.STRING,
-              description: "Must be a valid JobStatus enum for the current mode."
+              description: "Must be a valid JobStatus enum for the active mode."
             },
             ui_triggers: {
               type: Type.OBJECT,
@@ -92,15 +94,15 @@ ${context.vehicleType} | ${context.brand} | ${context.model} | ${context.year} |
       
       return result;
     } catch (error) {
-      console.error("EKA-Ai Engine Error:", error);
+      console.error("EKA Central OS Error:", error);
       return {
         response_content: {
-          visual_text: "1. GOVERNANCE ALERT: SYSTEM TIMEOUT\n   a. Ecosystem stream interrupted.\n   b. Please re-verify vehicle context.",
-          audio_text: "Engine timeout. Please re-issue the command."
+          visual_text: "1. GOVERNANCE ALERT: SYSTEM TIMEOUT\n   a. Central OS stream interrupted.\n   b. Please re-verify identity context.",
+          audio_text: "System timeout. Please re-issue."
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "System Error", part_display_query: null }
+        visual_assets: { vehicle_display_query: "System Timeout", part_display_query: null }
       };
     }
   }
@@ -110,7 +112,7 @@ ${context.vehicleType} | ${context.brand} | ${context.model} | ${context.year} |
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `EKA Ecosystem Voice: ${text}` }] }],
+        contents: [{ parts: [{ text: `EKA OS Voice: ${text}` }] }],
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
