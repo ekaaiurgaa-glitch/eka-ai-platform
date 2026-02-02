@@ -140,7 +140,7 @@ const App: React.FC = () => {
 
     let promptOverride = trimmedText;
 
-    // WORKSHOP INTAKE LOCK (Checklist Step 3 & 4)
+    // WORKSHOP INTAKE LOCK
     if (status === 'AUTH_INTAKE') {
       const validation = isValidRegistrationFormat(trimmedText);
       if (!validation.valid) {
@@ -154,7 +154,6 @@ const App: React.FC = () => {
         setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, errorMessage]);
         return;
       }
-      // Checklist Implementation: Inject System Note so AI transitions state
       promptOverride = `[SYSTEM_NOTE: VALID_FORMAT] User input: ${trimmedText}`;
     }
 
@@ -189,7 +188,7 @@ const App: React.FC = () => {
 
   /**
    * SILENT MODE SWITCHING (Deterministic Protocol Implementation)
-   * Refactored to update states immediately without conversational filler.
+   * Refactored for strictly silent, functional transitions as requested.
    */
   const handleModeChange = (mode: OperatingMode) => {
     // 1. Update states immediately
@@ -221,11 +220,11 @@ const App: React.FC = () => {
         break;
     }
 
-    // 2. Immediate logical updates
+    // 2. Apply updates
     setStatus(entryStatus);
     setActiveProtocol(protocol);
     
-    // 3. Direct functional prompt without meta-narrative
+    // 3. Issue functional prompt
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',

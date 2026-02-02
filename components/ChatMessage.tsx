@@ -123,10 +123,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div className={`flex flex-col mb-8 ${isAi ? 'items-start' : 'items-end'}`}>
-      <div className={`relative max-w-[80%] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.6)] px-5 py-4 flex flex-col ${
+      <div className={`relative max-w-[80%] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex flex-col ${
         isAi 
-          ? 'bg-[#050505] border border-[#222222] border-l-4 border-l-[#f18a22] rounded-[4px_12px_12px_4px]' 
-          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl'
+          ? 'bg-[#050505] border border-[#222222] border-l-4 border-l-[#FF9F1C] rounded-[4px_12px_12px_4px] px-[20px] py-[16px]' 
+          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl px-5 py-4'
       } ${!isAi && message.ui_triggers?.show_orange_border ? 'border-r-4 border-r-[#f18a22]' : ''}`}>
         
         {/* Header Section */}
