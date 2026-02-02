@@ -162,62 +162,81 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     );
   }
 
+  // ENHANCED LOCKED STATE
   if (!isEditing && isContextComplete(context)) {
     return (
-      <div className="mx-4 mb-8 animate-in slide-in-from-top-4 duration-700">
-        <div className="relative group overflow-hidden p-[1px] rounded-[32px] bg-gradient-to-br from-zinc-800 to-black hover:from-[#f18a22]/40 hover:to-green-500/40 transition-all duration-700 shadow-2xl">
-          <div className="bg-[#050505] rounded-[31px] p-8 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10 overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/5 blur-[100px] rounded-full pointer-events-none -mr-48 -mt-48"></div>
+      <div className="mx-4 mb-8 animate-in slide-in-from-top-4 duration-1000">
+        <div className="relative group overflow-hidden p-[1px] rounded-[32px] bg-gradient-to-br from-zinc-800 via-zinc-900 to-black hover:from-[#f18a22]/50 hover:via-[#f18a22]/20 hover:to-green-500/50 transition-all duration-1000 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+          
+          {/* Subtle success pulse background */}
+          <div className="absolute inset-0 bg-green-500/5 animate-pulse pointer-events-none"></div>
+          
+          <div className="bg-[#050505] rounded-[31px] p-8 md:p-10 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10 overflow-hidden">
             
+            {/* Holographic Watermark Badge */}
+            <div className="absolute -bottom-10 -left-10 opacity-[0.03] rotate-12 select-none pointer-events-none">
+              <span className="text-[120px] font-black uppercase tracking-tighter leading-none">VERIFIED</span>
+            </div>
+
             <div className="flex flex-col sm:flex-row items-center gap-10 w-full lg:w-auto">
               <div className="relative shrink-0">
-                <div className="absolute -inset-6 bg-green-500/10 rounded-full blur-2xl animate-pulse"></div>
-                <div className="w-28 h-28 bg-black border-2 border-green-500/40 shadow-[0_0_40px_rgba(34,197,94,0.1)] rounded-[32px] flex items-center justify-center relative overflow-hidden group-hover:scale-110 transition-transform duration-700">
+                <div className="absolute -inset-8 bg-green-500/10 rounded-full blur-[40px] animate-pulse"></div>
+                <div className="w-32 h-32 bg-black border-2 border-green-500/30 shadow-[0_0_60px_rgba(34,197,94,0.05)] rounded-[32px] flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-1000">
                    {context.vehicleType === '2W' ? (
-                      <svg className="w-14 h-14 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" /></svg>
+                      <svg className="w-16 h-16 text-green-500/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" /></svg>
                    ) : (
-                      <svg className="w-14 h-14 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                      <svg className="w-16 h-16 text-green-500/80" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                    )}
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent h-full w-full animate-scan-y"></div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full border-4 border-black bg-green-500 flex items-center justify-center shadow-xl">
-                  <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
+                
+                {/* Success Check Badge */}
+                <div className="absolute -bottom-1 -right-1 w-12 h-12 rounded-full border-[6px] border-black bg-green-500 flex items-center justify-center shadow-[0_10px_30px_rgba(34,197,94,0.4)] animate-bounce-subtle">
+                  <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
                 </div>
               </div>
 
               <div className="flex flex-col text-center sm:text-left">
-                <div className="flex items-center justify-center sm:justify-start gap-3 mb-3">
-                  <div className="px-3 py-1 bg-green-500 text-black text-[9px] font-black uppercase tracking-widest rounded-full shadow-[0_0_15px_rgba(34,197,94,0.4)]">Digital Twin Synchronized</div>
-                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.3em]">ID: #G4G-{context.brand.slice(0,3).toUpperCase()}-{Math.floor(Math.random()*9000)+1000}</span>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-4">
+                  <div className="px-4 py-1.5 bg-green-500/10 border border-green-500/40 text-green-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-full flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
+                    Digital Twin Active
+                  </div>
+                  <div className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center gap-2">
+                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">ID:</span>
+                    <span className="text-[10px] font-mono font-bold text-white tracking-tighter">#G4G-{context.brand.slice(0,3).toUpperCase()}-{context.year.slice(-2)}</span>
+                  </div>
                 </div>
-                <h2 className="text-4xl font-black text-white tracking-tighter uppercase leading-none mb-4 group-hover:text-[#f18a22] transition-colors">
+
+                <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter uppercase leading-tight mb-5 group-hover:text-[#f18a22] transition-colors duration-700">
                   <span className="text-zinc-700">{context.year}</span> {context.brand} <span className="text-zinc-500">{context.model}</span>
                 </h2>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-                  <div className="flex items-center gap-3 px-5 py-2.5 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-300 uppercase tracking-wide">
-                    {getFuelIcon(context.fuelType, "w-5 h-5")}
-                    <span>{context.fuelType} Engine</span>
+
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                  <div className="flex items-center gap-2.5 px-5 py-3 bg-zinc-900/40 border border-white/5 rounded-2xl text-[11px] font-black text-zinc-300 uppercase tracking-[0.1em]">
+                    {getFuelIcon(context.fuelType, "w-4 h-4")}
+                    <span>{context.fuelType} Propulsion</span>
                   </div>
                   {context.fuelType === 'Electric' && (
-                    <div className="flex items-center gap-3 px-5 py-2.5 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-300 uppercase tracking-wide">
-                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <div className="flex items-center gap-2.5 px-5 py-3 bg-[#f18a22]/5 border border-[#f18a22]/10 rounded-2xl text-[11px] font-black text-[#f18a22] uppercase tracking-[0.1em]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                       <span>{context.batteryCapacity} kWh • {context.motorPower} kW</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-3 px-5 py-2.5 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-300 uppercase tracking-wide">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    <span>G4G Governance Locked</span>
+                  <div className="flex items-center gap-2.5 px-5 py-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[11px] font-black text-blue-400 uppercase tracking-[0.1em]">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                    <span>Audit Ready</span>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-center gap-5 w-full lg:w-auto">
-              <button onClick={onScanRecalls} className="w-full sm:w-auto px-12 py-6 bg-green-600 text-black text-xs font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-green-500 hover:shadow-[0_15px_40px_rgba(34,197,94,0.3)] transition-all active:scale-95 flex items-center justify-center gap-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto relative z-10">
+              <button onClick={onScanRecalls} className="w-full sm:w-auto px-10 py-5 bg-green-600 text-black text-xs font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-green-500 hover:shadow-[0_20px_50px_rgba(34,197,94,0.3)] transition-all active:scale-95 flex items-center justify-center gap-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 Safety Triage
               </button>
-              <button onClick={() => setIsEditing(true)} className="w-full sm:w-auto px-10 py-6 bg-zinc-900 border border-zinc-800 text-zinc-500 text-xs font-black uppercase tracking-widest rounded-2xl hover:border-[#f18a22] hover:text-white transition-all active:scale-95">Re-Architect Identity</button>
+              <button onClick={() => setIsEditing(true)} className="w-full sm:w-auto px-10 py-5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-xs font-black uppercase tracking-widest rounded-2xl hover:border-[#f18a22] hover:text-white transition-all active:scale-95">Re-Architect Identity</button>
             </div>
           </div>
         </div>
@@ -412,6 +431,13 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes bounce-subtle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .animate-bounce-subtle {
+          animation: bounce-subtle 2s infinite ease-in-out;
         }
       `}</style>
     </div>
