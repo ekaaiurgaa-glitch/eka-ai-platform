@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Message, VehicleContext, isContextComplete } from '../types';
+import { Message, VehicleContext } from '../types';
+import DigitalJobCard from './DigitalJobCard';
 
 interface ChatMessageProps {
   message: Message;
@@ -20,15 +21,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const isAi = message.role === 'assistant';
 
   const formatTechnicalTags = (text: string) => {
-    // Strip Generative UI State Tags silently
     const cleanText = text.replace(/\[\[STATE:.*?\]\]/g, '').trim();
     if (!cleanText && text.includes('[[STATE:')) return null;
 
-    // Regex for Price Ranges
     const rangeRegex = /((\d+[\d,]*)\s*(?:-|to)\s*(\d+[\d,]*))/gi;
-    // Regex for HSN Codes
     const hsnRegex = /(HSN:\s*\d+)/gi;
-    // Regex for GST Tags
     const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
 
     let parts: (string | React.ReactNode)[] = [cleanText];
@@ -71,7 +68,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       parts = nextParts;
     };
 
-    // Apply specific tags
     applyRegex(rangeRegex, "bg-[#f18a22]/10 border border-[#f18a22]/30 text-[#f18a22]", 'price');
     applyRegex(hsnRegex, "bg-blue-500/10 border border-blue-500/30 text-blue-400", 'hsn');
     applyRegex(gstRegex, "bg-green-500/10 border border-green-500/30 text-green-400", 'gst');
@@ -81,6 +77,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   const renderContent = () => {
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
+
+    const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
 
     return (
       <div className="space-y-4">
@@ -95,6 +93,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             );
           })}
         </div>
+
+        {showJobCard && (
+          <DigitalJobCard 
+            customerName="Authorized User"
+            contact="N/A"
+            vehicleModel={`${vehicleContext?.brand} ${vehicleContext?.model}`}
+            regNo={vehicleContext?.registrationNumber || ''}
+            odometer="12,450"
+            onComplete={(data) => {
+              console.log("Job Card Initialized:", data);
+              // Handle completion logic if needed
+            }}
+          />
+        )}
 
         {message.grounding_links && message.grounding_links.length > 0 && (
           <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
@@ -122,14 +134,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   return (
-    <div className={`flex flex-col mb-8 ${isAi ? 'items-start' : 'items-end'}`}>
-      <div className={`relative max-w-[80%] transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex flex-col ${
+    <div className={`flex flex-col mb-8 ${isAi ? 'items-start' : 'items-end'} w-full`}>
+      <div className={`relative w-full transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex flex-col ${
         isAi 
           ? 'bg-[#050505] border border-[#222222] border-l-4 border-l-[#FF9F1C] rounded-[4px_12px_12px_4px] px-[20px] py-[16px]' 
-          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl px-5 py-4'
+          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl px-5 py-4 max-w-[80%]'
       } ${!isAi && message.ui_triggers?.show_orange_border ? 'border-r-4 border-r-[#f18a22]' : ''}`}>
         
-        {/* Header Section */}
         <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
            <div className="flex items-center gap-2">
               <div className={`w-1.5 h-1.5 rounded-full ${isAi ? 'bg-[#f18a22]' : 'bg-zinc-600'}`}></div>
@@ -150,12 +161,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            )}
         </div>
 
-        {/* Body Section */}
         <div className="flex-1">
           {renderContent()}
         </div>
 
-        {/* Footer Section */}
         <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-3">
            <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">
              {new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })} • {message.intelligenceMode || 'FAST'} ENGINE

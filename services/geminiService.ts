@@ -27,8 +27,9 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
 [STATE MACHINE RULES]:
 1. IF state is 'AUTH_INTAKE': You are LOCKED. Your only goal is to receive a valid Vehicle Reg No.
 2. IF [SYSTEM_NOTE: VALID_FORMAT] is present in the latest user prompt, transition state to 'SYMPTOM_RECORDING'.
-3. RESPOND ONLY in valid JSON. No Markdown. No conversational filler.
-4. Keep visual_text concise and technical.
+3. IF state transitions to 'SYMPTOM_RECORDING' in Mode 1, you MUST set visual_assets.vehicle_display_query to 'DIGITAL_JOB_CARD'.
+4. RESPOND ONLY in valid JSON. No Markdown. No conversational filler.
+5. Keep visual_text concise and technical.
 `;
 
       const config: any = {
