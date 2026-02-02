@@ -84,7 +84,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     return undefined;
   }, [context.fuelType]);
 
-  // Run validation whenever context changes
   useEffect(() => {
     const newErrors: ValidationErrors = {};
     const fields = ['brand', 'model', 'year', 'fuelType', 'batteryCapacity', 'motorPower', 'hvSafetyConfirmed'];
@@ -127,7 +126,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   const isDataValid = isContextComplete(context) && Object.keys(errors).length === 0;
 
   const handleLockIdentity = () => {
-    // Mark all as touched on submit attempt
     const allTouched = ['brand', 'model', 'year', 'fuelType', 'batteryCapacity', 'motorPower', 'hvSafetyConfirmed'].reduce((acc, f) => ({ ...acc, [f]: true }), {});
     setTouched(allTouched);
 
@@ -187,90 +185,99 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
 
   if (!isEditing && isContextComplete(context)) {
     return (
-      <div className="mx-4 mb-8 animate-in slide-in-from-top-4 duration-1000">
-        <div className="relative group overflow-hidden p-[1px] rounded-[32px] bg-gradient-to-br from-zinc-800 via-zinc-900 to-black hover:from-[#f18a22]/50 hover:via-[#f18a22]/20 hover:to-green-500/50 transition-all duration-1000 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+      <div className="mx-4 mb-12 animate-in slide-in-from-top-4 duration-1000">
+        <div className="relative group overflow-hidden p-[2px] rounded-[40px] bg-gradient-to-br from-[#f18a22]/40 via-zinc-900 to-green-500/40 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] transition-all duration-1000">
           
-          <div className="absolute inset-0 bg-green-500/5 animate-pulse pointer-events-none"></div>
+          {/* Synchronized Glow Overlay */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.1),transparent_50%)] animate-pulse"></div>
           
-          <div className="absolute top-8 right-10 z-20 flex flex-col items-end gap-2">
-            <div className="px-4 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
-              <span className="text-[9px] font-black text-green-500 uppercase tracking-[0.3em]">Governance Locked</span>
-            </div>
-          </div>
-
-          <div className="bg-[#050505] rounded-[31px] p-8 md:p-12 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10 overflow-hidden">
+          <div className="bg-[#050505] rounded-[38px] p-10 md:p-14 relative z-10 overflow-hidden">
             
-            <div className="absolute -bottom-10 -left-10 opacity-[0.03] rotate-12 select-none pointer-events-none">
-              <span className="text-[120px] font-black uppercase tracking-tighter leading-none text-green-500">VERIFIED</span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center gap-10 w-full lg:w-auto">
-              <div className="relative shrink-0">
-                <div className="absolute -inset-10 bg-green-500/10 rounded-full blur-[50px] animate-pulse"></div>
-                <div className="w-36 h-36 bg-black border-2 border-green-500/20 shadow-[0_0_60px_rgba(34,197,94,0.1)] rounded-[40px] flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-1000">
-                   {context.vehicleType === '2W' ? (
-                      <svg className="w-20 h-20 text-green-500/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" /></svg>
-                   ) : (
-                      <svg className="w-20 h-20 text-green-500/80" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-                   )}
-                   <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/20 to-transparent h-full w-full animate-scan-y"></div>
-                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(34,197,94,0.1)_0%,transparent_70%)]"></div>
+            {/* Confirmation Header Badge */}
+            <div className="flex items-center justify-between mb-12 border-b border-white/5 pb-8 relative z-20">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+                   <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                   </svg>
                 </div>
-                
-                <div className="absolute -bottom-2 -right-2 w-14 h-14 rounded-full border-[6px] border-black bg-green-500 flex items-center justify-center shadow-[0_10px_30px_rgba(34,197,94,0.4)] animate-bounce-subtle z-20">
-                  <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
+                <div className="flex flex-col">
+                  <span className="text-white font-black text-lg tracking-tight uppercase">Identity Synchronized</span>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em]">Digital Twin Active • G4G.OS.V1</span>
                 </div>
               </div>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-[9px] font-mono font-bold text-zinc-500 tracking-tighter">
+                  REF: {context.brand.slice(0,3).toUpperCase()}-{context.year}
+                </span>
+                <span className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-lg text-[9px] font-black text-green-500 uppercase tracking-widest animate-pulse">
+                  SECURE
+                </span>
+              </div>
+            </div>
 
-              <div className="flex flex-col text-center sm:text-left">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-6">
-                  <div className="px-5 py-2 bg-green-500/10 border border-green-500/40 text-green-400 text-[10px] font-black uppercase tracking-[0.25em] rounded-xl flex items-center gap-3 shadow-[0_4px_15px_rgba(34,197,94,0.1)]">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    Digital Twin Synchronized
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+              
+              <div className="flex flex-col sm:flex-row items-center gap-12 w-full lg:w-auto">
+                <div className="relative shrink-0 group/icon">
+                  <div className="absolute -inset-12 bg-green-500/5 rounded-full blur-[60px] opacity-0 group-hover/icon:opacity-100 transition-opacity duration-1000"></div>
+                  <div className="w-40 h-40 bg-black border-2 border-zinc-800 rounded-[48px] flex items-center justify-center relative overflow-hidden shadow-2xl transition-transform duration-700 hover:scale-105">
+                     {context.vehicleType === '2W' ? (
+                        <svg className="w-24 h-24 text-zinc-400 group-hover/icon:text-[#f18a22] transition-colors duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" /></svg>
+                     ) : (
+                        <svg className="w-24 h-24 text-zinc-400 group-hover/icon:text-[#f18a22] transition-colors duration-700" fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z"/></svg>
+                     )}
+                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#f18a22]/10 to-transparent h-full w-full animate-scan-y"></div>
                   </div>
-                  <div className="px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center gap-3">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">OS_REF:</span>
-                    <span className="text-[10px] font-mono font-bold text-white tracking-tighter">#G4G-{context.brand.slice(0,3).toUpperCase()}-{context.year.slice(-2)}</span>
+                  <div className="absolute -bottom-3 -right-3 w-16 h-16 rounded-3xl border-[8px] border-black bg-green-500 flex items-center justify-center shadow-xl">
+                    <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
                   </div>
                 </div>
 
-                <h2 className="text-5xl sm:text-6xl font-black text-white tracking-tighter uppercase leading-tight mb-6 group-hover:text-[#f18a22] transition-colors duration-700">
-                  <span className="text-zinc-700">{context.year}</span> {context.brand} <span className="text-zinc-400">{context.model}</span>
-                </h2>
+                <div className="flex flex-col text-center sm:text-left">
+                  <h2 className="text-5xl sm:text-7xl font-black text-white tracking-tighter uppercase leading-[0.9] mb-8">
+                    <span className="text-zinc-800 block text-3xl sm:text-4xl mb-2">{context.year}</span>
+                    <span className="group-hover:text-[#f18a22] transition-colors duration-500">{context.brand}</span>
+                    <span className="text-zinc-600 block text-4xl sm:text-5xl mt-1">{context.model}</span>
+                  </h2>
 
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-                  <div className="flex items-center gap-3 px-6 py-3.5 bg-zinc-900/40 border border-white/5 rounded-2xl text-[11px] font-black text-zinc-300 uppercase tracking-[0.15em] hover:border-white/10 transition-colors">
-                    {getFuelIcon(context.fuelType, "w-5 h-5")}
-                    <span>{context.fuelType} Engine</span>
-                  </div>
-                  {context.fuelType === 'Electric' && (
-                    <div className="flex items-center gap-3 px-6 py-3.5 bg-[#f18a22]/5 border border-[#f18a22]/20 rounded-2xl text-[11px] font-black text-[#f18a22] uppercase tracking-[0.15em] shadow-[0_4px_15px_rgba(241,138,34,0.05)]">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                      <span>{context.batteryCapacity}kWh • {context.motorPower}kW</span>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                    <div className="flex items-center gap-3 px-6 py-4 bg-zinc-900 border border-zinc-800 rounded-[20px] text-[11px] font-black text-white uppercase tracking-[0.15em] hover:border-zinc-700 transition-colors">
+                      {getFuelIcon(context.fuelType, "w-5 h-5")}
+                      {context.fuelType} Configuration
                     </div>
-                  )}
-                  <div className="flex items-center gap-3 px-6 py-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-[11px] font-black text-blue-400 uppercase tracking-[0.15em] shadow-[0_4px_15px_rgba(59,130,246,0.05)]">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    <span>Audit Capable</span>
+                    {context.fuelType === 'Electric' && (
+                      <div className="flex items-center gap-3 px-6 py-4 bg-[#f18a22]/5 border border-[#f18a22]/20 rounded-[20px] text-[11px] font-black text-[#f18a22] uppercase tracking-[0.15em]">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        {context.batteryCapacity}kWh • {context.motorPower}kW
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-5 w-full lg:w-auto relative z-10">
-              <button onClick={onScanRecalls} className="w-full sm:w-auto px-12 py-6 bg-green-600 text-black text-[11px] font-black uppercase tracking-[0.25em] rounded-[24px] hover:bg-green-500 hover:shadow-[0_20px_50px_rgba(34,197,94,0.4)] transition-all active:scale-95 flex items-center justify-center gap-4">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                Safety Triage
-              </button>
-              <button onClick={() => setIsEditing(true)} className="w-full sm:w-auto px-10 py-6 bg-zinc-900/80 border border-zinc-800 text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-[24px] hover:border-[#f18a22] hover:text-white transition-all active:scale-95">Re-Architect Identity</button>
+              
+              <div className="flex flex-col gap-4 w-full lg:w-auto relative z-10">
+                <button 
+                  onClick={onScanRecalls} 
+                  className="group w-full lg:w-72 h-20 bg-[#f18a22] text-black text-[13px] font-black uppercase tracking-[0.3em] rounded-[24px] hover:bg-white hover:shadow-[0_20px_60px_rgba(255,255,255,0.15)] transition-all duration-500 active:scale-95 flex items-center justify-center gap-4"
+                >
+                  <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Safety Triage
+                </button>
+                <button 
+                  onClick={() => setIsEditing(true)} 
+                  className="w-full lg:w-72 h-16 bg-zinc-900/50 border border-zinc-800 text-zinc-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-[20px] hover:border-[#f18a22] hover:text-white transition-all active:scale-95"
+                >
+                  Modify Architecture
+                </button>
+              </div>
             </div>
           </div>
           
-          <div className="absolute bottom-5 right-12 flex items-center gap-4 opacity-40 select-none">
-             <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">EKA-Ai Central OS Certified Environment</span>
-             <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_#22c55e]"></div>
-          </div>
+          {/* Subtle Scanlines and Decoration */}
+          <div className="absolute inset-0 pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
         </div>
       </div>
     );
