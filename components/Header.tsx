@@ -33,7 +33,7 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig =>
     case 'IGNITION_TRIAGE':
       return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
 
-    // Logic Mapping: CTX_WORKSHOP_INTAKE
+    // Logic Mapping: CTX_WORKSHOP_INTAKE / CTX_FLEET_INTAKE
     case 'AUTH_INTAKE':
     case 'CONTRACT_VALIDATION':
       return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-[#FF9F1C] animate-pulse-orange' };
@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) =
           </div>
         )}
 
-        <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-orange-500/30 rounded-full transition-all duration-300 shadow-sm group hover:border-white/20">
+        <div className="flex items-center gap-3 px-4 py-1.5 bg-white/5 border border-orange-500/30 rounded-full transition-all duration-300 shadow-sm group hover:border-white/20">
           <div className={`w-2 h-2 rounded-full transition-all duration-300 ${config.dotClass}`}></div>
           <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[1px] font-mono group-hover:text-white transition-colors">
             {config.label}

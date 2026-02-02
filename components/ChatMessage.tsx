@@ -80,11 +80,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   const renderContent = () => {
-    if (!isAi) return <p className="text-sm leading-relaxed text-zinc-300">{message.content}</p>;
+    if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
     return (
       <div className="space-y-4">
-        <div className="text-sm leading-relaxed text-zinc-200">
+        <div className="text-base leading-relaxed text-zinc-200 font-inter">
           {message.content.split('\n').map((line, i) => {
             const formatted = formatTechnicalTags(line);
             if (!formatted) return null;
@@ -98,7 +98,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         {message.grounding_links && message.grounding_links.length > 0 && (
           <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Sources Found:</span>
+            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest font-mono block mb-2">Sources Found:</span>
             <div className="flex flex-wrap gap-2">
               {message.grounding_links.map((link, i) => (
                 <a 
@@ -123,16 +123,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div className={`flex flex-col mb-8 ${isAi ? 'items-start' : 'items-end'}`}>
-      <div className={`max-w-[85%] rounded-2xl p-6 transition-all duration-300 ${
+      <div className={`relative max-w-[80%] transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5)] px-6 py-4 flex flex-col ${
         isAi 
-          ? 'bg-[#0A0A0A] border border-[#262626] text-white shadow-xl' 
-          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 text-white'
-      } ${message.ui_triggers?.show_orange_border ? 'border-l-4 border-l-[#f18a22]' : ''}`}>
+          ? 'bg-[#111111] border border-[#333333] border-l-4 border-l-[#f18a22] rounded-[4px_12px_12px_4px]' 
+          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl'
+      } ${!isAi && message.ui_triggers?.show_orange_border ? 'border-r-4 border-r-[#f18a22]' : ''}`}>
         
+        {/* Header Section */}
         <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${isAi ? 'bg-[#f18a22]' : 'bg-zinc-600'}`}></div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              <div className={`w-1.5 h-1.5 rounded-full ${isAi ? 'bg-[#f18a22]' : 'bg-zinc-600'}`}></div>
+              <span className="text-[11px] font-black uppercase tracking-[1.5px] text-zinc-500 font-mono">
                 {isAi ? 'EKA Central OS' : 'User Terminal'}
               </span>
            </div>
@@ -149,16 +150,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            )}
         </div>
 
-        {renderContent()}
+        {/* Body Section */}
+        <div className="flex-1">
+          {renderContent()}
+        </div>
 
-        <div className="mt-4 flex items-center justify-between">
-           <span className="text-[9px] font-mono text-zinc-600 uppercase">
-             {new Date(message.timestamp).toLocaleTimeString()} • {message.intelligenceMode || 'FAST'} ENGINE
+        {/* Footer Section */}
+        <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-3">
+           <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">
+             {new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })} • {message.intelligenceMode || 'FAST'} ENGINE
            </span>
            {isAi && message.job_status_update && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[8px] font-black text-zinc-500 uppercase tracking-tighter">
-                <span className="w-1 h-1 bg-green-500 rounded-full"></span>
-                State: {message.job_status_update}
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-black text-zinc-500 uppercase tracking-tighter font-mono">
+                <span className="text-[8px] text-zinc-600 uppercase mr-1">STATE:</span>
+                <span className="text-zinc-400">{message.job_status_update}</span>
               </div>
            )}
         </div>

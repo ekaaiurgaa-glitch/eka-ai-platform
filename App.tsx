@@ -80,10 +80,6 @@ const App: React.FC = () => {
     }
   }, [intelligenceMode, operatingMode]);
 
-  /**
-   * NAV_CONTEXT_MAP Logic
-   * Maps granular backend states to primary navigation categories.
-   */
   const getActiveTab = (): OperatingMode => {
     const workshopStates: JobStatus[] = ['AUTH_INTAKE', 'SYMPTOM_RECORDING', 'DIAGNOSTICS_WISDOM', 'INVENTORY_GATING', 'ESTIMATE_GOVERNANCE', 'APPROVAL_GATE', 'EXECUTION_QUALITY', 'PDI_CHECKLIST'];
     const fleetStates: JobStatus[] = ['CONTRACT_VALIDATION', 'UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK', 'MG_COMPLETE'];
@@ -130,17 +126,6 @@ const App: React.FC = () => {
 
     // Command Interceptor: Start/Status
     if (lowerText === 'start' || lowerText === 'status') {
-      if (status !== 'CREATED' && status !== 'IGNITION_TRIAGE' && status !== 'CLOSED') {
-        const warningMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: `State Locked: ${status.replace(/_/g, ' ')}. Complete current protocol or type 'EXIT'.`,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, warningMessage]);
-        return;
-      }
-
       const initResponse: Message = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -152,6 +137,8 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, initResponse]);
       return;
     }
+
+    let finalPrompt = trimmedText;
 
     // WORKSHOP INTAKE LOCK
     if (status === 'AUTH_INTAKE') {
@@ -167,7 +154,8 @@ const App: React.FC = () => {
         setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, errorMessage]);
         return;
       }
-      setStatus('SYMPTOM_RECORDING');
+      // Inject System Note for validation success as per checklist
+      finalPrompt = `[SYSTEM_NOTE: VALID_FORMAT] ${trimmedText}`;
     }
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: trimmedText, timestamp: new Date(), intelligenceMode, operatingMode };
@@ -176,7 +164,7 @@ const App: React.FC = () => {
 
     const history = [...messages, userMessage].map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }]
+      parts: [{ text: m.id === userMessage.id ? finalPrompt : m.content }]
     }));
 
     const responseData = await geminiService.sendMessage(history, vehicleContext, status, intelligenceMode, operatingMode);
@@ -200,8 +188,8 @@ const App: React.FC = () => {
   };
 
   /**
-   * Refactored for SILENT MODE SWITCHING
-   * Adheres to EKA Constitution Section 1 (Silent Protocol)
+   * Refactored for SILENT MODE SWITCHING (Deterministic Protocol)
+   * Updates state immediately and presents the context-relevant input prompt.
    */
   const handleModeChange = (mode: OperatingMode) => {
     setOperatingMode(mode);
@@ -217,12 +205,12 @@ const App: React.FC = () => {
         brandId = 'G4G_IGNITION';
         break;
       case 1:
-        intakePrompt = "Enter Vehicle Registration Number.";
+        intakePrompt = "Workshop Mode Active. Please enter the Vehicle Registration Number.";
         entryStatus = 'AUTH_INTAKE';
         brandId = 'G4G_WORKSHOP';
         break;
       case 2:
-        intakePrompt = "Enter Fleet ID and Billing Month.";
+        intakePrompt = "Fleet Mode Active. Please enter Fleet ID and Billing Month.";
         entryStatus = 'CONTRACT_VALIDATION';
         brandId = 'G4G_FLEET';
         break;
@@ -230,7 +218,6 @@ const App: React.FC = () => {
 
     setStatus(entryStatus);
     
-    // Immediate state update without meta-commentary narration
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
