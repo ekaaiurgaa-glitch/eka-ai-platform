@@ -22,10 +22,11 @@ const App: React.FC = () => {
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
 
+  // Defined Architectural Protocols
   const STANDARD_PROTOCOL = ["Boundary Auth", "URGAA Query", "Symptom Triage", "RSA Gating", "Audit Finalization"];
   const JOBCARD_PROTOCOL = ["Workshop Auth", "Service Normalization", "Inventory Gating", "Compliance Audit", "PDI Verification"];
   const MG_PROTOCOL = ["Contract Validation", "Utilization Analytics", "SLA Breach Logic", "Settlement Logic", "Cycle Closure"];
-  const THINKING_PROTOCOL = ["Logic Node Branching", "Ecosystem Integration", "Pattern Synthesis", "Governance Audit"];
+  const THINKING_PROTOCOL = ["Logic Node Branching", "Ecosystem Integration", "Pattern Synthesis", "EKA Governance Audit"];
 
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
 
@@ -57,13 +58,14 @@ const App: React.FC = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // Protocol Progress Engine
   useEffect(() => {
     let interval: any;
     if (isLoading) {
       setLoadingStep(0);
       interval = setInterval(() => {
         setLoadingStep((prev) => (prev < activeProtocol.length - 1 ? prev + 1 : prev));
-      }, 600);
+      }, 700);
     }
     return () => clearInterval(interval);
   }, [isLoading, activeProtocol]);
@@ -127,13 +129,12 @@ const App: React.FC = () => {
   };
 
   const handleModeChange = (mode: OperatingMode) => {
-    // SILENT MODE SWITCHING: Immediate internal state update without meta-commentary filler.
+    // SILENT MODE SWITCHING
     setOperatingMode(mode);
     
     let initialResponse = "";
     let newStatus: JobStatus = 'CREATED';
 
-    // Adopt target persona and ask for domain-specific input immediately.
     switch (mode) {
       case 0:
         initialResponse = "[[STATE:CHAT]] EKA-Ai Online. How can I assist with your EV or Service today?";
@@ -151,7 +152,6 @@ const App: React.FC = () => {
 
     setStatus(newStatus);
     
-    // Output ONLY the direct request for input relevant to the new mode.
     setMessages(prev => [...prev, {
       id: `mode-switch-${Date.now()}`,
       role: 'assistant',
@@ -196,16 +196,62 @@ const App: React.FC = () => {
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} onPlayAudio={handlePlayAudio} isAudioPlaying={isAudioPlaying} vehicleContext={vehicleContext} onUpdateContext={setVehicleContext} />
             ))}
+            
+            {/* Context-Aware Protocol Triage Indicator */}
             {isLoading && (
-              <div className="flex justify-start mb-6">
-                <div className={`bg-[#0A0A0A] border border-[#262626] p-5 rounded-lg flex flex-col gap-4 shadow-2xl min-w-[300px] border-l-4 transition-all duration-500 border-l-[#f18a22]`}>
-                  <div className="flex flex-col gap-2">
+              <div className="flex justify-start mb-12 animate-in slide-in-from-left duration-300">
+                <div className={`bg-[#0A0A0A] border border-[#262626] p-6 rounded-2xl flex flex-col gap-6 shadow-3xl min-w-[340px] border-l-4 transition-all duration-500 border-l-[#f18a22] relative overflow-hidden group`}>
+                  <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <svg className="w-12 h-12 text-[#f18a22]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+                    </svg>
+                  </div>
+                  
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-black text-[#f18a22] uppercase tracking-[0.2em]">
+                        {intelligenceMode === 'THINKING' ? 'Deep Reasoning Protocol' : 'Operational Triage'}
+                      </span>
+                      <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
+                        {operatingMode === 1 ? 'Workshop Governance' : operatingMode === 2 ? 'Fleet Settlement' : 'Public Ignition'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[14px] font-mono font-black text-white">
+                        {Math.round(((loadingStep + 1) / activeProtocol.length) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 relative z-10">
                     {activeProtocol.map((step, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? 'bg-[#f18a22]' : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
-                        <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? 'text-zinc-400' : 'text-zinc-700'}`}>{step}</span>
+                      <div key={idx} className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                          idx < loadingStep 
+                            ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
+                            : idx === loadingStep 
+                              ? 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.8)]' 
+                              : 'bg-zinc-800'
+                        }`}></div>
+                        <span className={`text-[10px] font-black uppercase tracking-tight transition-colors duration-300 ${
+                          idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? 'text-zinc-500' : 'text-zinc-800'
+                        }`}>
+                          {step}
+                        </span>
+                        {idx === loadingStep && (
+                           <div className="ml-auto w-4 h-1 bg-[#f18a22]/20 rounded-full overflow-hidden">
+                              <div className="h-full bg-[#f18a22] animate-shimmer"></div>
+                           </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+
+                  <div className="w-full h-1 bg-zinc-900 rounded-full overflow-hidden mt-2 border border-white/5">
+                    <div 
+                      className="h-full bg-gradient-to-r from-[#f18a22] to-orange-400 transition-all duration-700 ease-out shadow-[0_0_10px_#f18a22]" 
+                      style={{ width: `${((loadingStep + 1) / activeProtocol.length) * 100}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -214,6 +260,16 @@ const App: React.FC = () => {
         </div>
       </main>
       <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+          animation: shimmer 1s infinite linear;
+          width: 50%;
+        }
+      `}</style>
     </div>
   );
 };
