@@ -289,44 +289,46 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     <div className="mx-4 mb-8 p-12 bg-[#0A0A0A] border-2 border-[#f18a22]/15 rounded-[48px] shadow-3xl relative overflow-hidden transition-all duration-300">
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#f18a22]/5 blur-[150px] rounded-full pointer-events-none"></div>
       
-      <div className="flex items-center gap-6 mb-12">
-        <div className="w-3 h-12 bg-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.5)] rounded-full animate-pulse"></div>
+      {/* Refined Header - Structured & Anchored */}
+      <div className="flex items-start gap-6 mb-12">
+        <div className="w-2.5 h-12 bg-[#f18a22] shadow-[0_0_25px_rgba(241,138,34,0.6)] rounded-full animate-pulse"></div>
         <div className="flex flex-col">
-          <h3 className="text-2xl font-black text-white uppercase tracking-[0.5em]">Architect Vehicle Dossier</h3>
-          <p className="text-[12px] text-zinc-600 font-bold uppercase tracking-[0.3em] mt-1">EKA-Ai Central Governance Initialization</p>
+          <h3 className="text-2xl font-black text-white uppercase tracking-[0.5em] leading-none mb-2">Architect Vehicle Dossier</h3>
+          <p className="text-[12px] text-zinc-600 font-bold uppercase tracking-[0.35em]">EKA-Ai Central Governance Initialization</p>
         </div>
       </div>
 
       <div className="mb-14">
-         <label className="text-[13px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-2 mb-8 block">01. Architectural Class</label>
+         <label className="text-[13px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-2 mb-8 block font-mono">01. Architectural Class</label>
          <div className="flex flex-col sm:flex-row gap-8">
             <button onClick={() => handleTypeSelect('2W')} className={`flex-1 py-10 rounded-[40px] border-2 flex flex-col items-center gap-6 transition-all active:scale-[0.97] group ${context.vehicleType === '2W' ? 'bg-[#f18a22] border-[#f18a22] text-black shadow-3xl scale-[1.02]' : 'bg-[#050505] border-[#262626] text-zinc-700 hover:border-[#f18a22]/40'}`}>
                <svg className={`w-16 h-16 transition-all duration-700 group-hover:scale-110 ${context.vehicleType === '2W' ? 'text-black' : 'text-zinc-800'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" /></svg>
-               <span className="text-[14px] uppercase font-black tracking-[0.35em]">2-Wheeler Fleet</span>
+               <span className="text-[14px] uppercase font-black tracking-[0.35em] font-mono">2-Wheeler Fleet</span>
             </button>
             <button onClick={() => handleTypeSelect('4W')} className={`flex-1 py-10 rounded-[40px] border-2 flex flex-col items-center gap-6 transition-all active:scale-[0.97] group ${context.vehicleType === '4W' ? 'bg-[#f18a22] border-[#f18a22] text-black shadow-3xl scale-[1.02]' : 'bg-[#050505] border-[#262626] text-zinc-700 hover:border-[#f18a22]/40'}`}>
                <svg className={`w-16 h-16 transition-all duration-700 group-hover:scale-110 ${context.vehicleType === '4W' ? 'text-black' : 'text-zinc-800'}`} fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z"/></svg>
-               <span className="text-[14px] uppercase font-black tracking-[0.35em]">4-Wheeler Fleet</span>
+               <span className="text-[14px] uppercase font-black tracking-[0.35em] font-mono">4-Wheeler Fleet</span>
             </button>
          </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-14">
+      {/* Grid Fix: Optimized 2fr:2fr:1fr layout to eliminate the right-side gap and align with above cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr] gap-10 mb-14">
         <div className="flex flex-col gap-4">
           <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.brand && errors.brand) ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturer Brand</label>
-          <input name="brand" list="brand-list" value={context.brand} onChange={handleChange} onBlur={() => handleBlur('brand')} placeholder="e.g. Tata Motors" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.brand && errors.brand) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          <input name="brand" list="brand-list" value={context.brand} onChange={handleChange} onBlur={() => handleBlur('brand')} placeholder="e.g. Tata Motors" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.brand && errors.brand) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'} w-full`} />
           {(touched.brand && errors.brand) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.brand}</span>}
           <datalist id="brand-list">{brandSuggestions.map(b => <option key={b} value={b} />)}</datalist>
         </div>
         <div className="flex flex-col gap-4">
           <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.model && errors.model) ? 'text-red-500' : 'text-zinc-600'}`}>Series / Model</label>
-          <input name="model" list="model-list" value={context.model} onChange={handleChange} onBlur={() => handleBlur('model')} placeholder="e.g. Nexon EV" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.model && errors.model) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          <input name="model" list="model-list" value={context.model} onChange={handleChange} onBlur={() => handleBlur('model')} placeholder="e.g. Nexon EV" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.model && errors.model) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'} w-full`} />
           {(touched.model && errors.model) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.model}</span>}
           <datalist id="model-list">{DATA_STORE.models_common.map(m => <option key={m} value={m} />)}</datalist>
         </div>
         <div className="flex flex-col gap-4">
-          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.year && errors.year) ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturing Year</label>
-          <input name="year" list="year-list" value={context.year} onChange={handleChange} onBlur={() => handleBlur('year')} placeholder="2024" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.year && errors.year) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.year && errors.year) ? 'text-red-500' : 'text-zinc-600'}`}>Year</label>
+          <input name="year" list="year-list" value={context.year} onChange={handleChange} onBlur={() => handleBlur('year')} placeholder="2024" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.year && errors.year) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'} w-full`} />
           {(touched.year && errors.year) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.year}</span>}
           <datalist id="year-list">{DATA_STORE.years.map(y => <option key={y} value={y} />)}</datalist>
         </div>
@@ -334,7 +336,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
 
       <div className="mb-14">
         <div className="flex items-center justify-between mb-8 pr-4">
-           <label className={`text-[13px] font-black uppercase tracking-[0.4em] ml-2 block ${(touched.fuelType && errors.fuelType) ? 'text-red-500' : 'text-zinc-600'}`}>02. Propulsion Type</label>
+           <label className={`text-[13px] font-black uppercase tracking-[0.4em] ml-2 block font-mono ${(touched.fuelType && errors.fuelType) ? 'text-red-500' : 'text-zinc-600'}`}>02. Propulsion Type</label>
            {(touched.fuelType && errors.fuelType) && <span className="text-[10px] text-red-500 font-black uppercase tracking-widest">{errors.fuelType}</span>}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
@@ -354,15 +356,15 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       </div>
 
       {context.fuelType === 'Electric' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mb-14 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr] gap-10 mb-14 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex flex-col gap-4">
             <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.batteryCapacity && errors.batteryCapacity) ? 'text-red-500' : 'text-zinc-600'}`}>Battery Capacity (kWh)</label>
-            <input name="batteryCapacity" type="number" value={context.batteryCapacity || ''} onChange={handleChange} onBlur={() => handleBlur('batteryCapacity')} placeholder="40.5" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.batteryCapacity && errors.batteryCapacity) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+            <input name="batteryCapacity" type="number" value={context.batteryCapacity || ''} onChange={handleChange} onBlur={() => handleBlur('batteryCapacity')} placeholder="40.5" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.batteryCapacity && errors.batteryCapacity) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'} w-full`} />
             {(touched.batteryCapacity && errors.batteryCapacity) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.batteryCapacity}</span>}
           </div>
           <div className="flex flex-col gap-4">
             <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.motorPower && errors.motorPower) ? 'text-red-500' : 'text-zinc-600'}`}>Peak Power (kW)</label>
-            <input name="motorPower" type="number" value={context.motorPower || ''} onChange={handleChange} onBlur={() => handleBlur('motorPower')} placeholder="110" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.motorPower && errors.motorPower) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+            <input name="motorPower" type="number" value={context.motorPower || ''} onChange={handleChange} onBlur={() => handleBlur('motorPower')} placeholder="110" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.motorPower && errors.motorPower) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'} w-full`} />
             {(touched.motorPower && errors.motorPower) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.motorPower}</span>}
           </div>
         </div>
