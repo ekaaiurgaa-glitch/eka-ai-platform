@@ -30,10 +30,9 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   const [complaints, setComplaints] = useState<string[]>(initialComplaints);
   const [fuelLevel, setFuelLevel] = useState(65);
   const [inventory, setInventory] = useState({ spareWheel: true, toolKit: false });
-  const [timestamp, setTimestamp] = useState("05 OCT 2026 | 14:32:05");
+  const [timestamp, setTimestamp] = useState("");
 
   useEffect(() => {
-    // For a real app, we'd use current time, but for the spec fidelity:
     const now = new Date();
     const formatted = now.toLocaleString('en-IN', {
       day: '2-digit',
@@ -43,15 +42,13 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
       minute: '2-digit',
       second: '2-digit',
       hour12: false
-    }).toUpperCase().replace(',', '');
+    }).toUpperCase().replace(',', ' |');
     setTimestamp(formatted);
   }, []);
 
   const handleAddIssue = () => {
-    const issue = prompt("Enter Complaint Logic Node:");
-    if (issue) {
-      setComplaints(prev => [...prev, issue]);
-    }
+    const issue = prompt("Enter Logic Node (New Complaint):");
+    if (issue) setComplaints(prev => [...prev, issue]);
   };
 
   return (
@@ -73,11 +70,11 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           <label>CUSTOMER PROFILE</label>
           <div className="data-row">
             <span className="val-label">Name</span>
-            <span className="val-data">{customerName || 'Vikram Aditya Singh'}</span>
+            <span className="val-data">{customerName || 'NOT_SPECIFIED'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Contact</span>
-            <span className="val-data">{contact || '+91 98765 43210'}</span>
+            <span className="val-data">{contact || 'AWAITING_AUTH'}</span>
           </div>
         </div>
         
@@ -85,15 +82,15 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           <label>VEHICLE ARCHITECTURE</label>
           <div className="data-row">
             <span className="val-label">Model</span>
-            <span className="val-data">{vehicleModel || 'Tata Nexon EV Max'}</span>
+            <span className="val-data">{vehicleModel || 'UNIDENTIFIED'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Reg No</span>
-            <span className="val-data">{regNo || 'MH 12 AB 1234'}</span>
+            <span className="val-data">{regNo || 'PENDING'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Odo</span>
-            <span className="val-data">{odometer || '12,450'} KM</span>
+            <span className="val-data">{odometer || '0'} KM</span>
           </div>
         </div>
       </section>
@@ -120,15 +117,17 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
         <div className="inventory-controls">
           <div className="fuel-gauge">
             <span className="val-label">Propulsion Energy</span>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              value={fuelLevel} 
-              onChange={(e) => setFuelLevel(parseInt(e.target.value))}
-              className="eka-slider" 
-            />
-            <span className="gauge-value">{fuelLevel}%</span>
+            <div className="slider-container">
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={fuelLevel} 
+                onChange={(e) => setFuelLevel(parseInt(e.target.value))}
+                className="eka-slider" 
+              />
+              <span className="gauge-value">{fuelLevel}%</span>
+            </div>
           </div>
           
           <div className="check-grid">
@@ -138,7 +137,8 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
                 checked={inventory.spareWheel} 
                 onChange={() => setInventory(i => ({...i, spareWheel: !i.spareWheel}))}
               />
-              <span>Spare Wheel</span>
+              <span className="check-box-ui"></span>
+              <span className="check-label">Spare Wheel</span>
             </label>
             <label className="check-item">
               <input 
@@ -146,7 +146,8 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
                 checked={inventory.toolKit} 
                 onChange={() => setInventory(i => ({...i, toolKit: !i.toolKit}))}
               />
-              <span>Tool Kit</span>
+              <span className="check-box-ui"></span>
+              <span className="check-label">Tool Kit</span>
             </label>
           </div>
         </div>
@@ -178,8 +179,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           background-color: var(--bg-deep);
           color: var(--text-bright);
           font-family: 'Inter', sans-serif;
-          max-width: 600px;
-          margin: 20px auto;
+          width: 100%;
           border: 1px solid var(--border-soft);
           border-radius: 12px;
           padding: 32px;
@@ -187,6 +187,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           flex-direction: column;
           gap: 28px;
           box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
+          margin: 1rem 0;
         }
 
         .job-card-dossier label {
@@ -214,6 +215,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           font-weight: 700;
           font-size: 1.1rem;
           margin-right: 12px;
+          color: var(--text-bright);
         }
 
         .status-pill {
@@ -225,6 +227,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           font-size: 0.6rem;
           font-weight: 900;
           letter-spacing: 1px;
+          text-transform: uppercase;
         }
 
         .timestamp {
@@ -256,6 +259,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           font-size: 0.8rem;
           font-weight: 700;
           font-family: 'Roboto Mono', monospace;
+          color: var(--text-bright);
         }
 
         /* --- VOC SECTION --- */
@@ -267,11 +271,12 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
         .complaint-list li {
           font-size: 0.85rem;
-          padding: 10px 12px;
+          padding: 12px 16px;
           background: #0D0D0D;
           border-left: 2px solid var(--eka-orange);
           margin-bottom: 8px;
           border-radius: 0 4px 4px 0;
+          color: #BBB;
         }
 
         .btn-add-issue {
@@ -290,75 +295,115 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           justify-content: center;
           gap: 8px;
           transition: all 0.2s;
+          font-family: 'Roboto Mono', monospace;
         }
 
         .btn-add-issue:hover {
           border-color: var(--eka-orange);
           color: var(--eka-orange);
+          background: rgba(255, 159, 28, 0.05);
         }
 
         /* --- INVENTORY --- */
         .inventory-controls {
           background: #080808;
-          padding: 20px;
+          padding: 24px;
           border-radius: 8px;
+          border: 1px solid #111;
         }
 
         .fuel-gauge {
-          margin-bottom: 20px;
+          margin-bottom: 24px;
+        }
+
+        .slider-container {
           display: flex;
-          flex-direction: column;
+          align-items: center;
+          gap: 20px;
         }
 
         .gauge-value {
-          align-self: flex-end;
           font-family: 'Roboto Mono', monospace;
-          font-size: 0.8rem;
+          font-size: 1rem;
           color: var(--eka-orange);
           font-weight: 700;
-          margin-top: -10px;
+          min-width: 50px;
+          text-align: right;
         }
 
         .eka-slider {
           -webkit-appearance: none;
-          width: 100%;
+          flex: 1;
           height: 4px;
           background: #1A1A1A;
           border-radius: 2px;
           outline: none;
-          margin: 15px 0;
         }
 
         .eka-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 12px;
-          height: 12px;
+          width: 14px;
+          height: 14px;
           background: var(--eka-orange);
           border-radius: 50%;
           cursor: pointer;
-          box-shadow: 0 0 10px var(--eka-orange);
+          box-shadow: 0 0 10px rgba(255, 159, 28, 0.5);
+          transition: transform 0.1s;
+        }
+
+        .eka-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
         }
 
         .check-grid {
           display: flex;
-          gap: 24px;
+          gap: 32px;
         }
 
         .check-item {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
+          cursor: pointer;
+          position: relative;
+        }
+
+        .check-item input {
+          position: absolute;
+          opacity: 0;
           cursor: pointer;
         }
 
-        .check-item input[type="checkbox"] {
-          accent-color: var(--eka-orange);
+        .check-box-ui {
+          width: 18px;
+          height: 18px;
+          background: #000;
+          border: 2px solid #333;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
         }
 
-        .check-item span {
+        .check-item input:checked + .check-box-ui {
+          border-color: var(--eka-orange);
+          background: var(--eka-orange);
+        }
+
+        .check-item input:checked + .check-box-ui::after {
+          content: '✔';
+          color: #000;
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .check-label {
           font-size: 0.75rem;
-          letter-spacing: 0;
           color: var(--text-dim);
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         /* --- FOOTER --- */
@@ -369,7 +414,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
         .sig-line {
           height: 1px;
           background: var(--border-soft);
-          width: 200px;
+          width: 220px;
           margin-top: 24px;
         }
 
@@ -378,24 +423,35 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           color: #000;
           border: none;
           width: 100%;
-          padding: 20px;
+          padding: 22px;
           border-radius: 8px;
           font-weight: 900;
-          font-size: 0.85rem;
-          letter-spacing: 1.5px;
+          font-size: 0.9rem;
+          letter-spacing: 2px;
           text-transform: uppercase;
           cursor: pointer;
-          transition: transform 0.1s;
+          transition: all 0.2s;
+          box-shadow: 0 10px 20px -10px rgba(255, 159, 28, 0.4);
+        }
+
+        .btn-primary:hover {
+          background-color: #FFF;
+          transform: translateY(-2px);
+          box-shadow: 0 15px 30px -10px rgba(255, 255, 255, 0.3);
         }
 
         .btn-primary:active {
-          transform: scale(0.98);
+          transform: translateY(0);
         }
 
         @media (max-width: 640px) {
           .architect-grid {
             grid-template-columns: 1fr;
             gap: 20px;
+          }
+          .check-grid {
+            flex-direction: column;
+            gap: 16px;
           }
         }
       `}</style>
