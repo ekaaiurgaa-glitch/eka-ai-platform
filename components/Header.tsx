@@ -3,8 +3,9 @@ import React from 'react';
 import { JobStatus, VehicleContext, isContextComplete } from '../types';
 
 interface HeaderProps {
-  status?: JobStatus;
-  vehicle?: VehicleContext;
+  status: JobStatus;
+  vehicle: VehicleContext;
+  isLoading?: boolean;
 }
 
 const FUEL_ICONS: Record<string, string> = {
@@ -15,9 +16,45 @@ const FUEL_ICONS: Record<string, string> = {
   Hybrid: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
 };
 
-const Header: React.FC<HeaderProps> = ({ status = 'CREATED', vehicle }) => {
+interface StatusConfig {
+  label: string;
+  dotClass: string;
+}
+
+const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig => {
+  if (isLoading) {
+    return { label: 'STATUS: VERIFYING...', dotClass: 'bg-yellow-500 animate-pulse' };
+  }
+
+  switch (status) {
+    case 'CREATED':
+    case 'IGNITION_TRIAGE':
+      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-green-500' };
+    case 'AUTH_INTAKE':
+    case 'CONTRACT_VALIDATION':
+      return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-orange-500 animate-pulse-orange' };
+    case 'SYMPTOM_RECORDING':
+    case 'DIAGNOSTICS_WISDOM':
+    case 'INVENTORY_GATING':
+    case 'ESTIMATE_GOVERNANCE':
+    case 'APPROVAL_GATE':
+    case 'EXECUTION_QUALITY':
+    case 'PDI_CHECKLIST':
+    case 'UTILIZATION_TRACKING':
+    case 'SETTLEMENT_LOGIC':
+    case 'SLA_BREACH_CHECK':
+      return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-green-500' };
+    case 'CLOSED':
+    case 'MG_COMPLETE':
+      return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500' };
+    default:
+      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-green-500' };
+  }
+};
+
+const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) => {
   const isLocked = vehicle && isContextComplete(vehicle);
-  const isPendingInput = status === 'AUTH_INTAKE' || status === 'CONTRACT_VALIDATION';
+  const config = getStatusConfig(status, isLoading);
 
   const renderFuelIcon = () => {
     if (!vehicle?.fuelType || !FUEL_ICONS[vehicle.fuelType]) return null;
@@ -57,11 +94,10 @@ const Header: React.FC<HeaderProps> = ({ status = 'CREATED', vehicle }) => {
           </div>
         )}
 
-        <div className={`flex items-center gap-3 bg-[#0A0A0A] border px-3 py-1.5 rounded-full transition-all duration-300 ${isPendingInput ? 'border-[#f18a22] shadow-[0_0_10px_rgba(241,138,34,0.2)]' : 'border-[#262626]'}`}>
-          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isPendingInput ? 'bg-red-500' : 'bg-[#f18a22]'}`}></div>
+        <div className={`flex items-center gap-3 bg-[#0A0A0A] border px-3 py-1.5 rounded-full transition-all duration-300 border-[#262626] shadow-sm`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`}></div>
           <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">
-            {isPendingInput ? 'AWAITING_INPUT: ' : 'Protocol: '}
-            <span className="text-white">{status.replace(/_/g, ' ')}</span>
+            <span className="text-white">{config.label}</span>
           </span>
         </div>
       </div>
@@ -72,6 +108,15 @@ const Header: React.FC<HeaderProps> = ({ status = 'CREATED', vehicle }) => {
           <span className="text-zinc-800 text-[8px] font-mono">PHASE-1.AUDIT.G4G</span>
         </div>
       </div>
+      <style>{`
+        @keyframes pulse-orange {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 10px #f18a22; }
+        }
+        .animate-pulse-orange {
+          animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+      `}</style>
     </header>
   );
 };
