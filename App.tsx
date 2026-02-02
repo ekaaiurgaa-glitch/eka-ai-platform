@@ -22,7 +22,6 @@ const App: React.FC = () => {
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
 
-  // Defined Architectural Protocols
   const STANDARD_PROTOCOL = ["Boundary Auth", "URGAA Query", "Symptom Triage", "RSA Gating", "Audit Finalization"];
   const JOBCARD_PROTOCOL = ["Workshop Auth", "Service Normalization", "Inventory Gating", "Compliance Audit", "PDI Verification"];
   const MG_PROTOCOL = ["Contract Validation", "Utilization Analytics", "SLA Breach Logic", "Settlement Logic", "Cycle Closure"];
@@ -34,7 +33,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "[[STATE:CHAT]] EKA-Ai Online. Awaiting Governance Mode Selection.",
+      content: "[[STATE:CHAT]] EKA-Ai Online. Connected to Go4Garage Ecosystem. Awaiting Mode Selection.",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -58,7 +57,6 @@ const App: React.FC = () => {
     scrollToBottom();
   }, [messages, isLoading]);
 
-  // Protocol Progress Engine
   useEffect(() => {
     let interval: any;
     if (isLoading) {
@@ -70,7 +68,6 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [isLoading, activeProtocol]);
 
-  // Unified Protocol Governor: Syncs visualization based on intelligence and operating modes
   useEffect(() => {
     if (intelligenceMode === 'THINKING') {
       setActiveProtocol(THINKING_PROTOCOL);
@@ -99,6 +96,20 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = async (text: string) => {
+    // Intercept initialization commands
+    if (text.toLowerCase() === 'start' || text.toLowerCase() === 'status') {
+      const initMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: "EKA-Ai Online. Architecture Loaded. Awaiting Directive.",
+        timestamp: new Date(),
+        intelligenceMode,
+        operatingMode
+      };
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date() }, initMessage]);
+      return;
+    }
+
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date(), intelligenceMode, operatingMode };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
@@ -129,7 +140,6 @@ const App: React.FC = () => {
   };
 
   const handleModeChange = (mode: OperatingMode) => {
-    // SILENT MODE SWITCHING: Atomic update of state and protocol-specific intake query.
     setOperatingMode(mode);
     
     let intakePrompt = "";
@@ -143,12 +153,12 @@ const App: React.FC = () => {
         brandId = 'G4G_IGNITION';
         break;
       case 1:
-        intakePrompt = "[[STATE:DASHBOARD]] Vehicle Registration Number:";
+        intakePrompt = "[[STATE:DASHBOARD]] Workshop Mode Active. Please enter the Vehicle Registration Number.";
         entryStatus = 'AUTH_INTAKE';
         brandId = 'G4G_WORKSHOP';
         break;
       case 2:
-        intakePrompt = "[[STATE:DASHBOARD]] Fleet ID:";
+        intakePrompt = "[[STATE:DASHBOARD]] Fleet Mode Active. Please provide the Fleet ID and Billing Month.";
         entryStatus = 'CONTRACT_VALIDATION';
         brandId = 'G4G_FLEET';
         break;
@@ -156,7 +166,6 @@ const App: React.FC = () => {
 
     setStatus(entryStatus);
     
-    // Immediate injection of the protocol entry prompt.
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
@@ -171,33 +180,36 @@ const App: React.FC = () => {
       }
     }]);
 
-    // Ensure scrolling reflects the new prompt instantly.
     scrollToBottom();
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
+      {/* Background Glow Layer for Glassmorphism */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#f18a22]/5 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-green-500/5 blur-[100px] rounded-full pointer-events-none"></div>
+
       <Header status={status} vehicle={vehicleContext} />
       
-      <div className="bg-[#0A0A0A] border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="backdrop-blur-xl bg-black/40 border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4 z-10">
         <div className="flex items-center gap-4">
-          <div className="flex bg-black border border-white/10 rounded-lg p-0.5 shadow-inner">
-            <button onClick={() => setIntelligenceMode('FAST')} className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Core AI</button>
-            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Expert</button>
+          <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
+            <button onClick={() => setIntelligenceMode('FAST')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Core AI</button>
+            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600/80 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Expert</button>
           </div>
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
-          <div className="flex bg-black border border-white/10 rounded-lg p-0.5 shadow-inner">
-            <button onClick={() => handleModeChange(0)} className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
-            <button onClick={() => handleModeChange(1)} className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
-            <button onClick={() => handleModeChange(2)} className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
+          <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
+            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
+            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
+            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em]">
-           Governor: <span className="text-white">{operatingMode === 0 ? 'PUBLIC' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
+        <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.25em]">
+           Governance: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5">{operatingMode === 0 ? 'PUBLIC' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
+      <main className="flex-1 overflow-y-auto pt-8 pb-4 z-0" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
           <VehicleContextPanel context={vehicleContext} onUpdate={setVehicleContext} />
           <div className="px-4">
@@ -205,10 +217,9 @@ const App: React.FC = () => {
               <ChatMessage key={msg.id} message={msg} onPlayAudio={handlePlayAudio} isAudioPlaying={isAudioPlaying} vehicleContext={vehicleContext} onUpdateContext={setVehicleContext} />
             ))}
             
-            {/* Context-Aware Protocol Triage Indicator */}
             {isLoading && (
               <div className="flex justify-start mb-12 animate-in slide-in-from-left duration-300">
-                <div className={`bg-[#0A0A0A] border border-[#262626] p-6 rounded-2xl flex flex-col gap-6 shadow-3xl min-w-[340px] border-l-4 transition-all duration-500 border-l-[#f18a22] relative overflow-hidden group`}>
+                <div className={`backdrop-blur-2xl bg-black/40 border border-[#262626] p-6 rounded-3xl flex flex-col gap-6 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] min-w-[340px] border-l-4 transition-all duration-500 border-l-[#f18a22] relative overflow-hidden group`}>
                   <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                     <svg className="w-12 h-12 text-[#f18a22]" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>

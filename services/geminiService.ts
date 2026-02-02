@@ -22,14 +22,14 @@ export class GeminiService {
 [GOVERNANCE CONTEXT]:
 Mode: ${opMode}
 State: ${currentStatus}
-Vehicle: ${context && context.brand ? `${context.brand} ${context.model} (${context.fuelType})` : 'Pending'}
+Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Dossier'}
 
-[STRICT DIRECTIVE]:
-1. NO meta-commentary like "Switching mode" or "[OS SIGNAL]".
-2. Be extremely concise. Action-only responses.
-3. If EV + Battery/Technical: Must include HV Warning.
-4. If Mode 1 + Estimate: Must include HSN/GST for every line item. Format: "Item | Range | HSN: [Code] | GST: [Rate]%".
-5. Use googleSearch for part sourcing if unknown.
+[OPERATIONAL GOVERNANCE]:
+- SILENT PROTOCOL: Response MUST be raw, action-oriented, and concise. No conversational filler.
+- GST LOGIC (Mode 1): Every estimate line MUST include HSN and GST percentage.
+- EV SAFETY: High Voltage warning is mandatory for Electric/Hybrid technical queries.
+- SETTLEMENT (Mode 2): Enforce Shortfall/Excess logic based on Assured KM vs Actual KM.
+- UI SYNC: Use [[STATE:NAME]] tags for any UI transitions.
 `;
 
       const config: any = {
@@ -94,11 +94,11 @@ Vehicle: ${context && context.brand ? `${context.brand} ${context.model} (${cont
       
       return { ...result, grounding_links: groundingLinks };
     } catch (error) {
-      console.error("EKA Central OS Error:", error);
+      console.error("EKA Central OS Fatal Error:", error);
       return {
-        response_content: { visual_text: "System interrupted. Re-issue query.", audio_text: "Error." },
+        response_content: { visual_text: "System interrupted. Critical logic breach. Re-issue query.", audio_text: "System Error." },
         job_status_update: currentStatus,
-        ui_triggers: { theme_color: "#FF0000", brand_identity: "ERROR", show_orange_border: true },
+        ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true },
         visual_assets: { vehicle_display_query: "Error", part_display_query: null }
       };
     }
