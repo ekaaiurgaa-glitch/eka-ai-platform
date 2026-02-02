@@ -20,6 +20,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const isAi = message.role === 'assistant';
 
   const formatTechnicalTags = (text: string) => {
+    // Strip Generative UI State Tags silently
+    const cleanText = text.replace(/\[\[STATE:.*?\]\]/g, '').trim();
+    if (!cleanText && text.includes('[[STATE:')) return null;
+
     // Regex for Price Ranges
     const rangeRegex = /((\d+[\d,]*)\s*(?:-|to)\s*(\d+[\d,]*))/gi;
     // Regex for HSN Codes
@@ -27,7 +31,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     // Regex for GST Tags
     const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
 
-    let parts: (string | React.ReactNode)[] = [text];
+    let parts: (string | React.ReactNode)[] = [cleanText];
 
     const applyRegex = (regex: RegExp, className: string, iconType: 'price' | 'hsn' | 'gst') => {
       let nextParts: (string | React.ReactNode)[] = [];
@@ -81,11 +85,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return (
       <div className="space-y-4">
         <div className="text-sm leading-relaxed text-zinc-200">
-          {message.content.split('\n').map((line, i) => (
-            <div key={i} className="mb-2">
-              {formatTechnicalTags(line)}
-            </div>
-          ))}
+          {message.content.split('\n').map((line, i) => {
+            const formatted = formatTechnicalTags(line);
+            if (!formatted) return null;
+            return (
+              <div key={i} className="mb-2">
+                {formatted}
+              </div>
+            );
+          })}
         </div>
 
         {message.grounding_links && message.grounding_links.length > 0 && (

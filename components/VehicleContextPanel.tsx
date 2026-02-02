@@ -33,12 +33,25 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   }, [context.vehicleType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    onUpdate({ ...context, [name]: value });
+    const { name, value, type } = e.target as HTMLInputElement;
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      onUpdate({ ...context, [name]: checked });
+    } else {
+      onUpdate({ ...context, [name]: value });
+    }
   };
 
   const handleFuelSelect = (id: string) => {
-    onUpdate({ ...context, fuelType: id });
+    onUpdate({ 
+      ...context, 
+      fuelType: id,
+      // Clear battery/motor info if not Electric, but preserve if it is
+      batteryCapacity: id === 'Electric' ? context.batteryCapacity : '',
+      motorPower: id === 'Electric' ? context.motorPower : '',
+      // Preserving hvSafetyConfirmed toggle logic for EV/Hybrid
+      hvSafetyConfirmed: (id === 'Electric' || id === 'Hybrid') ? context.hvSafetyConfirmed : false
+    });
   };
 
   const handleTypeSelect = (type: '2W' | '4W') => {
@@ -137,6 +150,12 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                     {getFuelIcon(context.fuelType, "w-5 h-5")}
                     <span>{context.fuelType} Engine</span>
                   </div>
+                  {context.fuelType === 'Electric' && (
+                    <div className="flex items-center gap-3 px-5 py-2.5 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-300 uppercase tracking-wide">
+                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      <span>{context.batteryCapacity} kWh • {context.motorPower} kW</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 px-5 py-2.5 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-300 uppercase tracking-wide">
                     <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     <span>G4G Governance Locked</span>
@@ -157,6 +176,8 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       </div>
     );
   }
+
+  const isEVOrHybrid = context.fuelType === 'Electric' || context.fuelType === 'Hybrid';
 
   return (
     <div className="mx-4 mb-8 p-12 bg-[#0A0A0A] border-2 border-[#f18a22]/15 rounded-[48px] shadow-3xl relative overflow-hidden transition-all duration-300">
@@ -227,6 +248,66 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
           ))}
         </div>
       </div>
+
+      {/* EV Technical Dossier Section */}
+      {context.fuelType === 'Electric' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mb-14 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col gap-4">
+            <label className="text-[12px] font-black text-zinc-600 uppercase tracking-widest ml-2">Battery Capacity (kWh)</label>
+            <input 
+              name="batteryCapacity" 
+              type="number" 
+              value={context.batteryCapacity || ''} 
+              onChange={handleChange} 
+              placeholder="e.g. 40.5" 
+              className="bg-[#050505] border-2 border-zinc-900 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none focus:border-[#f18a22] transition-all placeholder:text-zinc-800 font-bold" 
+            />
+          </div>
+          <div className="flex flex-col gap-4">
+            <label className="text-[12px] font-black text-zinc-600 uppercase tracking-widest ml-2">Motor peak Power (kW)</label>
+            <input 
+              name="motorPower" 
+              type="number" 
+              value={context.motorPower || ''} 
+              onChange={handleChange} 
+              placeholder="e.g. 110" 
+              className="bg-[#050505] border-2 border-zinc-900 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none focus:border-[#f18a22] transition-all placeholder:text-zinc-800 font-bold" 
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Safety Constitution Acknowledgment */}
+      {isEVOrHybrid && (
+        <div className="mb-14 p-8 bg-orange-500/5 border-2 border-orange-500/20 rounded-[32px] flex flex-col md:flex-row items-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0 border border-orange-500/30">
+             <svg className="w-8 h-8 text-orange-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+             </svg>
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-black text-white uppercase tracking-widest mb-1 italic">High Voltage (HV) Safety Affirmation</h4>
+            <p className="text-[11px] text-zinc-500 font-bold leading-relaxed uppercase tracking-tighter">
+              Diagnosis of EV propulsion systems requires strict adherence to PPE and LOTO protocols. Confirm compliance with G4G safety governance.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                name="hvSafetyConfirmed" 
+                checked={!!context.hvSafetyConfirmed} 
+                onChange={handleChange} 
+                className="sr-only peer" 
+              />
+              <div className="w-14 h-8 bg-zinc-900 border-2 border-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-zinc-600 after:border-zinc-400 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-600 peer-checked:border-orange-500 peer-checked:after:bg-white"></div>
+            </label>
+            <span className={`text-[10px] font-black uppercase tracking-widest ${context.hvSafetyConfirmed ? 'text-orange-500' : 'text-zinc-700'}`}>
+              {context.hvSafetyConfirmed ? 'Confirmed' : 'Pending'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {isContextComplete(context) && (
         <div className="relative pt-10">

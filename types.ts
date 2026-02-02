@@ -65,8 +65,21 @@ export interface VehicleContext {
   model: string;
   year: string;
   fuelType: string;
+  batteryCapacity?: string;
+  motorPower?: string;
+  hvSafetyConfirmed?: boolean;
 }
 
 export const isContextComplete = (ctx: VehicleContext): boolean => {
-  return !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
+  const baseComplete = !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
+  
+  if (ctx.fuelType === 'Electric') {
+    return baseComplete && !!ctx.batteryCapacity && !!ctx.motorPower && !!ctx.hvSafetyConfirmed;
+  }
+  
+  if (ctx.fuelType === 'Hybrid') {
+    return baseComplete && !!ctx.hvSafetyConfirmed;
+  }
+  
+  return baseComplete;
 };

@@ -13,17 +13,27 @@ const App: React.FC = () => {
     brand: '',
     model: '',
     year: '',
-    fuelType: ''
+    fuelType: '',
+    batteryCapacity: '',
+    motorPower: '',
+    hvSafetyConfirmed: false
   });
 
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
 
+  const STANDARD_PROTOCOL = ["Boundary Auth", "URGAA Query", "Symptom Triage", "RSA Gating", "Audit Finalization"];
+  const JOBCARD_PROTOCOL = ["Workshop Auth", "Service Normalization", "Inventory Gating", "Compliance Audit", "PDI Verification"];
+  const MG_PROTOCOL = ["Contract Validation", "Utilization Analytics", "SLA Breach Logic", "Settlement Logic", "Cycle Closure"];
+  const THINKING_PROTOCOL = ["Logic Node Branching", "Ecosystem Integration", "Pattern Synthesis", "Governance Audit"];
+
+  const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai Online. Connected to Go4Garage Ecosystem. Awaiting Mode Selection.",
+      content: "[[STATE:CHAT]] EKA-Ai Online. Awaiting Governance Mode Selection.",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -36,13 +46,6 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<JobStatus>('CREATED');
   const scrollRef = useRef<HTMLDivElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-
-  const STANDARD_PROTOCOL = ["Boundary Auth", "URGAA Query", "Symptom Triage", "RSA Gating", "Audit Finalization"];
-  const JOBCARD_PROTOCOL = ["Workshop Auth", "Service Normalization", "Inventory Gating", "Compliance Audit", "PDI Verification"];
-  const MG_PROTOCOL = ["Contract Validation", "Utilization Analytics", "SLA Breach Logic", "Settlement Logic", "Cycle Closure"];
-  const THINKING_PROTOCOL = ["Logic Node Branching", "Ecosystem Integration", "Pattern Synthesis", "Governance Audit"];
-
-  const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -65,6 +68,19 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [isLoading, activeProtocol]);
 
+  // Unified Protocol Governor: Syncs visualization based on intelligence and operating modes
+  useEffect(() => {
+    if (intelligenceMode === 'THINKING') {
+      setActiveProtocol(THINKING_PROTOCOL);
+    } else {
+      switch (operatingMode) {
+        case 1: setActiveProtocol(JOBCARD_PROTOCOL); break;
+        case 2: setActiveProtocol(MG_PROTOCOL); break;
+        default: setActiveProtocol(STANDARD_PROTOCOL); break;
+      }
+    }
+  }, [intelligenceMode, operatingMode]);
+
   const handlePlayAudio = async (text: string) => {
     if (isAudioPlaying) return;
     setIsAudioPlaying(true);
@@ -81,11 +97,6 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = async (text: string) => {
-    if (intelligenceMode === 'THINKING') setActiveProtocol(THINKING_PROTOCOL);
-    else if (operatingMode === 1) setActiveProtocol(JOBCARD_PROTOCOL);
-    else if (operatingMode === 2) setActiveProtocol(MG_PROTOCOL);
-    else setActiveProtocol(STANDARD_PROTOCOL);
-
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date(), intelligenceMode, operatingMode };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
@@ -116,29 +127,43 @@ const App: React.FC = () => {
   };
 
   const handleModeChange = (mode: OperatingMode) => {
+    // SILENT MODE SWITCHING: Immediate internal state update without meta-commentary filler.
     setOperatingMode(mode);
+    
     let initialResponse = "";
     let newStatus: JobStatus = 'CREATED';
 
-    if (mode === 0) {
-      initialResponse = "EKA-Ai Online. How can I assist with your EV or Service today?";
-      newStatus = 'CREATED';
-    } else if (mode === 1) {
-      initialResponse = "Workshop Mode. Please enter the Vehicle Registration Number to begin.";
-      newStatus = 'AUTH_INTAKE';
-    } else if (mode === 2) {
-      initialResponse = "Fleet Mode. Please provide the Fleet ID and Month for calculation.";
-      newStatus = 'CONTRACT_VALIDATION';
+    // Adopt target persona and ask for domain-specific input immediately.
+    switch (mode) {
+      case 0:
+        initialResponse = "[[STATE:CHAT]] EKA-Ai Online. How can I assist with your EV or Service today?";
+        newStatus = 'CREATED';
+        break;
+      case 1:
+        initialResponse = "[[STATE:DASHBOARD]] Vehicle Registration Number:";
+        newStatus = 'AUTH_INTAKE';
+        break;
+      case 2:
+        initialResponse = "[[STATE:DASHBOARD]] Fleet ID:";
+        newStatus = 'CONTRACT_VALIDATION';
+        break;
     }
 
     setStatus(newStatus);
+    
+    // Output ONLY the direct request for input relevant to the new mode.
     setMessages(prev => [...prev, {
-      id: Date.now().toString(),
+      id: `mode-switch-${Date.now()}`,
       role: 'assistant',
       content: initialResponse,
       timestamp: new Date(),
       operatingMode: mode,
-      job_status_update: newStatus
+      job_status_update: newStatus,
+      ui_triggers: {
+        theme_color: '#f18a22',
+        brand_identity: mode === 0 ? 'G4G_IGNITION' : mode === 1 ? 'G4G_WORKSHOP' : 'G4G_FLEET',
+        show_orange_border: true
+      }
     }]);
   };
 
@@ -166,7 +191,7 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto pt-8 pb-4" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          {isContextComplete(vehicleContext) && <VehicleContextPanel context={vehicleContext} onUpdate={setVehicleContext} />}
+          <VehicleContextPanel context={vehicleContext} onUpdate={setVehicleContext} />
           <div className="px-4">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} onPlayAudio={handlePlayAudio} isAudioPlaying={isAudioPlaying} vehicleContext={vehicleContext} onUpdateContext={setVehicleContext} />
