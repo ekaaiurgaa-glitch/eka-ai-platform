@@ -12,8 +12,10 @@ interface ValidationErrors {
   brand?: string;
   model?: string;
   year?: string;
+  fuelType?: string;
   batteryCapacity?: string;
   motorPower?: string;
+  hvSafetyConfirmed?: string;
 }
 
 const DATA_STORE = {
@@ -36,6 +38,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setBrandSuggestions(context.vehicleType === '2W' ? DATA_STORE.brands_2w : DATA_STORE.brands_4w);
@@ -45,40 +48,63 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     const currentYear = new Date().getFullYear();
     switch (name) {
       case 'brand':
-        if (!value || value.trim().length < 2) return "Brand required (min 2 chars)";
+        if (!value || value.trim().length < 2) return "Brand required (min 2 characters)";
         break;
       case 'model':
         if (!value || value.trim().length < 1) return "Model identifier required";
         break;
       case 'year':
         const y = parseInt(value);
-        if (isNaN(y) || y < 1990 || y > currentYear + 1) return `Range: 1990 - ${currentYear + 1}`;
+        if (!value) return "Manufacturing year required";
+        if (isNaN(y) || y < 1990 || y > currentYear + 1) return `Valid range: 1990 - ${currentYear + 1}`;
+        break;
+      case 'fuelType':
+        if (!value) return "Selection required";
         break;
       case 'batteryCapacity':
         if (context.fuelType === 'Electric') {
           const bc = parseFloat(value);
-          if (isNaN(bc) || bc <= 0 || bc > 300) return "Valid range: 1-300 kWh";
+          if (!value) return "Capacity required";
+          if (isNaN(bc) || bc <= 0 || bc > 300) return "Range: 1-300 kWh";
         }
         break;
       case 'motorPower':
         if (context.fuelType === 'Electric') {
           const mp = parseFloat(value);
-          if (isNaN(mp) || mp <= 0 || mp > 1000) return "Valid range: 1-1000 kW";
+          if (!value) return "Power rating required";
+          if (isNaN(mp) || mp <= 0 || mp > 1000) return "Range: 1-1000 kW";
+        }
+        break;
+      case 'hvSafetyConfirmed':
+        if ((context.fuelType === 'Electric' || context.fuelType === 'Hybrid') && !value) {
+          return "Safety affirmation mandatory for high-voltage systems";
         }
         break;
     }
     return undefined;
   }, [context.fuelType]);
 
+  // Run validation whenever context changes
+  useEffect(() => {
+    const newErrors: ValidationErrors = {};
+    const fields = ['brand', 'model', 'year', 'fuelType', 'batteryCapacity', 'motorPower', 'hvSafetyConfirmed'];
+    fields.forEach(f => {
+      const err = validateField(f, (context as any)[f]);
+      if (err) (newErrors as any)[f] = err;
+    });
+    setErrors(newErrors);
+  }, [context, validateField]);
+
+  const handleBlur = (name: string) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     
-    const updatedContext = { ...context, [name]: val };
-    onUpdate(updatedContext);
-
-    const error = validateField(name, val);
-    setErrors(prev => ({ ...prev, [name]: error }));
+    onUpdate({ ...context, [name]: val });
+    if (!touched[name]) setTouched(prev => ({ ...prev, [name]: true }));
   };
 
   const handleFuelSelect = (id: string) => {
@@ -89,19 +115,22 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       motorPower: id === 'Electric' ? context.motorPower : '',
       hvSafetyConfirmed: (id === 'Electric' || id === 'Hybrid') ? context.hvSafetyConfirmed : false
     });
-    if (id !== 'Electric') {
-      setErrors(prev => ({ ...prev, batteryCapacity: undefined, motorPower: undefined }));
-    }
+    setTouched(prev => ({ ...prev, fuelType: true }));
   };
 
   const handleTypeSelect = (type: '2W' | '4W') => {
     onUpdate({ ...context, vehicleType: type, brand: '', model: '' });
+    setTouched({});
     setErrors({});
   };
 
-  const isDataValid = isContextComplete(context) && Object.values(errors).every(e => !e);
+  const isDataValid = isContextComplete(context) && Object.keys(errors).length === 0;
 
   const handleLockIdentity = () => {
+    // Mark all as touched on submit attempt
+    const allTouched = ['brand', 'model', 'year', 'fuelType', 'batteryCapacity', 'motorPower', 'hvSafetyConfirmed'].reduce((acc, f) => ({ ...acc, [f]: true }), {});
+    setTouched(allTouched);
+
     if (!isDataValid) return;
     
     setIsSyncing(true);
@@ -277,28 +306,29 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-14">
         <div className="flex flex-col gap-4">
-          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.brand ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturer Brand</label>
-          <input name="brand" list="brand-list" value={context.brand} onChange={handleChange} placeholder="e.g. Tata Motors" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.brand ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
-          {errors.brand && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.brand}</span>}
+          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.brand && errors.brand) ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturer Brand</label>
+          <input name="brand" list="brand-list" value={context.brand} onChange={handleChange} onBlur={() => handleBlur('brand')} placeholder="e.g. Tata Motors" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.brand && errors.brand) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          {(touched.brand && errors.brand) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.brand}</span>}
           <datalist id="brand-list">{brandSuggestions.map(b => <option key={b} value={b} />)}</datalist>
         </div>
         <div className="flex flex-col gap-4">
-          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.model ? 'text-red-500' : 'text-zinc-600'}`}>Series / Model</label>
-          <input name="model" list="model-list" value={context.model} onChange={handleChange} placeholder="e.g. Nexon EV" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.model ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
-          {errors.model && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.model}</span>}
+          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.model && errors.model) ? 'text-red-500' : 'text-zinc-600'}`}>Series / Model</label>
+          <input name="model" list="model-list" value={context.model} onChange={handleChange} onBlur={() => handleBlur('model')} placeholder="e.g. Nexon EV" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.model && errors.model) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          {(touched.model && errors.model) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.model}</span>}
           <datalist id="model-list">{DATA_STORE.models_common.map(m => <option key={m} value={m} />)}</datalist>
         </div>
         <div className="flex flex-col gap-4">
-          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.year ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturing Year</label>
-          <input name="year" list="year-list" value={context.year} onChange={handleChange} placeholder="2024" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.year ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
-          {errors.year && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.year}</span>}
+          <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.year && errors.year) ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturing Year</label>
+          <input name="year" list="year-list" value={context.year} onChange={handleChange} onBlur={() => handleBlur('year')} placeholder="2024" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.year && errors.year) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          {(touched.year && errors.year) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.year}</span>}
           <datalist id="year-list">{DATA_STORE.years.map(y => <option key={y} value={y} />)}</datalist>
         </div>
       </div>
 
       <div className="mb-14">
-        <div className="flex items-center gap-5 mb-8">
-           <label className="text-[13px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-2 block">02. Propulsion Type</label>
+        <div className="flex items-center justify-between mb-8 pr-4">
+           <label className={`text-[13px] font-black uppercase tracking-[0.4em] ml-2 block ${(touched.fuelType && errors.fuelType) ? 'text-red-500' : 'text-zinc-600'}`}>02. Propulsion Type</label>
+           {(touched.fuelType && errors.fuelType) && <span className="text-[10px] text-red-500 font-black uppercase tracking-widest">{errors.fuelType}</span>}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
           {DATA_STORE.fuelOptions.map((fuel) => (
@@ -319,26 +349,27 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       {context.fuelType === 'Electric' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mb-14 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex flex-col gap-4">
-            <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.batteryCapacity ? 'text-red-500' : 'text-zinc-600'}`}>Battery Capacity (kWh)</label>
-            <input name="batteryCapacity" type="number" value={context.batteryCapacity || ''} onChange={handleChange} placeholder="40.5" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.batteryCapacity ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
-            {errors.batteryCapacity && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.batteryCapacity}</span>}
+            <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.batteryCapacity && errors.batteryCapacity) ? 'text-red-500' : 'text-zinc-600'}`}>Battery Capacity (kWh)</label>
+            <input name="batteryCapacity" type="number" value={context.batteryCapacity || ''} onChange={handleChange} onBlur={() => handleBlur('batteryCapacity')} placeholder="40.5" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.batteryCapacity && errors.batteryCapacity) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+            {(touched.batteryCapacity && errors.batteryCapacity) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.batteryCapacity}</span>}
           </div>
           <div className="flex flex-col gap-4">
-            <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.motorPower ? 'text-red-500' : 'text-zinc-600'}`}>Peak Power (kW)</label>
-            <input name="motorPower" type="number" value={context.motorPower || ''} onChange={handleChange} placeholder="110" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.motorPower ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
-            {errors.motorPower && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.motorPower}</span>}
+            <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${(touched.motorPower && errors.motorPower) ? 'text-red-500' : 'text-zinc-600'}`}>Peak Power (kW)</label>
+            <input name="motorPower" type="number" value={context.motorPower || ''} onChange={handleChange} onBlur={() => handleBlur('motorPower')} placeholder="110" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${(touched.motorPower && errors.motorPower) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+            {(touched.motorPower && errors.motorPower) && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.motorPower}</span>}
           </div>
         </div>
       )}
 
       {isEVOrHybrid && (
-        <div className="mb-14 p-8 bg-orange-500/5 border-2 border-orange-500/20 rounded-[32px] flex flex-col md:flex-row items-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0 border border-orange-500/30">
-             <svg className="w-8 h-8 text-orange-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        <div className={`mb-14 p-8 bg-orange-500/5 border-2 rounded-[32px] flex flex-col md:flex-row items-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 transition-colors ${ (touched.hvSafetyConfirmed && errors.hvSafetyConfirmed) ? 'border-red-500/40 bg-red-500/5' : 'border-orange-500/20'}`}>
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border transition-colors ${ (touched.hvSafetyConfirmed && errors.hvSafetyConfirmed) ? 'bg-red-500/10 border-red-500/30' : 'bg-orange-500/10 border-orange-500/30'}`}>
+             <svg className={`w-8 h-8 animate-pulse transition-colors ${ (touched.hvSafetyConfirmed && errors.hvSafetyConfirmed) ? 'text-red-500' : 'text-orange-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
           <div className="flex-1">
-            <h4 className="text-sm font-black text-white uppercase tracking-widest mb-1 italic">High Voltage (HV) Safety Affirmation</h4>
+            <h4 className={`text-sm font-black uppercase tracking-widest mb-1 italic transition-colors ${ (touched.hvSafetyConfirmed && errors.hvSafetyConfirmed) ? 'text-red-400' : 'text-white'}`}>High Voltage (HV) Safety Affirmation</h4>
             <p className="text-[11px] text-zinc-500 font-bold leading-relaxed uppercase tracking-tighter">Confirm compliance with G4G safety governance before technical diagnosis.</p>
+            {(touched.hvSafetyConfirmed && errors.hvSafetyConfirmed) && <span className="text-[10px] text-red-500 font-black uppercase mt-1 block tracking-tight">{errors.hvSafetyConfirmed}</span>}
           </div>
           <div className="flex items-center gap-4">
             <label className="relative inline-flex items-center cursor-pointer">
@@ -353,10 +384,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         <div className="relative pt-10">
            <button 
              onClick={handleLockIdentity} 
-             disabled={!isDataValid}
-             className={`w-full py-8 text-[16px] font-black uppercase tracking-[0.6em] rounded-[32px] transition-all flex items-center justify-center gap-8 group overflow-hidden ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-[#d97a1d] shadow-[0_30px_60px_-12px_rgba(241,138,34,0.6)]' : 'bg-zinc-900 text-zinc-700 cursor-not-allowed border border-zinc-800'}`}
+             className={`w-full py-8 text-[16px] font-black uppercase tracking-[0.6em] rounded-[32px] transition-all flex items-center justify-center gap-8 group overflow-hidden ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-[#d97a1d] shadow-[0_30px_60px_-12px_rgba(241,138,34,0.6)]' : 'bg-zinc-900 text-zinc-700 border border-zinc-800'}`}
            >
-            {isDataValid ? 'Finalize Digital Twin Dossier' : 'Correct Validation Errors'}
+            {isDataValid ? 'Finalize Digital Twin Dossier' : 'Correct Technical Errors'}
            </button>
         </div>
       )}
