@@ -1,9 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { OperatingMode } from '../types';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
   isLoading: boolean;
+  operatingMode: OperatingMode;
 }
 
 declare global {
@@ -13,11 +15,20 @@ declare global {
   }
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode }) => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  const getPlaceholder = () => {
+    if (isListening) return "Listening to symptoms...";
+    switch (operatingMode) {
+      case 1: return "Enter Vehicle Registration Number...";
+      case 2: return "Enter Fleet ID or Billing Month...";
+      default: return "Enter symptom, DTC or part name...";
+    }
+  };
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -104,7 +115,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isListening ? "Listening to symptoms..." : "Enter symptom, DTC or part name..."}
+            placeholder={getPlaceholder()}
             className={`w-full bg-[#0A0A0A] text-white border border-[#262626] rounded-xl py-4 pl-4 pr-48 focus:outline-none focus:border-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
               isListening ? 'ring-2 ring-[#f18a22]/40 border-[#f18a22]/60' : ''
             }`}
@@ -177,7 +188,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
         </form>
         <div className="mt-2 flex items-center justify-between">
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
-            Safety Recall, Component Analysis & DTC Engine Active
+            {operatingMode === 1 ? 'Workshop OS Locked • Awaiting Registration' : 'Safety Recall, Component Analysis & DTC Engine Active'}
           </p>
           {isListening && (
             <div className="flex items-center gap-1.5 animate-pulse">

@@ -33,7 +33,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "[[STATE:CHAT]] EKA-Ai Online. Connected to Go4Garage Ecosystem. Awaiting Mode Selection.",
+      content: "EKA-Ai Online. Connected to Go4Garage Ecosystem. Awaiting Mode Selection.",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -96,9 +96,11 @@ const App: React.FC = () => {
   };
 
   const handleSendMessage = async (text: string) => {
-    // Intercept initialization commands
-    if (text.toLowerCase() === 'start' || text.toLowerCase() === 'status') {
-      const initMessage: Message = {
+    const trimmedText = text.trim();
+    
+    // Command Interceptor: Start/Status
+    if (trimmedText.toLowerCase() === 'start' || trimmedText.toLowerCase() === 'status') {
+      const initResponse: Message = {
         id: Date.now().toString(),
         role: 'assistant',
         content: "EKA-Ai Online. Architecture Loaded. Awaiting Directive.",
@@ -106,11 +108,11 @@ const App: React.FC = () => {
         intelligenceMode,
         operatingMode
       };
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date() }, initMessage]);
+      setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, initResponse]);
       return;
     }
 
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date(), intelligenceMode, operatingMode };
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: trimmedText, timestamp: new Date(), intelligenceMode, operatingMode };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -148,17 +150,17 @@ const App: React.FC = () => {
 
     switch (mode) {
       case 0:
-        intakePrompt = "[[STATE:CHAT]] EKA-Ai Online. How can I assist with your EV or Service today?";
-        entryStatus = 'CREATED';
+        intakePrompt = "EKA-Ai Online. How can I assist with your EV or Service today?";
+        entryStatus = 'IGNITION_TRIAGE';
         brandId = 'G4G_IGNITION';
         break;
       case 1:
-        intakePrompt = "[[STATE:DASHBOARD]] Workshop Mode Active. Please enter the Vehicle Registration Number.";
+        intakePrompt = "Workshop Mode Active. Please enter the Vehicle Registration Number.";
         entryStatus = 'AUTH_INTAKE';
         brandId = 'G4G_WORKSHOP';
         break;
       case 2:
-        intakePrompt = "[[STATE:DASHBOARD]] Fleet Mode Active. Please provide the Fleet ID and Billing Month.";
+        intakePrompt = "Fleet Mode Active. Please provide the Fleet ID and Billing Month.";
         entryStatus = 'CONTRACT_VALIDATION';
         brandId = 'G4G_FLEET';
         break;
@@ -185,7 +187,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
-      {/* Background Glow Layer for Glassmorphism */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#f18a22]/5 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-green-500/5 blur-[100px] rounded-full pointer-events-none"></div>
 
@@ -205,7 +206,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.25em]">
-           Governance: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5">{operatingMode === 0 ? 'PUBLIC' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
+           Governor: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5">{operatingMode === 0 ? 'PUBLIC' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
         </div>
       </div>
 
@@ -278,7 +279,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
+      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} />
       <style>{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }

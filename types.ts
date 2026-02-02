@@ -6,12 +6,12 @@ export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 
 export type JobStatus = 
   | 'CREATED' 
   // Mode 0 Statuses
-  | 'RSA_TRIAGE'
-  | 'CHARGER_LOCATING'
-  | 'SYMPTOM_TRIAGE'
-  | 'HV_SAFETY_ACK'
-  // Mode 1 Statuses
+  | 'IGNITION_TRIAGE'
+  | 'RSA_ACTIVE'
+  | 'URGAA_QUERY'
+  // Mode 1 Statuses (Workshop)
   | 'AUTH_INTAKE'
+  | 'SYMPTOM_RECORDING'
   | 'DIAGNOSTICS_WISDOM'
   | 'INVENTORY_GATING'
   | 'ESTIMATE_GOVERNANCE'
@@ -19,11 +19,11 @@ export type JobStatus =
   | 'EXECUTION_QUALITY'
   | 'PDI_CHECKLIST'
   | 'CLOSED'
-  // Mode 2 Statuses
+  // Mode 2 Statuses (Fleet)
   | 'CONTRACT_VALIDATION'
   | 'UTILIZATION_TRACKING'
+  | 'SETTLEMENT_LOGIC'
   | 'SLA_BREACH_CHECK'
-  | 'SETTLEMENT_REPORTING'
   | 'MG_COMPLETE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
