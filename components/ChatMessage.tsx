@@ -19,23 +19,60 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const isAi = message.role === 'assistant';
 
-  const formatPriceRanges = (text: string) => {
+  const formatTechnicalTags = (text: string) => {
+    // Regex for Price Ranges
     const rangeRegex = /((\d+[\d,]*)\s*(?:-|to)\s*(\d+[\d,]*))/gi;
-    const parts = text.split(rangeRegex);
-    return parts.map((part, i) => {
-      if (part.match(/^(\d+[\d,]*)\s*(?:-|to)\s*(\d+[\d,]*)$/i)) {
-        return (
-          <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#f18a22]/10 border border-[#f18a22]/30 rounded text-[#f18a22] font-black text-[11px] shadow-[0_0_10px_rgba(241,138,34,0.1)] mx-0.5 group/range">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M13 11l-4-4m0 4l4-4" />
-            </svg>
-            {part}
-            <span className="text-[7px] opacity-60 uppercase tracking-tighter">(Est. Range)</span>
-          </span>
-        );
-      }
-      return part;
-    });
+    // Regex for HSN Codes
+    const hsnRegex = /(HSN:\s*\d+)/gi;
+    // Regex for GST Tags
+    const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
+
+    let parts = [text];
+
+    // Added React namespace to JSX.Element or used React.ReactNode to fix "Cannot find namespace JSX"
+    const applyRegex = (regex: RegExp, className: string, iconType: 'price' | 'hsn' | 'gst') => {
+      let nextParts: (string | React.ReactNode)[] = [];
+      parts.forEach(part => {
+        if (typeof part !== 'string') {
+          nextParts.push(part);
+          return;
+        }
+        const matches = part.split(regex);
+        matches.forEach((subPart, i) => {
+          if (subPart.match(regex)) {
+            nextParts.push(
+              <span key={`${iconType}-${i}`} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-black text-[10px] shadow-sm mx-0.5 group/tag ${className}`}>
+                {iconType === 'price' && (
+                  <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M13 11l-4-4m0 4l4-4" />
+                  </svg>
+                )}
+                {iconType === 'hsn' && (
+                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                   </svg>
+                )}
+                {iconType === 'gst' && (
+                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                   </svg>
+                )}
+                {subPart}
+              </span>
+            );
+          } else {
+            nextParts.push(subPart);
+          }
+        });
+      });
+      parts = nextParts;
+    };
+
+    applyRegex(rangeRegex, "bg-[#f18a22]/10 border border-[#f18a22]/30 text-[#f18a22]", 'price');
+    applyRegex(hsnRegex, "bg-blue-600/10 border border-blue-500/30 text-blue-400", 'hsn');
+    applyRegex(gstRegex, "bg-green-600/10 border border-green-500/30 text-green-400", 'gst');
+
+    return parts;
   };
 
   const renderContent = (content: string) => {
@@ -124,12 +161,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div key={i} className="ml-6 mb-3 flex items-start gap-4 group/subpoint">
             <span className="text-[#f18a22] font-black text-[12px] mt-1 shrink-0 opacity-70 group-hover/subpoint:opacity-100 transition-opacity">{trimmedLine.split('.')[0]}.</span>
             <span className="text-zinc-300 text-sm leading-relaxed tracking-wide">
-              {formatPriceRanges(subPointerMatch[1])}
+              {formatTechnicalTags(subPointerMatch[1])}
             </span>
           </div>
         );
       }
-      return <div key={i} className="mb-3 text-sm text-zinc-300 leading-relaxed font-medium pl-6">{formatPriceRanges(trimmedLine)}</div>;
+      return <div key={i} className="mb-3 text-sm text-zinc-300 leading-relaxed font-medium pl-6">{formatTechnicalTags(trimmedLine)}</div>;
     });
   };
 
@@ -160,7 +197,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {part_display_query && (
            <div className="group relative overflow-hidden rounded-3xl border border-blue-500/30 bg-[#0A0C14] flex flex-col md:flex-row items-stretch gap-0 transition-all hover:border-blue-500/60 shadow-[0_20px_50px_rgba(59,130,246,0.15)]">
              <div className="w-full md:w-56 h-56 bg-zinc-900 overflow-hidden shrink-0 relative">
-                <img src={`https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=600&q=${encodeURIComponent(part_display_query + ' automobile part')}`} alt={part_display_query} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-125" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=600'; }} />
+                <img src={`https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=600&q=${encodeURIComponent(part_display_query + ' automobile part')}`} alt={part_display_query} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-125" onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&get=80&w=600'; }} />
                 <div className="absolute top-3 left-3 px-3 py-1.5 bg-blue-600/90 backdrop-blur-md rounded-lg text-[9px] font-black text-white uppercase tracking-widest shadow-xl">Component Lock</div>
              </div>
              <div className="flex flex-col p-8 justify-center bg-gradient-to-br from-transparent to-blue-900/10">
