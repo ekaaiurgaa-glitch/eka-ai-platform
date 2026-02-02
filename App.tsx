@@ -4,7 +4,7 @@ import Header from './components/Header';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import VehicleContextPanel from './components/VehicleContextPanel';
-import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode } from './types';
+import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode } from './types';
 import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -17,21 +17,23 @@ const App: React.FC = () => {
   });
 
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
+  const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
+      content: "EKA-Ai SYSTEM INITIALIZED. GOVERNOR ACTIVE.",
       response_content: {
-        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. Current Mode: Low-Latency Fast Response.\n   c. Switch to 'Deep Intelligence' for complex reasoning.\n   d. I can also scan for official safety recalls and provide technical component specifications.",
-        audio_text: "EKA-Ai system initialized. Service advisor active. Please describe your vehicle's symptoms or input a Diagnostic Trouble Code to begin diagnostic guidance."
+        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. GOVERNOR ACTIVE.\n   a. Active Mode: 0 (Default Automobile Q&A).\n   b. I guide governed workshop and fleet workflows.\n   c. Switch modes to initialize 'Job Card' or 'MG Fleet' protocols.",
+        audio_text: "EKA-Ai system initialized. Governor active. I am ready for general automobile diagnostic guidance. Switch to Job Card mode for governed workshop workflows."
       },
       job_status_update: 'CREATED',
       ui_triggers: { theme_color: "#f18a22", show_orange_border: true },
-      visual_assets: { vehicle_display_query: "Modern Car Diagnostic Interface", part_display_query: null },
+      visual_assets: { vehicle_display_query: "Professional Service Advisor Interface", part_display_query: null },
       timestamp: new Date(),
-      isValidated: true
+      isValidated: true,
+      operatingMode: 0
     }
   ]);
   
@@ -50,28 +52,28 @@ const App: React.FC = () => {
     "Finalization: Safety Governance Audit"
   ];
 
+  const JOBCARD_PROTOCOL = [
+    "Verification: Mode 1 Paid Access",
+    "Initialization: Workshop Identity Auth",
+    "Governance: Problem Intake & Normalization",
+    "Reasoning: Diagnostic Mapping",
+    "Audit: Estimate Range Preparation"
+  ];
+
+  const MG_PROTOCOL = [
+    "Verification: Mode 2 Paid Access",
+    "Initialization: Fleet Identity Auth",
+    "Governance: Period Tracking Logic",
+    "Synthesis: Settlement Analysis",
+    "Finalization: Reporting Cycle Audit"
+  ];
+
   const THINKING_PROTOCOL = [
     "Verification: High-Reasoning Initialization",
     "Analysis: Network Intelligence Synapse",
     "Logic: Deep Diagnostic Branching",
     "Synthesis: Complex Pattern Integration",
     "Audit: Expert-Grade Solution Validation"
-  ];
-
-  const RECALL_PROTOCOL = [
-    "Verification: Safety Audit Initiation",
-    "Connection: Grounding Data Engine",
-    "Scan: NHTSA & Manufacturer Database",
-    "Analysis: Common Issue Pattern Logic",
-    "Verification: Audit-Grade Finalization"
-  ];
-
-  const COMPONENT_PROTOCOL = [
-    "Verification: Technical Spec Request",
-    "Indexing: Component Data Matrix",
-    "Analysis: Compatibility Check",
-    "Verification: System Integration Logic",
-    "Finalization: Expert Tech Audit"
   ];
 
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
@@ -120,41 +122,10 @@ const App: React.FC = () => {
     }
   };
 
-  const checkProtocolViolations = (content: string): { violated: boolean; reason?: string; remedy?: string } => {
-    const forbidden = [
-      { 
-        term: 'chatbot', 
-        reason: 'Identity Breach: AI identified as generic chatbot.', 
-        remedy: 'Restoring EKA-Ai agent identity. Please re-state your vehicle query focusing on technical symptoms.' 
-      },
-      { 
-        term: 'large language model', 
-        reason: 'Identity Breach: Technical self-reference detected.', 
-        remedy: 'System reset required. Ensure vehicle identification (Brand/Model/Year) is fully provided.' 
-      },
-      { 
-        term: 'assistant', 
-        reason: 'Identity Breach: Generic terminology used.', 
-        remedy: 'Switching back to Service Advisor mode. Please describe the mechanical symptom again.' 
-      }
-    ];
-
-    for (const item of forbidden) {
-      if (content.toLowerCase().includes(item.term)) {
-        return { violated: true, reason: item.reason, remedy: item.remedy };
-      }
-    }
-    return { violated: false };
-  };
-
   const handleSendMessage = async (text: string) => {
-    const lowerText = text.toLowerCase();
-    const isRecallScan = lowerText.includes('recall') || lowerText.includes('safety scan');
-    const isPartSearch = lowerText.includes('part') || lowerText.includes('component') || lowerText.includes('oem');
-
     if (intelligenceMode === 'THINKING') setActiveProtocol(THINKING_PROTOCOL);
-    else if (isRecallScan) setActiveProtocol(RECALL_PROTOCOL);
-    else if (isPartSearch) setActiveProtocol(COMPONENT_PROTOCOL);
+    else if (operatingMode === 1) setActiveProtocol(JOBCARD_PROTOCOL);
+    else if (operatingMode === 2) setActiveProtocol(MG_PROTOCOL);
     else setActiveProtocol(STANDARD_PROTOCOL);
 
     const userMessage: Message = {
@@ -162,7 +133,8 @@ const App: React.FC = () => {
       role: 'user',
       content: text,
       timestamp: new Date(),
-      intelligenceMode
+      intelligenceMode,
+      operatingMode
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -173,83 +145,57 @@ const App: React.FC = () => {
       parts: [{ text: m.content || m.response_content?.visual_text || '' }]
     }));
 
-    let attempts = 0;
-    let finalParsedResponse = null;
-    let validationError = false;
-
-    while (attempts < 2) {
-      const responseData = await geminiService.sendMessage(currentHistory, vehicleContext, status, intelligenceMode);
-      const violation = checkProtocolViolations(responseData.response_content.visual_text);
-      
-      if (!violation.violated) {
-        finalParsedResponse = responseData;
-        break;
-      } else {
-        attempts++;
-        validationError = true;
-        currentHistory.push({
-          role: 'user',
-          parts: [{ text: `[GOVERNANCE SIGNAL]: Protocol violation: "${violation.reason}". RE-ISSUE strictly.` }]
-        });
-        await new Promise(r => setTimeout(r, 800));
-      }
-    }
-
-    if (!finalParsedResponse) {
-      finalParsedResponse = {
-        response_content: {
-          visual_text: "1. AUDIT ALERT: GOVERNANCE BREACH\n   a. Breach Type: Protocol Violation\n   b. Remedy: Identity Reset.",
-          audio_text: "Response blocked due to protocol breach."
-        },
-        job_status_update: status,
-        ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Protocol Violation", part_display_query: null }
-      };
-      validationError = true;
-    }
+    const responseData = await geminiService.sendMessage(currentHistory, vehicleContext, status, intelligenceMode, operatingMode);
 
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content: finalParsedResponse.response_content.visual_text,
-      response_content: finalParsedResponse.response_content,
-      job_status_update: finalParsedResponse.job_status_update as JobStatus,
-      ui_triggers: finalParsedResponse.ui_triggers,
-      visual_assets: finalParsedResponse.visual_assets,
+      content: responseData.response_content.visual_text,
+      response_content: responseData.response_content,
+      job_status_update: responseData.job_status_update as JobStatus,
+      ui_triggers: responseData.ui_triggers,
+      visual_assets: responseData.visual_assets,
       timestamp: new Date(),
-      isValidated: !validationError,
-      validationError: validationError,
-      intelligenceMode
+      intelligenceMode,
+      operatingMode
     };
     
-    if (finalParsedResponse.job_status_update) setStatus(finalParsedResponse.job_status_update as JobStatus);
+    if (responseData.job_status_update) {
+      setStatus(responseData.job_status_update as JobStatus);
+      if (responseData.job_status_update === 'CLOSED' || responseData.job_status_update === 'MG_COMPLETE') {
+        setOperatingMode(0);
+      }
+    }
 
     setMessages(prev => [...prev, assistantMessage]);
     setIsLoading(false);
   };
 
-  const handleScanRecalls = () => {
-    handleSendMessage("Initiate audit-grade safety scan for official recalls and common patterns for this vehicle identity.");
+  const handleModeChange = (mode: OperatingMode) => {
+    setOperatingMode(mode);
+    setStatus(mode === 1 ? 'JOB_CARD_OPENING' : mode === 2 ? 'MG_CONTRACT_SETUP' : 'CREATED');
+    
+    const modeName = mode === 0 ? "Default Mode" : mode === 1 ? "Job Card Mode" : "MG Fleet Mode";
+    setMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      role: 'assistant',
+      content: `Operating Mode switched to ${modeName}. Protocols updated.`,
+      timestamp: new Date(),
+      operatingMode: mode
+    }]);
   };
 
   const getLoadingColor = () => {
     if (intelligenceMode === 'THINKING') return 'border-l-purple-600';
-    if (activeProtocol === RECALL_PROTOCOL) return 'border-l-red-600';
-    if (activeProtocol === COMPONENT_PROTOCOL) return 'border-l-blue-600';
+    if (operatingMode === 1) return 'border-l-blue-600';
+    if (operatingMode === 2) return 'border-l-emerald-600';
     return 'border-l-[#f18a22]';
-  };
-
-  const getLoadingLabel = () => {
-    if (intelligenceMode === 'THINKING') return 'EKA Deep Reasoning Engine';
-    if (activeProtocol === RECALL_PROTOCOL) return 'EKA Safety Audit Engine';
-    if (activeProtocol === COMPONENT_PROTOCOL) return 'EKA Component Intelligence Engine';
-    return 'EKA Governance Engine';
   };
 
   const getLoadingTextColor = () => {
     if (intelligenceMode === 'THINKING') return 'text-purple-500';
-    if (activeProtocol === RECALL_PROTOCOL) return 'text-red-500';
-    if (activeProtocol === COMPONENT_PROTOCOL) return 'text-blue-500';
+    if (operatingMode === 1) return 'text-blue-500';
+    if (operatingMode === 2) return 'text-emerald-500';
     return 'text-[#f18a22]';
   };
 
@@ -257,29 +203,47 @@ const App: React.FC = () => {
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden">
       <Header status={status} vehicle={vehicleContext} />
       
-      {/* Intelligence Mode Toggle */}
-      <div className="bg-[#0A0A0A] border-b border-white/5 px-6 py-2 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Engine Profile:</span>
+      {/* Engine & Operating Mode Toggles */}
+      <div className="bg-[#0A0A0A] border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
           <div className="flex bg-black border border-white/10 rounded-lg p-0.5">
             <button 
               onClick={() => setIntelligenceMode('FAST')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-300 ${intelligenceMode === 'FAST' ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              <span className="text-[9px] font-black uppercase tracking-tighter">Fast AI</span>
+              Fast AI
             </button>
             <button 
               onClick={() => setIntelligenceMode('THINKING')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all duration-300 ${intelligenceMode === 'THINKING' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-              <span className="text-[9px] font-black uppercase tracking-tighter">Thinking Mode</span>
+              Thinking
+            </button>
+          </div>
+          <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
+          <div className="flex bg-black border border-white/10 rounded-lg p-0.5">
+            <button 
+              onClick={() => handleModeChange(0)}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Mode 0
+            </button>
+            <button 
+              onClick={() => handleModeChange(1)}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-blue-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Mode 1 (Paid)
+            </button>
+            <button 
+              onClick={() => handleModeChange(2)}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-emerald-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              Mode 2 (Paid)
             </button>
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2 text-[9px] font-bold text-zinc-600 uppercase tracking-widest">
-           {intelligenceMode === 'FAST' ? 'Optimization: Low Latency' : 'Optimization: Logic Max'}
+        <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em]">
+           Governance Mode: <span className="text-white">{operatingMode === 0 ? 'DEFAULT' : operatingMode === 1 ? 'JOB CARD' : 'MG FLEET'}</span>
         </div>
       </div>
 
@@ -289,7 +253,6 @@ const App: React.FC = () => {
             <VehicleContextPanel 
               context={vehicleContext} 
               onUpdate={setVehicleContext} 
-              onScanRecalls={handleScanRecalls}
             />
           )}
           
@@ -311,7 +274,7 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full animate-ping ${getLoadingTextColor().replace('text-', 'bg-')}`}></div>
                       <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${getLoadingTextColor()}`}>
-                        {getLoadingLabel()}
+                        EKA Governance Engine
                       </span>
                     </div>
                   </div>
@@ -322,13 +285,7 @@ const App: React.FC = () => {
                         <div className={`w-1.5 h-1.5 rounded-full ${idx < loadingStep ? getLoadingTextColor().replace('text-', 'bg-') : idx === loadingStep ? 'bg-zinc-100 animate-pulse' : 'bg-zinc-800'}`}></div>
                         <span className={`text-[9px] font-bold uppercase tracking-tight ${idx === loadingStep ? 'text-zinc-100' : idx < loadingStep ? 'text-zinc-400' : 'text-zinc-700'}`}>
                           {step}
-                          {idx === loadingStep && (
-                            <span className="ml-2 inline-flex gap-0.5">
-                              <span className="animate-[bounce_1s_infinite_0ms]">.</span>
-                              <span className="animate-[bounce_1s_infinite_200ms]">.</span>
-                              <span className="animate-[bounce_1s_infinite_400ms]">.</span>
-                            </span>
-                          )}
+                          {idx === loadingStep && <span className="ml-2 animate-pulse">...</span>}
                         </span>
                       </div>
                     ))}

@@ -13,11 +13,11 @@ const DATA_STORE = {
   brands_2w: ["Hero MotoCorp", "Honda", "TVS", "Bajaj", "Royal Enfield", "Yamaha", "Suzuki", "KTM", "Ather", "Ola Electric", "Jawa", "Yezdi"],
   models_common: ["Swift", "Creta", "Nexon", "Scorpio", "City", "Innova", "Seltos", "Hector", "Polo", "Splendor", "Activa", "Pulsar", "Classic 350", "Jupiter", "FZs"],
   fuelOptions: [
-    { id: "Petrol", label: "Petrol", color: "text-orange-400", icon: "M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M13 11l-4-4m0 4l4-4" },
-    { id: "Diesel", label: "Diesel", color: "text-zinc-400", icon: "M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M9 11h4" },
-    { id: "Electric", label: "Electric", color: "text-blue-400", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
-    { id: "CNG", label: "CNG", color: "text-green-400", icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" },
-    { id: "Hybrid", label: "Hybrid", color: "text-emerald-400", icon: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" }
+    { id: "Petrol", label: "Petrol", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/30", icon: "M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M13 11l-4-4m0 4l4-4" },
+    { id: "Diesel", label: "Diesel", color: "text-zinc-400", bg: "bg-zinc-500/10", border: "border-zinc-500/30", icon: "M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M9 11h4" },
+    { id: "Electric", label: "Electric", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/30", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
+    { id: "CNG", label: "CNG", color: "text-green-400", bg: "bg-green-500/10", border: "border-green-500/30", icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" },
+    { id: "Hybrid", label: "Hybrid", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30", icon: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" }
   ],
   years: Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString()) 
 };
@@ -165,18 +165,28 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       </div>
 
       <div className="mb-10">
-        <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-1 mb-5 block">2. Fuel System Identity</label>
+        <div className="flex items-center gap-3 mb-5">
+           <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-1 block">2. Fuel System Identity</label>
+           {context.fuelType && (
+             <div className="flex items-center gap-2 px-2 py-1 bg-zinc-900 border border-[#262626] rounded-md animate-in fade-in slide-in-from-left-2 duration-300">
+               {getFuelIcon(context.fuelType, "w-3 h-3")}
+               <span className="text-[8px] font-black text-zinc-400 uppercase tracking-tighter">Active Protocol</span>
+             </div>
+           )}
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {DATA_STORE.fuelOptions.map((fuel) => (
             <button
               key={fuel.id}
               onClick={() => handleFuelSelect(fuel.id)}
-              className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 ${context.fuelType === fuel.id ? 'bg-[#f18a22]/10 border-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.1)]' : 'bg-black border-[#262626] hover:border-[#f18a22]/30'}`}
+              className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 ${context.fuelType === fuel.id ? `${fuel.bg} border-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.1)]` : 'bg-black border-[#262626] hover:border-[#f18a22]/30'}`}
             >
               <div className={`mb-3 transition-transform duration-300 ${context.fuelType === fuel.id ? 'scale-125' : 'scale-100'}`}>
                 {getFuelIcon(fuel.id, "w-8 h-8")}
               </div>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${context.fuelType === fuel.id ? 'text-white' : 'text-zinc-500'}`}>{fuel.label}</span>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[10px] font-black uppercase tracking-widest ${context.fuelType === fuel.id ? 'text-white' : 'text-zinc-500'}`}>{fuel.label}</span>
+              </div>
             </button>
           ))}
         </div>

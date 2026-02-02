@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { EKA_CONSTITUTION } from "../constants";
-import { VehicleContext, JobStatus, IntelligenceMode } from "../types";
+import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types";
 
 export class GeminiService {
   private fastModel: string = 'gemini-3-flash-preview';
@@ -12,22 +12,20 @@ export class GeminiService {
     history: { role: string; parts: { text: string }[] }[], 
     context?: VehicleContext, 
     currentStatus: JobStatus = 'CREATED',
-    mode: IntelligenceMode = 'FAST'
+    intelMode: IntelligenceMode = 'FAST',
+    opMode: OperatingMode = 0
   ) {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
-      // Identification detection (simplified to identification, not sourcing)
-      const isPartSearch = lastUserMessage.includes('part') || 
-                           lastUserMessage.includes('lookup') || 
-                           lastUserMessage.includes('oem') || 
-                           lastUserMessage.includes('component');
-
-      const contextPrompt = `
+      
+      const modeInstruction = `
 [CURRENT SYSTEM STATE]:
+Active Operating Mode: MODE ${opMode} (${opMode === 0 ? 'DEFAULT' : opMode === 1 ? 'JOB CARD WORKFLOW' : 'MG FLEET MODEL'})
+Intelligence Mode: ${intelMode}
 Current Status: ${currentStatus}
-[INTELLIGENCE MODE]: ${mode}
+
 ${context && context.brand ? `
 Locked Vehicle Context:
 Type: ${context.vehicleType}
@@ -36,14 +34,15 @@ Model: ${context.model}
 Year: ${context.year}
 Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
 
-[INTENT SIGNAL]: ${isPartSearch ? 'COMPONENT_ID_ENGAGED' : 'STANDARD_DIAGNOSTIC_PROTOCOL'}
-${isPartSearch ? 
-  'MISSION: Identify exact technical component specifications and compatibility. No supplier links required.' : 
-  'MISSION: Analyze vehicle symptoms and provide step-by-step diagnostic reasoning.'}`;
+[MODE PROTOCOL]:
+${opMode === 0 ? 'Protocol: MODE 0. General advice only. If user requests Job Card or Fleet features, refuse and direct to workflow mode.' : ''}
+${opMode === 1 ? 'Protocol: MODE 1. Follow the 8-step Job Card order strictly. Current status is ' + currentStatus : ''}
+${opMode === 2 ? 'Protocol: MODE 2. Follow MG Fleet Settlement logic. Current status is ' + currentStatus : ''}
+`;
 
       const config: any = {
-        systemInstruction: EKA_CONSTITUTION + contextPrompt,
-        temperature: mode === 'THINKING' ? 0.7 : 0.1,
+        systemInstruction: EKA_CONSTITUTION + modeInstruction,
+        temperature: intelMode === 'THINKING' ? 0.7 : 0.1,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
         responseSchema: {
@@ -83,12 +82,12 @@ ${isPartSearch ?
         }
       };
 
-      if (mode === 'THINKING') {
+      if (intelMode === 'THINKING') {
         config.thinkingConfig = { thinkingBudget: 32768 };
       }
 
       const response = await ai.models.generateContent({
-        model: mode === 'THINKING' ? this.thinkingModel : this.fastModel,
+        model: intelMode === 'THINKING' ? this.thinkingModel : this.fastModel,
         contents: history,
         config: config,
       });
@@ -96,9 +95,7 @@ ${isPartSearch ?
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
       
-      return {
-        ...result
-      };
+      return result;
     } catch (error) {
       console.error("EKA-Ai Engine Error:", error);
       return {

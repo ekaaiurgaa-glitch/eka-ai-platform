@@ -1,16 +1,24 @@
 
 export type MessageRole = 'user' | 'assistant';
 
+export type OperatingMode = 0 | 1 | 2; // 0: Default, 1: Job Card, 2: MG Fleet
+
 export type JobStatus = 
   | 'CREATED' 
+  | 'JOB_CARD_OPENING'
+  | 'PROBLEM_INTAKE'
+  | 'DIAGNOSTIC_REASONING'
+  | 'ESTIMATE_PREPARATION'
+  | 'CUSTOMER_APPROVAL_GATE'
+  | 'WORK_EXECUTION'
+  | 'INVOICING'
   | 'VEHICLE_CONTEXT_COLLECTED' 
-  | 'CONFIDENCE_CONFIRMED' 
-  | 'READY_FOR_PRICING' 
-  | 'IN_PROGRESS' 
-  | 'PDI_COMPLETED' 
-  | 'CUSTOMER_APPROVED' 
-  | 'INVOICED' 
-  | 'CLOSED';
+  | 'CLOSED'
+  | 'MG_CONTRACT_SETUP'
+  | 'MG_PERIOD_TRACKING'
+  | 'MG_SETTLEMENT'
+  | 'MG_REPORTING'
+  | 'MG_COMPLETE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
 
@@ -36,6 +44,7 @@ export interface Message {
   isValidated?: boolean;
   validationError?: boolean;
   intelligenceMode?: IntelligenceMode;
+  operatingMode?: OperatingMode;
 }
 
 export interface VehicleContext {
