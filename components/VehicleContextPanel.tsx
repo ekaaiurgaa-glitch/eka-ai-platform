@@ -36,7 +36,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const validateField = useCallback((name: string, value: any): string | undefined => {
     const currentYear = new Date().getFullYear();
@@ -116,11 +115,19 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
 
   if (isSyncing) {
     return (
-      <div className="mx-4 mb-8 p-12 bg-[#050505] border border-zinc-800 rounded-[20px] flex flex-col items-center justify-center gap-8 animate-pulse">
-        <div className="text-center">
-          <h4 className="text-[#f18a22] font-black text-xl uppercase tracking-[0.4em] mb-4">Syncing Digital Twin...</h4>
-          <div className="w-64 h-2 bg-zinc-900 rounded-full overflow-hidden">
-            <div className="h-full bg-[#f18a22] transition-all duration-300" style={{ width: `${syncProgress}%` }}></div>
+      <div className="mx-4 mb-8 p-12 bg-[#050505] border border-zinc-800 rounded-[20px] flex flex-col items-center justify-center gap-8 animate-in fade-in zoom-in duration-500">
+        <div className="text-center relative">
+          <div className="absolute -inset-10 bg-[#f18a22]/5 blur-3xl rounded-full"></div>
+          <h4 className="text-[#f18a22] font-black text-2xl uppercase tracking-[0.5em] mb-6 animate-pulse">Syncing Digital Twin</h4>
+          <div className="w-80 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+            <div 
+              className="h-full bg-gradient-to-r from-[#f18a22] to-orange-400 transition-all duration-300 shadow-[0_0_15px_rgba(241,138,34,0.5)]" 
+              style={{ width: `${syncProgress}%` }}
+            ></div>
+          </div>
+          <div className="mt-4 flex justify-between text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+            <span>Core Logic Gates</span>
+            <span>{syncProgress}% Complete</span>
           </div>
         </div>
       </div>
@@ -130,41 +137,63 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   if (!isEditing && isContextComplete(context)) {
     return (
       <div className="mx-4 mb-12 animate-in slide-in-from-top-4 duration-700">
-        <div className="bg-[#050505] border border-zinc-800 rounded-[20px] p-10 md:p-14 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-2 h-full bg-[#f18a22]"></div>
+        <div className="bg-[#050505] border border-zinc-800 rounded-[24px] p-10 md:p-14 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+          {/* Accent bar */}
+          <div className="absolute top-0 left-0 w-2.5 h-full bg-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.4)]"></div>
           
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-8 mb-10 border-b border-white/5 pb-8">
+          {/* Subtle Scanning Animation overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#f18a22]/5 to-transparent h-[40%] w-full -translate-y-full animate-scan-slow opacity-30 pointer-events-none"></div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-8 mb-12 border-b border-white/5 pb-10 relative z-10">
             <div className="flex items-center gap-6">
-              <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center">
-                 <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                 </svg>
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-green-500/10 border border-green-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.1)]">
+                   <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                   </svg>
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-[3px] border-black animate-ping"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-white font-black text-2xl tracking-tighter uppercase font-mono">Digital Twin Synchronized</span>
-                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em] font-mono">G4G Architecture Active</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-white font-black text-3xl tracking-tighter uppercase font-mono">Dossier Locked</span>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 border border-green-500/20 rounded text-[9px] font-black text-green-500 uppercase tracking-widest">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    Live Sync
+                  </div>
+                </div>
+                <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-[0.4em] font-mono mt-1">G4G Architectural Twin • Synchronized</span>
               </div>
             </div>
             <button 
               onClick={() => setIsEditing(true)} 
-              className="px-6 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-black uppercase tracking-widest rounded-lg hover:border-[#f18a22] hover:text-white transition-all"
+              className="px-8 py-3 bg-zinc-900/50 border border-zinc-800 text-zinc-500 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:border-[#f18a22] hover:text-white transition-all shadow-inner active:scale-95 group-hover:bg-zinc-900"
             >
-              Modify
+              Modify Architecture
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-end justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-end justify-between gap-10 relative z-10">
             <div className="flex flex-col">
-              <span className="text-zinc-700 text-3xl font-black font-mono mb-2">{context.year}</span>
-              <h2 className="text-5xl sm:text-7xl font-black text-white tracking-tighter uppercase leading-none">
-                {context.brand} <span className="text-[#f18a22]">{context.model}</span>
+              <span className="text-zinc-800 text-4xl font-black font-mono mb-2 tracking-widest">{context.year}</span>
+              <h2 className="text-6xl sm:text-8xl font-black text-white tracking-tighter uppercase leading-[0.85]">
+                {context.brand} <br />
+                <span className="text-[#f18a22] drop-shadow-[0_0_10px_rgba(241,138,34,0.3)]">{context.model}</span>
               </h2>
             </div>
-            <div className="flex items-center gap-4 px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-               {getFuelIcon(context.fuelType, "w-6 h-6")}
-               <span className="text-lg font-black text-white uppercase tracking-widest">{context.fuelType}</span>
+            <div className="flex flex-col items-end gap-3">
+              <div className="flex items-center gap-4 px-8 py-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl shadow-xl backdrop-blur-md">
+                 {getFuelIcon(context.fuelType, "w-8 h-8")}
+                 <span className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono">{context.fuelType}</span>
+              </div>
+              <div className="text-[9px] text-zinc-600 font-mono font-bold uppercase tracking-[0.3em] mr-2">
+                Unified Governance Protocol Active
+              </div>
             </div>
           </div>
+          
+          {/* Subtle grid pattern background */}
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         </div>
       </div>
     );
@@ -175,7 +204,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       
       {/* Structural Header */}
       <div className="flex items-start gap-6">
-        <div className="w-[6px] h-12 bg-[#f18a22] rounded-full shrink-0"></div>
+        <div className="w-[6px] h-12 bg-[#f18a22] rounded-full shrink-0 shadow-[0_0_15px_rgba(241,138,34,0.5)]"></div>
         <div className="flex flex-col">
           <h2 className="text-2xl font-black text-white uppercase tracking-[0.3em] font-mono leading-none mb-2">Architect Vehicle Dossier</h2>
           <span className="text-[11px] text-zinc-600 font-bold uppercase tracking-[0.25em] font-mono">EKA-Ai Central Governance Initialization</span>
@@ -271,10 +300,20 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
              disabled={!isDataValid}
              className={`w-full py-5 text-[15px] font-black uppercase tracking-[0.4em] rounded-xl transition-all font-mono ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-white shadow-xl active:scale-[0.98]' : 'bg-zinc-900 text-zinc-700'}`}
            >
-            {isDataValid ? 'Finalize Digital Twin Dossier' : 'Incomplete Architecture'}
+            {isDataValid ? 'Lock Identity & Sync Digital Twin' : 'Incomplete Architecture'}
            </button>
         </div>
       )}
+
+      <style>{`
+        @keyframes scan-slow {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(250%); }
+        }
+        .animate-scan-slow {
+          animation: scan-slow 5s linear infinite;
+        }
+      `}</style>
     </div>
   );
 };
