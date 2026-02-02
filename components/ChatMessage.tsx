@@ -19,19 +19,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const isAi = message.role === 'assistant';
 
-  const handleContextSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const updatedContext: VehicleContext = {
-      vehicleType: formData.get('vehicleType') as '2W' | '4W',
-      brand: formData.get('brand') as string,
-      model: formData.get('model') as string,
-      year: formData.get('year') as string,
-      fuelType: formData.get('fuelType') as string,
-    };
-    onUpdateContext?.(updatedContext);
-  };
-
   const formatPriceRanges = (text: string) => {
     const rangeRegex = /((\d+[\d,]*)\s*(?:-|to)\s*(\d+[\d,]*))/gi;
     const parts = text.split(rangeRegex);
@@ -61,12 +48,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       if (mainPointerMatch) {
         const title = mainPointerMatch[1];
         
-        // Dynamic styling for different output types
-        const isPartSourcing = title.toLowerCase().includes('part') || 
-                               title.toLowerCase().includes('source') || 
-                               title.toLowerCase().includes('oem') || 
-                               title.toLowerCase().includes('inventory') ||
-                               title.toLowerCase().includes('component');
+        const isComponentId = title.toLowerCase().includes('component') || 
+                              title.toLowerCase().includes('specification') || 
+                              title.toLowerCase().includes('technical');
 
         const isRecall = title.toLowerCase().includes('recall alert') || 
                          title.toLowerCase().includes('common reported issues');
@@ -90,7 +74,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           );
         }
 
-        if (isPartSourcing) {
+        if (isComponentId) {
           return (
             <div key={i} className="flex items-center gap-3 mt-8 mb-4 p-5 bg-blue-600/10 border-blue-500/40 border-2 rounded-2xl shadow-[0_0_25px_rgba(59,130,246,0.15)]">
               <div className="p-3 rounded-xl bg-blue-600 shadow-lg">
@@ -99,7 +83,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                 </svg>
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Inventory & Sourcing Spec</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Component Specification Profile</span>
                 <span className="text-white font-black text-base uppercase tracking-tight">{title}</span>
               </div>
             </div>
@@ -145,7 +129,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   };
 
   const displayContent = isAi ? (message.response_content?.visual_text || message.content) : message.content;
-  const showContextForm = isAi && message.id === 'welcome' && vehicleContext && !isContextComplete(vehicleContext);
   const showOrangeBorder = isAi && message.ui_triggers?.show_orange_border;
 
   const renderVisualAssets = () => {
@@ -183,7 +166,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                <h5 className="text-2xl font-black text-white uppercase tracking-tight leading-none mb-4">{part_display_query}</h5>
                <div className="flex flex-wrap gap-3">
                  <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">Spec Verified</span>
-                 <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">Sourcing: Global</span>
+                 <span className="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-xl text-[9px] font-black text-zinc-400 uppercase tracking-widest">Global Standards</span>
                </div>
              </div>
            </div>
@@ -241,31 +224,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         </div>
 
         {isAi && renderVisualAssets()}
-
-        {isAi && message.grounding_urls && message.grounding_urls.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-white/5">
-            <h5 className="text-[12px] font-black text-zinc-600 uppercase tracking-[0.4em] mb-6 flex items-center gap-4">
-              <span className="w-3 h-5 bg-zinc-800 rounded-sm"></span>
-              Verified Sourcing & Documentation
-            </h5>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {message.grounding_urls.map((url, idx) => {
-                const isPartVendor = url.title.toLowerCase().includes('part') || url.uri.toLowerCase().includes('oem') || url.uri.toLowerCase().includes('supplier') || url.uri.toLowerCase().includes('parts');
-                return (
-                  <a key={idx} href={url.uri} target="_blank" rel="noopener noreferrer" className={`text-[12px] px-6 py-5 bg-[#121212] border ${isPartVendor ? 'border-blue-500/30 hover:border-blue-500 hover:bg-blue-600/5' : 'border-[#262626] hover:border-[#f18a22] hover:bg-[#f18a22]/5'} text-zinc-300 rounded-2xl font-black transition-all flex items-center justify-between group shadow-xl`}>
-                    <div className="flex items-center gap-5">
-                      <div className={`p-2.5 rounded-xl ${isPartVendor ? 'bg-blue-600/20 text-blue-400' : 'bg-zinc-800 text-zinc-500'}`}>
-                        {isPartVendor ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
-                      </div>
-                      <span className="truncate max-w-[140px] md:max-w-[220px]">{url.title}</span>
-                    </div>
-                    <svg className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-all -translate-x-3 group-hover:translate-x-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

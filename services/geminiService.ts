@@ -18,12 +18,10 @@ export class GeminiService {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
-      // Refined Part Sourcing detection
+      // Identification detection (simplified to identification, not sourcing)
       const isPartSearch = lastUserMessage.includes('part') || 
-                           lastUserMessage.includes('source') || 
+                           lastUserMessage.includes('lookup') || 
                            lastUserMessage.includes('oem') || 
-                           lastUserMessage.includes('aftermarket') ||
-                           lastUserMessage.includes('inventory') ||
                            lastUserMessage.includes('component');
 
       const contextPrompt = `
@@ -38,9 +36,9 @@ Model: ${context.model}
 Year: ${context.year}
 Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
 
-[INTENT SIGNAL]: ${isPartSearch ? 'PART_SOURCING_ENGAGED' : 'STANDARD_DIAGNOSTIC_PROTOCOL'}
+[INTENT SIGNAL]: ${isPartSearch ? 'COMPONENT_ID_ENGAGED' : 'STANDARD_DIAGNOSTIC_PROTOCOL'}
 ${isPartSearch ? 
-  'MISSION: Research exact technical part numbers and compatible suppliers. Provide a technical spec sheet format.' : 
+  'MISSION: Identify exact technical component specifications and compatibility. No supplier links required.' : 
   'MISSION: Analyze vehicle symptoms and provide step-by-step diagnostic reasoning.'}`;
 
       const config: any = {
@@ -95,25 +93,11 @@ ${isPartSearch ?
         config: config,
       });
 
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      const groundingUrls: { title: string; uri: string }[] = [];
-      if (groundingChunks) {
-        groundingChunks.forEach((chunk: any) => {
-          if (chunk.web?.uri) {
-            groundingUrls.push({ 
-              title: chunk.web.title || 'Technical Sourcing Data', 
-              uri: chunk.web.uri 
-            });
-          }
-        });
-      }
-
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
       
       return {
-        ...result,
-        grounding_urls: groundingUrls
+        ...result
       };
     } catch (error) {
       console.error("EKA-Ai Engine Error:", error);
@@ -124,8 +108,7 @@ ${isPartSearch ?
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Engine Error", part_display_query: null },
-        grounding_urls: []
+        visual_assets: { vehicle_display_query: "Engine Error", part_display_query: null }
       };
     }
   }

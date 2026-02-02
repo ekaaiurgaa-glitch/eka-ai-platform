@@ -24,7 +24,7 @@ const App: React.FC = () => {
       role: 'assistant',
       content: "EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.",
       response_content: {
-        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. Current Mode: Low-Latency Fast Response.\n   c. Switch to 'Deep Intelligence' for complex reasoning.\n   d. I can also scan for official safety recalls and source OEM/Aftermarket parts.",
+        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. SERVICE ADVISOR ACTIVE.\n   a. I provide professional automotive diagnostics and service guidance.\n   b. Current Mode: Low-Latency Fast Response.\n   c. Switch to 'Deep Intelligence' for complex reasoning.\n   d. I can also scan for official safety recalls and provide technical component specifications.",
         audio_text: "EKA-Ai system initialized. Service advisor active. Please describe your vehicle's symptoms or input a Diagnostic Trouble Code to begin diagnostic guidance."
       },
       job_status_update: 'CREATED',
@@ -66,12 +66,12 @@ const App: React.FC = () => {
     "Verification: Audit-Grade Finalization"
   ];
 
-  const PART_PROTOCOL = [
-    "Verification: Part Sourcing Request",
-    "Indexing: OEM Component Database",
-    "Grounding: Global Inventory Scan",
-    "Verification: Compatibility & Price Logic",
-    "Finalization: Supplier Trust Audit"
+  const COMPONENT_PROTOCOL = [
+    "Verification: Technical Spec Request",
+    "Indexing: Component Data Matrix",
+    "Analysis: Compatibility Check",
+    "Verification: System Integration Logic",
+    "Finalization: Expert Tech Audit"
   ];
 
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
@@ -150,11 +150,11 @@ const App: React.FC = () => {
   const handleSendMessage = async (text: string) => {
     const lowerText = text.toLowerCase();
     const isRecallScan = lowerText.includes('recall') || lowerText.includes('safety scan');
-    const isPartSearch = lowerText.includes('part') || lowerText.includes('source') || lowerText.includes('oem') || lowerText.includes('aftermarket');
+    const isPartSearch = lowerText.includes('part') || lowerText.includes('component') || lowerText.includes('oem');
 
     if (intelligenceMode === 'THINKING') setActiveProtocol(THINKING_PROTOCOL);
     else if (isRecallScan) setActiveProtocol(RECALL_PROTOCOL);
-    else if (isPartSearch) setActiveProtocol(PART_PROTOCOL);
+    else if (isPartSearch) setActiveProtocol(COMPONENT_PROTOCOL);
     else setActiveProtocol(STANDARD_PROTOCOL);
 
     const userMessage: Message = {
@@ -203,8 +203,7 @@ const App: React.FC = () => {
         },
         job_status_update: status,
         ui_triggers: { theme_color: "#FF0000", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Protocol Violation", part_display_query: null },
-        grounding_urls: []
+        visual_assets: { vehicle_display_query: "Protocol Violation", part_display_query: null }
       };
       validationError = true;
     }
@@ -217,7 +216,6 @@ const App: React.FC = () => {
       job_status_update: finalParsedResponse.job_status_update as JobStatus,
       ui_triggers: finalParsedResponse.ui_triggers,
       visual_assets: finalParsedResponse.visual_assets,
-      grounding_urls: finalParsedResponse.grounding_urls,
       timestamp: new Date(),
       isValidated: !validationError,
       validationError: validationError,
@@ -237,21 +235,21 @@ const App: React.FC = () => {
   const getLoadingColor = () => {
     if (intelligenceMode === 'THINKING') return 'border-l-purple-600';
     if (activeProtocol === RECALL_PROTOCOL) return 'border-l-red-600';
-    if (activeProtocol === PART_PROTOCOL) return 'border-l-blue-600';
+    if (activeProtocol === COMPONENT_PROTOCOL) return 'border-l-blue-600';
     return 'border-l-[#f18a22]';
   };
 
   const getLoadingLabel = () => {
     if (intelligenceMode === 'THINKING') return 'EKA Deep Reasoning Engine';
     if (activeProtocol === RECALL_PROTOCOL) return 'EKA Safety Audit Engine';
-    if (activeProtocol === PART_PROTOCOL) return 'EKA Logistics & Sourcing Engine';
+    if (activeProtocol === COMPONENT_PROTOCOL) return 'EKA Component Intelligence Engine';
     return 'EKA Governance Engine';
   };
 
   const getLoadingTextColor = () => {
     if (intelligenceMode === 'THINKING') return 'text-purple-500';
     if (activeProtocol === RECALL_PROTOCOL) return 'text-red-500';
-    if (activeProtocol === PART_PROTOCOL) return 'text-blue-500';
+    if (activeProtocol === COMPONENT_PROTOCOL) return 'text-blue-500';
     return 'text-[#f18a22]';
   };
 

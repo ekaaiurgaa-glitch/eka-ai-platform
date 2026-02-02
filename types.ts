@@ -32,7 +32,6 @@ export interface Message {
     vehicle_display_query: string;
     part_display_query: string | null;
   };
-  grounding_urls?: { title: string; uri: string }[];
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;

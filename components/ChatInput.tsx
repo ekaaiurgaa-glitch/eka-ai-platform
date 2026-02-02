@@ -48,7 +48,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
   };
 
   const insertPartHelper = () => {
-    const partPrefix = "Identify and source this part: ";
+    const partPrefix = "Identify technical specifications for this component: ";
     if (!input.startsWith(partPrefix)) {
       setInput(partPrefix + input);
     }
@@ -127,9 +127,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
               onClick={insertPartHelper}
               disabled={isLoading}
               className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-blue-400 hover:border-blue-400 transition-all uppercase tracking-tighter"
-              title="Identify Part & Sourcing"
+              title="Identify Component Tech Specs"
             >
-              Part
+              Tech
             </button>
 
             <button
@@ -177,7 +177,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
         </form>
         <div className="mt-2 flex items-center justify-between">
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
-            Part Sourcing, Recall & DTC Analysis Engine Active
+            Safety Recall, Component Analysis & DTC Engine Active
           </p>
           {isListening && (
             <div className="flex items-center gap-1.5 animate-pulse">
