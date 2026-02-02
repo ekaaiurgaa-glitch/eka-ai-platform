@@ -171,6 +171,14 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
           {/* Subtle success pulse background */}
           <div className="absolute inset-0 bg-green-500/5 animate-pulse pointer-events-none"></div>
           
+          {/* Governance Lock Badge */}
+          <div className="absolute top-8 right-10 z-20 flex items-center gap-2">
+            <div className="px-4 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
+              <span className="text-[9px] font-black text-green-500 uppercase tracking-[0.3em]">Governance Locked</span>
+            </div>
+          </div>
+
           <div className="bg-[#050505] rounded-[31px] p-8 md:p-10 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10 overflow-hidden">
             
             {/* Holographic Watermark Badge */}
@@ -238,6 +246,12 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
               </button>
               <button onClick={() => setIsEditing(true)} className="w-full sm:w-auto px-10 py-5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-xs font-black uppercase tracking-widest rounded-2xl hover:border-[#f18a22] hover:text-white transition-all active:scale-95">Re-Architect Identity</button>
             </div>
+          </div>
+          
+          {/* Subtle Certified Footer */}
+          <div className="absolute bottom-4 right-10 flex items-center gap-3 opacity-30 select-none">
+             <span className="text-[8px] font-mono text-zinc-400 uppercase tracking-widest">Certified by EKA-Ai Central OS</span>
+             <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
           </div>
         </div>
       </div>
