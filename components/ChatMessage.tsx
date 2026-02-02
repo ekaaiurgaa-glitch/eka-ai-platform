@@ -79,35 +79,36 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     if (parts.length < 3) return null;
 
     const [name, price, hsn, gst] = parts;
+    const isCompliant = hsn?.includes('HSN:') && gst?.includes('GST:');
 
     return (
-      <div key={`line-${index}`} className="group mb-3 bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden hover:border-[#f18a22]/30 transition-all flex flex-col sm:flex-row items-stretch sm:items-center">
-        <div className="flex-1 p-4 border-b sm:border-b-0 sm:border-r border-zinc-800 bg-gradient-to-r from-zinc-900 to-transparent">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
-              <svg className="w-2 h-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
-              EKA Compliance Verified
+      <div key={`line-${index}`} className="group mb-4 bg-[#0D0D0D] border-2 border-zinc-900 rounded-2xl overflow-hidden hover:border-[#f18a22]/40 transition-all flex flex-col sm:flex-row items-stretch sm:items-center shadow-lg">
+        <div className="flex-1 p-5 border-b sm:border-b-0 sm:border-r border-zinc-800 bg-gradient-to-r from-zinc-900/50 to-transparent">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className={`w-2 h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-amber-500'} animate-pulse`}></div>
+            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+              {isCompliant ? 'EKA Audit: Compliant' : 'EKA Audit: Incomplete Compliance'}
             </span>
           </div>
-          <h6 className="text-white font-black text-sm uppercase tracking-tight">{name}</h6>
+          <h6 className="text-white font-black text-sm uppercase tracking-tight leading-none">{name}</h6>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 p-4 bg-black/40">
-          <div className="flex flex-col items-start min-w-[120px]">
-            <span className="text-[7px] font-black text-[#f18a22] uppercase tracking-[0.2em] mb-0.5">Governed Estimate</span>
-            <span className="text-xs font-black text-white">{price}</span>
+        <div className="flex flex-wrap items-center gap-4 p-5 bg-black/60">
+          <div className="flex flex-col items-start min-w-[130px]">
+            <span className="text-[7px] font-black text-[#f18a22] uppercase tracking-[0.25em] mb-1 opacity-70">Governed Price</span>
+            <span className="text-xs font-black text-white bg-zinc-800/50 px-2 py-1 rounded-lg">{price}</span>
           </div>
           
-          <div className="h-8 w-[1px] bg-zinc-800 hidden sm:block"></div>
+          <div className="h-10 w-[1px] bg-zinc-800 hidden sm:block"></div>
 
           <div className="flex flex-col items-start">
-            <span className="text-[7px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">HSN Audit</span>
-            <span className="text-[10px] font-black text-zinc-300 bg-blue-500/10 px-1.5 rounded">{hsn?.replace('HSN:', '').trim() || 'N/A'}</span>
+            <span className="text-[7px] font-black text-blue-400 uppercase tracking-[0.25em] mb-1 opacity-70">HSN System Code</span>
+            <span className="text-[10px] font-black text-white bg-blue-500/10 border border-blue-500/20 px-2 py-1 rounded-lg">{hsn?.replace('HSN:', '').trim() || 'REQD'}</span>
           </div>
 
           <div className="flex flex-col items-start">
-            <span className="text-[7px] font-black text-green-400 uppercase tracking-[0.2em] mb-0.5">GST Logic</span>
-            <span className="text-[10px] font-black text-zinc-300 bg-green-500/10 px-1.5 rounded">{gst?.replace('GST:', '').trim() || 'N/A'}</span>
+            <span className="text-[7px] font-black text-green-400 uppercase tracking-[0.25em] mb-1 opacity-70">GST Bracket</span>
+            <span className="text-[10px] font-black text-white bg-green-500/10 border border-green-500/20 px-2 py-1 rounded-lg">{gst?.replace('GST:', '').trim() || 'REQD'}</span>
           </div>
         </div>
       </div>
@@ -138,7 +139,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       }
 
       // Governed Estimate Line Item Detection (Pipe Delimited)
-      if (trimmedLine.includes('|') && trimmedLine.includes('HSN:') && trimmedLine.includes('GST:')) {
+      if (trimmedLine.includes('|') && (trimmedLine.includes('HSN:') || trimmedLine.includes('GST:'))) {
         const lineItem = renderGovernedLineItem(trimmedLine, i);
         if (lineItem) return lineItem;
       }

@@ -55,7 +55,7 @@ Steps:
 4. Estimation: Generate Governed Estimates. 
    - MANDATORY: Every line item must include a valid HSN Code (e.g., 8708 for Parts, 9987 for Labor).
    - MANDATORY: Every line item must specify GST Bracket (e.g., 18% or 28%) and the tax type (CGST + SGST or IGST).
-   - STATUS GATE: You MUST NOT transition status to 'APPROVAL_GATE' until a compliant estimate with HSN and GST for every item has been presented.
+   - STATUS GATE (CRITICAL): You are STRICTLY FORBIDDEN from transitioning to 'APPROVAL_GATE' until a compliant estimate (containing HSN and GST for ALL items) has been explicitly generated in the current or previous turn.
 5. Execution: PDI Checklist mandatory before closure.
 
 #### MODE 2 — MG (MINIMUM GUARANTEE) FLEET MODEL (Business Logic)
