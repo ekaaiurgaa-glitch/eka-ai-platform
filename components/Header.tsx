@@ -22,17 +22,23 @@ interface StatusConfig {
 }
 
 const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig => {
+  // Logic Mapping: CTX_VALIDATING equivalent
   if (isLoading) {
-    return { label: 'STATUS: VERIFYING...', dotClass: 'bg-yellow-500 animate-pulse' };
+    return { label: 'STATUS: VERIFYING...', dotClass: 'bg-yellow-400 animate-flicker' };
   }
 
   switch (status) {
+    // Logic Mapping: CTX_IGNITION
     case 'CREATED':
     case 'IGNITION_TRIAGE':
-      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-green-500' };
+      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
+
+    // Logic Mapping: CTX_WORKSHOP_INTAKE
     case 'AUTH_INTAKE':
     case 'CONTRACT_VALIDATION':
-      return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-orange-500 animate-pulse-orange' };
+      return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-[#FF9F1C] animate-pulse-orange' };
+
+    // Logic Mapping: CTX_WORKSHOP_ACTIVE
     case 'SYMPTOM_RECORDING':
     case 'DIAGNOSTICS_WISDOM':
     case 'INVENTORY_GATING':
@@ -43,12 +49,14 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig =>
     case 'UTILIZATION_TRACKING':
     case 'SETTLEMENT_LOGIC':
     case 'SLA_BREACH_CHECK':
-      return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-green-500' };
+      return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
+
     case 'CLOSED':
     case 'MG_COMPLETE':
       return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500' };
+
     default:
-      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-green-500' };
+      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676]' };
   }
 };
 
@@ -94,10 +102,10 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) =
           </div>
         )}
 
-        <div className={`flex items-center gap-3 bg-[#0A0A0A] border px-3 py-1.5 rounded-full transition-all duration-300 border-[#262626] shadow-sm`}>
-          <div className={`w-1.5 h-1.5 rounded-full ${config.dotClass}`}></div>
-          <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">
-            <span className="text-white">{config.label}</span>
+        <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-orange-500/30 rounded-full transition-all duration-300 shadow-sm group hover:border-white/20">
+          <div className={`w-2 h-2 rounded-full transition-all duration-300 ${config.dotClass}`}></div>
+          <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[1px] font-mono group-hover:text-white transition-colors">
+            {config.label}
           </span>
         </div>
       </div>
@@ -110,11 +118,19 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) =
       </div>
       <style>{`
         @keyframes pulse-orange {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 10px #f18a22; }
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 159, 28, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0); }
         }
         .animate-pulse-orange {
-          animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          animation: pulse-orange 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes flicker {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .animate-flicker {
+          animation: flicker 1s infinite linear;
         }
       `}</style>
     </header>
