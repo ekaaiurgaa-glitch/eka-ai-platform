@@ -18,32 +18,23 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-      const isEV = context?.fuelType === 'Electric' || context?.fuelType === 'Hybrid';
-
       const modeInstruction = `
-[GOVERNANCE SIGNAL]:
-Ecosystem Domain: MODE ${opMode} (${opMode === 0 ? 'IGNITION/URGAA' : opMode === 1 ? 'GST WORKSHOP' : 'FLEET MG'})
-Current State: ${currentStatus}
-Intel Mode: ${intelMode}
+[GOVERNANCE CONTEXT]:
+Mode: ${opMode}
+State: ${currentStatus}
+Vehicle: ${context && context.brand ? `${context.brand} ${context.model} (${context.fuelType})` : 'Pending'}
 
-[VEHICLE IDENTITY]:
-${context && context.brand ? `${context.vehicleType} | ${context.brand} | ${context.model} | ${context.fuelType}` : 'Identification Pending'}
-
-[CRITICAL PROTOCOLS]:
-${isEV ? '- MANDATORY: Preface all technical advice with the High Voltage (HV) PPE warning.' : ''}
-${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the format: "Item Name | Price Range | HSN: [Code] | GST: [Rate]% [Type]". 
-- COMPLIANCE GATING: You MUST NOT set job_status_update to 'APPROVAL_GATE' unless the visual_text provides a full, compliant estimate.
-- If HSN or GST data is missing, stay in 'ESTIMATE_GOVERNANCE' or 'INVENTORY_GATING' and ask for clarification or state lookup is in progress.` : ''}
-- MODE 0: If range anxiety mentioned, prioritize URGAA network search (Robin/Albatross).
-- MODE 1: Apply Dead Inventory and HSN compliance logic (Parts: 8708, Labor: 9987).
-- MODE 2: Apply SLA breach and utilization shortfall logic.
-- PART SEARCH: When identifying parts, use 'googleSearch' to find OEM/Aftermarket compatibility and technical specifications.
-- DATA TAGGING: Tag Energy/Outlook data as "Simulated".
+[STRICT DIRECTIVE]:
+1. NO meta-commentary like "Switching mode" or "[OS SIGNAL]".
+2. Be extremely concise. Action-only responses.
+3. If EV + Battery/Technical: Must include HV Warning.
+4. If Mode 1 + Estimate: Must include HSN/GST for every line item. Format: "Item | Range | HSN: [Code] | GST: [Rate]%".
+5. Use googleSearch for part sourcing if unknown.
 `;
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + modeInstruction,
-        temperature: intelMode === 'THINKING' ? 0.7 : 0.1,
+        temperature: 0.1,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
         responseSchema: {
@@ -57,10 +48,7 @@ ${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the form
               },
               required: ["visual_text", "audio_text"]
             },
-            job_status_update: { 
-              type: Type.STRING,
-              description: "Must be a valid JobStatus enum. In Mode 1, 'APPROVAL_GATE' is locked until HSN/GST compliance is generated."
-            },
+            job_status_update: { type: Type.STRING },
             ui_triggers: {
               type: Type.OBJECT,
               properties: {
@@ -84,7 +72,7 @@ ${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the form
       };
 
       if (intelMode === 'THINKING') {
-        config.thinkingConfig = { thinkingBudget: 32768 };
+        config.thinkingConfig = { thinkingBudget: 24576 };
       }
 
       const response = await ai.models.generateContent({
@@ -96,17 +84,11 @@ ${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the form
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
 
-      // Extract grounding metadata if available
       const groundingLinks: GroundingLink[] = [];
       const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (chunks) {
         chunks.forEach((chunk: any) => {
-          if (chunk.web) {
-            groundingLinks.push({
-              uri: chunk.web.uri,
-              title: chunk.web.title
-            });
-          }
+          if (chunk.web) groundingLinks.push({ uri: chunk.web.uri, title: chunk.web.title });
         });
       }
       
@@ -114,13 +96,10 @@ ${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the form
     } catch (error) {
       console.error("EKA Central OS Error:", error);
       return {
-        response_content: {
-          visual_text: "1. GOVERNANCE ALERT: SYSTEM TIMEOUT\n   a. Central OS stream interrupted.\n   b. Please re-verify identity context.",
-          audio_text: "System timeout. Please re-issue."
-        },
+        response_content: { visual_text: "System interrupted. Re-issue query.", audio_text: "Error." },
         job_status_update: currentStatus,
-        ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "System Timeout", part_display_query: null }
+        ui_triggers: { theme_color: "#FF0000", brand_identity: "ERROR", show_orange_border: true },
+        visual_assets: { vehicle_display_query: "Error", part_display_query: null }
       };
     }
   }
@@ -130,23 +109,16 @@ ${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the form
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `EKA OS Voice: ${text}` }] }],
+        contents: [{ parts: [{ text }] }],
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Kore' },
-            },
-          },
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
         },
       });
-
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (base64Audio) return this.decodeBase64(base64Audio);
       return null;
-    } catch (error) {
-      return null;
-    }
+    } catch (error) { return null; }
   }
 
   private decodeBase64(base64: string): Uint8Array {
@@ -158,12 +130,7 @@ ${opMode === 1 ? `- MANDATORY ESTIMATE RULE: All line items must follow the form
     return bytes;
   }
 
-  async decodeAudioData(
-    data: Uint8Array,
-    ctx: AudioContext,
-    sampleRate: number = 24000,
-    numChannels: number = 1
-  ): Promise<AudioBuffer> {
+  async decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number = 24000, numChannels: number = 1): Promise<AudioBuffer> {
     const dataInt16 = new Int16Array(data.buffer);
     const frameCount = dataInt16.length / numChannels;
     const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
