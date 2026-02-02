@@ -74,11 +74,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     const { name, value, type } = e.target as HTMLInputElement;
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     
-    // Update context
     const updatedContext = { ...context, [name]: val };
     onUpdate(updatedContext);
 
-    // Validate in real-time
     const error = validateField(name, val);
     setErrors(prev => ({ ...prev, [name]: error }));
   };
@@ -91,7 +89,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       motorPower: id === 'Electric' ? context.motorPower : '',
       hvSafetyConfirmed: (id === 'Electric' || id === 'Hybrid') ? context.hvSafetyConfirmed : false
     });
-    // Clear EV specific errors if fuel type changed from Electric
     if (id !== 'Electric') {
       setErrors(prev => ({ ...prev, batteryCapacity: undefined, motorPower: undefined }));
     }
@@ -155,23 +152,17 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
           <h4 className="text-[#f18a22] font-black text-base uppercase tracking-[0.4em] mb-2 animate-pulse">Syncing Digital Twin</h4>
           <p className="text-zinc-600 text-[9px] font-bold uppercase tracking-[0.3em]">Constructing G4G Unified Governance Dossier</p>
         </div>
-        <div className="w-full max-w-sm h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5">
-          <div className="h-full bg-gradient-to-r from-[#f18a22] to-orange-400 transition-all duration-100 shadow-[0_0_15px_#f18a22]" style={{ width: `${syncProgress}%` }}></div>
-        </div>
       </div>
     );
   }
 
-  // ENHANCED LOCKED STATE
   if (!isEditing && isContextComplete(context)) {
     return (
       <div className="mx-4 mb-8 animate-in slide-in-from-top-4 duration-1000">
         <div className="relative group overflow-hidden p-[1px] rounded-[32px] bg-gradient-to-br from-zinc-800 via-zinc-900 to-black hover:from-[#f18a22]/50 hover:via-[#f18a22]/20 hover:to-green-500/50 transition-all duration-1000 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
           
-          {/* Subtle success pulse background */}
           <div className="absolute inset-0 bg-green-500/5 animate-pulse pointer-events-none"></div>
           
-          {/* Governance Lock Badge */}
           <div className="absolute top-8 right-10 z-20 flex items-center gap-2">
             <div className="px-4 py-1.5 bg-green-500/10 border border-green-500/30 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
@@ -181,7 +172,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
 
           <div className="bg-[#050505] rounded-[31px] p-8 md:p-10 flex flex-col lg:flex-row items-center justify-between gap-10 relative z-10 overflow-hidden">
             
-            {/* Holographic Watermark Badge */}
             <div className="absolute -bottom-10 -left-10 opacity-[0.03] rotate-12 select-none pointer-events-none">
               <span className="text-[120px] font-black uppercase tracking-tighter leading-none">VERIFIED</span>
             </div>
@@ -198,7 +188,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/10 to-transparent h-full w-full animate-scan-y"></div>
                 </div>
                 
-                {/* Success Check Badge */}
                 <div className="absolute -bottom-1 -right-1 w-12 h-12 rounded-full border-[6px] border-black bg-green-500 flex items-center justify-center shadow-[0_10px_30px_rgba(34,197,94,0.4)] animate-bounce-subtle">
                   <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
                 </div>
@@ -208,10 +197,10 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-4">
                   <div className="px-4 py-1.5 bg-green-500/10 border border-green-500/40 text-green-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-full flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
-                    Digital Twin Active
+                    Vehicle Dossier Synchronized
                   </div>
                   <div className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center gap-2">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">ID:</span>
+                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">V-ID:</span>
                     <span className="text-[10px] font-mono font-bold text-white tracking-tighter">#G4G-{context.brand.slice(0,3).toUpperCase()}-{context.year.slice(-2)}</span>
                   </div>
                 </div>
@@ -223,12 +212,12 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                   <div className="flex items-center gap-2.5 px-5 py-3 bg-zinc-900/40 border border-white/5 rounded-2xl text-[11px] font-black text-zinc-300 uppercase tracking-[0.1em]">
                     {getFuelIcon(context.fuelType, "w-4 h-4")}
-                    <span>{context.fuelType} Propulsion</span>
+                    <span>{context.fuelType} Logic</span>
                   </div>
                   {context.fuelType === 'Electric' && (
                     <div className="flex items-center gap-2.5 px-5 py-3 bg-[#f18a22]/5 border border-[#f18a22]/10 rounded-2xl text-[11px] font-black text-[#f18a22] uppercase tracking-[0.1em]">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                      <span>{context.batteryCapacity} kWh • {context.motorPower} kW</span>
+                      <span>{context.batteryCapacity}kWh • {context.motorPower}kW</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2.5 px-5 py-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[11px] font-black text-blue-400 uppercase tracking-[0.1em]">
@@ -248,7 +237,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             </div>
           </div>
           
-          {/* Subtle Certified Footer */}
           <div className="absolute bottom-4 right-10 flex items-center gap-3 opacity-30 select-none">
              <span className="text-[8px] font-mono text-zinc-400 uppercase tracking-widest">Certified by EKA-Ai Central OS</span>
              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
@@ -289,13 +277,13 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-14">
         <div className="flex flex-col gap-4">
           <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.brand ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturer Brand</label>
-          <input name="brand" list="brand-list" value={context.brand} onChange={handleChange} placeholder="e.g. Maruti Suzuki" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.brand ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          <input name="brand" list="brand-list" value={context.brand} onChange={handleChange} placeholder="e.g. Tata Motors" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.brand ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
           {errors.brand && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.brand}</span>}
           <datalist id="brand-list">{brandSuggestions.map(b => <option key={b} value={b} />)}</datalist>
         </div>
         <div className="flex flex-col gap-4">
           <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.model ? 'text-red-500' : 'text-zinc-600'}`}>Series / Model</label>
-          <input name="model" list="model-list" value={context.model} onChange={handleChange} placeholder="e.g. Swift" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.model ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
+          <input name="model" list="model-list" value={context.model} onChange={handleChange} placeholder="e.g. Nexon EV" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.model ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
           {errors.model && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.model}</span>}
           <datalist id="model-list">{DATA_STORE.models_common.map(m => <option key={m} value={m} />)}</datalist>
         </div>
@@ -310,12 +298,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       <div className="mb-14">
         <div className="flex items-center gap-5 mb-8">
            <label className="text-[13px] font-black text-zinc-600 uppercase tracking-[0.4em] ml-2 block">02. Propulsion Type</label>
-           {context.fuelType && (
-             <div className="flex items-center gap-3 px-4 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full animate-in fade-in slide-in-from-left-4 duration-500">
-               {getFuelIcon(context.fuelType, "w-5 h-5")}
-               <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">{context.fuelType} Logic Engaged</span>
-             </div>
-           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-8">
           {DATA_STORE.fuelOptions.map((fuel) => (
@@ -333,126 +315,59 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         </div>
       </div>
 
-      {/* EV Technical Dossier Section */}
       {context.fuelType === 'Electric' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 mb-14 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex flex-col gap-4">
             <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.batteryCapacity ? 'text-red-500' : 'text-zinc-600'}`}>Battery Capacity (kWh)</label>
-            <input 
-              name="batteryCapacity" 
-              type="number" 
-              value={context.batteryCapacity || ''} 
-              onChange={handleChange} 
-              placeholder="e.g. 40.5" 
-              className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.batteryCapacity ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} 
-            />
+            <input name="batteryCapacity" type="number" value={context.batteryCapacity || ''} onChange={handleChange} placeholder="40.5" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.batteryCapacity ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
             {errors.batteryCapacity && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.batteryCapacity}</span>}
           </div>
           <div className="flex flex-col gap-4">
-            <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.motorPower ? 'text-red-500' : 'text-zinc-600'}`}>Motor peak Power (kW)</label>
-            <input 
-              name="motorPower" 
-              type="number" 
-              value={context.motorPower || ''} 
-              onChange={handleChange} 
-              placeholder="e.g. 110" 
-              className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.motorPower ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} 
-            />
+            <label className={`text-[12px] font-black uppercase tracking-widest ml-2 ${errors.motorPower ? 'text-red-500' : 'text-zinc-600'}`}>Peak Power (kW)</label>
+            <input name="motorPower" type="number" value={context.motorPower || ''} onChange={handleChange} placeholder="110" className={`bg-[#050505] border-2 rounded-[24px] px-8 py-6 text-base text-white focus:outline-none transition-all placeholder:text-zinc-800 font-bold ${errors.motorPower ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`} />
             {errors.motorPower && <span className="text-[10px] text-red-500 font-bold ml-4 uppercase tracking-tighter">{errors.motorPower}</span>}
           </div>
         </div>
       )}
 
-      {/* Safety Constitution Acknowledgment */}
       {isEVOrHybrid && (
         <div className="mb-14 p-8 bg-orange-500/5 border-2 border-orange-500/20 rounded-[32px] flex flex-col md:flex-row items-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="w-16 h-16 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0 border border-orange-500/30">
-             <svg className="w-8 h-8 text-orange-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-             </svg>
+             <svg className="w-8 h-8 text-orange-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
           <div className="flex-1">
             <h4 className="text-sm font-black text-white uppercase tracking-widest mb-1 italic">High Voltage (HV) Safety Affirmation</h4>
-            <p className="text-[11px] text-zinc-500 font-bold leading-relaxed uppercase tracking-tighter">
-              Diagnosis of EV propulsion systems requires strict adherence to PPE and LOTO protocols. Confirm compliance with G4G safety governance.
-            </p>
+            <p className="text-[11px] text-zinc-500 font-bold leading-relaxed uppercase tracking-tighter">Confirm compliance with G4G safety governance before technical diagnosis.</p>
           </div>
           <div className="flex items-center gap-4">
             <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                name="hvSafetyConfirmed" 
-                checked={!!context.hvSafetyConfirmed} 
-                onChange={handleChange} 
-                className="sr-only peer" 
-              />
+              <input type="checkbox" name="hvSafetyConfirmed" checked={!!context.hvSafetyConfirmed} onChange={handleChange} className="sr-only peer" />
               <div className="w-14 h-8 bg-zinc-900 border-2 border-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-zinc-600 after:border-zinc-400 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-orange-600 peer-checked:border-orange-500 peer-checked:after:bg-white"></div>
             </label>
-            <span className={`text-[10px] font-black uppercase tracking-widest ${context.hvSafetyConfirmed ? 'text-orange-500' : 'text-zinc-700'}`}>
-              {context.hvSafetyConfirmed ? 'Confirmed' : 'Pending'}
-            </span>
           </div>
         </div>
       )}
 
       {isContextComplete(context) && (
         <div className="relative pt-10">
-           <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-zinc-800 to-transparent"></div>
            <button 
              onClick={handleLockIdentity} 
              disabled={!isDataValid}
-             className={`w-full py-8 text-[16px] font-black uppercase tracking-[0.6em] rounded-[32px] transition-all shadow-[0_30px_60px_-12px_rgba(241,138,34,0.6)] flex items-center justify-center gap-8 group overflow-hidden ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-[#d97a1d] active:scale-[0.98]' : 'bg-zinc-900 text-zinc-700 cursor-not-allowed border border-zinc-800 shadow-none'}`}
+             className={`w-full py-8 text-[16px] font-black uppercase tracking-[0.6em] rounded-[32px] transition-all flex items-center justify-center gap-8 group overflow-hidden ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-[#d97a1d] shadow-[0_30px_60px_-12px_rgba(241,138,34,0.6)]' : 'bg-zinc-900 text-zinc-700 cursor-not-allowed border border-zinc-800'}`}
            >
-            <span className="relative z-10 flex items-center gap-8">
-              {isDataValid ? (
-                <svg className="w-8 h-8 group-hover:rotate-12 transition-transform duration-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              ) : (
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-              )}
-              {isDataValid ? 'Finalize Digital Twin Dossier' : 'Correct Validation Errors'}
-            </span>
-            {isDataValid && <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-24 bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:animate-shine"></div>}
-          </button>
+            {isDataValid ? 'Finalize Digital Twin Dossier' : 'Correct Validation Errors'}
+           </button>
         </div>
       )}
       <style>{`
-        @keyframes shine { 
-          0% { transform: translateX(-200%) skewX(-24deg); } 
-          100% { transform: translateX(300%) skewX(-24deg); } 
-        } 
-        .animate-shine {
-          animation: shine 1.5s infinite;
-        }
-        @keyframes scan-y { 
-          0% { transform: translateY(-100%); opacity: 0; } 
-          50% { opacity: 0.8; }
-          100% { transform: translateY(200%); opacity: 0; } 
-        }
-        .animate-scan-y {
-          animation: scan-y 3s linear infinite;
-        }
-        @keyframes scan-x { 
-          0% { transform: translateX(-100%); opacity: 0; } 
-          50% { opacity: 1; }
-          100% { transform: translateX(100%); opacity: 0; } 
-        }
-        .animate-scan-x {
-          animation: scan-x 2.5s ease-in-out infinite;
-        }
-        .animate-spin-slow {
-          animation: spin 6s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
-        }
-        .animate-bounce-subtle {
-          animation: bounce-subtle 2s infinite ease-in-out;
-        }
+        @keyframes scan-y { 0% { transform: translateY(-100%); opacity: 0; } 50% { opacity: 0.8; } 100% { transform: translateY(200%); opacity: 0; } }
+        .animate-scan-y { animation: scan-y 3s linear infinite; }
+        @keyframes scan-x { 0% { transform: translateX(-100%); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateX(100%); opacity: 0; } }
+        .animate-scan-x { animation: scan-x 2.5s ease-in-out infinite; }
+        .animate-spin-slow { animation: spin 6s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes bounce-subtle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .animate-bounce-subtle { animation: bounce-subtle 2s infinite ease-in-out; }
       `}</style>
     </div>
   );

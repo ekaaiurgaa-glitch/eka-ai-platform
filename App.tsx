@@ -80,6 +80,19 @@ const App: React.FC = () => {
     }
   }, [intelligenceMode, operatingMode]);
 
+  /**
+   * NAV_CONTEXT_MAP Logic
+   * Maps granular backend states to primary navigation categories.
+   */
+  const getActiveTab = (): OperatingMode => {
+    const workshopStates: JobStatus[] = ['AUTH_INTAKE', 'SYMPTOM_RECORDING', 'DIAGNOSTICS_WISDOM', 'INVENTORY_GATING', 'ESTIMATE_GOVERNANCE', 'APPROVAL_GATE', 'EXECUTION_QUALITY', 'PDI_CHECKLIST'];
+    const fleetStates: JobStatus[] = ['CONTRACT_VALIDATION', 'UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK', 'MG_COMPLETE'];
+
+    if (workshopStates.includes(status)) return 1;
+    if (fleetStates.includes(status)) return 2;
+    return operatingMode;
+  };
+
   const isValidRegistrationFormat = (input: string) => {
     const cleanInput = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const standardRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{0,3}[0-9]{4}$/;
@@ -109,7 +122,7 @@ const App: React.FC = () => {
     const trimmedText = text.trim();
     const lowerText = trimmedText.toLowerCase();
     
-    // Escape Clause
+    // Escape Clauses
     if (lowerText === 'exit' || lowerText === 'cancel' || lowerText === 'menu') {
       handleModeChange(0);
       return;
@@ -117,12 +130,11 @@ const App: React.FC = () => {
 
     // Command Interceptor: Start/Status
     if (lowerText === 'start' || lowerText === 'status') {
-      // Suppress if already in a specific state
-      if (status !== 'CREATED' && status !== 'IGNITION_TRIAGE') {
+      if (status !== 'CREATED' && status !== 'IGNITION_TRIAGE' && status !== 'CLOSED') {
         const warningMessage: Message = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: `State Locked: ${status}. Complete current protocol or type 'EXIT'.`,
+          content: `State Locked: ${status.replace(/_/g, ' ')}. Complete current protocol or type 'EXIT'.`,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, warningMessage]);
@@ -141,7 +153,7 @@ const App: React.FC = () => {
       return;
     }
 
-    // STATE MACHINE: Workshop Intake Lock
+    // WORKSHOP INTAKE LOCK
     if (status === 'AUTH_INTAKE') {
       const validation = isValidRegistrationFormat(trimmedText);
       if (!validation.valid) {
@@ -155,7 +167,6 @@ const App: React.FC = () => {
         setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, errorMessage]);
         return;
       }
-      // Valid Format - Proceed to next state in machine
       setStatus('SYMPTOM_RECORDING');
     }
 
@@ -188,6 +199,10 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
+  /**
+   * Refactored for SILENT MODE SWITCHING
+   * Adheres to EKA Constitution Section 1 (Silent Protocol)
+   */
   const handleModeChange = (mode: OperatingMode) => {
     setOperatingMode(mode);
     
@@ -197,17 +212,17 @@ const App: React.FC = () => {
 
     switch (mode) {
       case 0:
-        intakePrompt = "EKA-Ai Online. How can I assist with your EV or Service today?";
+        intakePrompt = "EKA-Ai Online. Awaiting ignition directive.";
         entryStatus = 'IGNITION_TRIAGE';
         brandId = 'G4G_IGNITION';
         break;
       case 1:
-        intakePrompt = "Workshop Mode Active. Please enter the Vehicle Registration Number.";
+        intakePrompt = "Enter Vehicle Registration Number.";
         entryStatus = 'AUTH_INTAKE';
         brandId = 'G4G_WORKSHOP';
         break;
       case 2:
-        intakePrompt = "Fleet Mode Active. Please provide the Fleet ID and Billing Month.";
+        intakePrompt = "Enter Fleet ID and Billing Month.";
         entryStatus = 'CONTRACT_VALIDATION';
         brandId = 'G4G_FLEET';
         break;
@@ -215,6 +230,7 @@ const App: React.FC = () => {
 
     setStatus(entryStatus);
     
+    // Immediate state update without meta-commentary narration
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
@@ -232,6 +248,8 @@ const App: React.FC = () => {
     scrollToBottom();
   };
 
+  const activeTab = getActiveTab();
+
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#f18a22]/5 blur-[120px] rounded-full pointer-events-none"></div>
@@ -247,13 +265,13 @@ const App: React.FC = () => {
           </div>
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
           <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
-            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
-            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
-            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
+            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
+            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
+            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
           </div>
         </div>
         <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.25em]">
-           Governor: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5">{operatingMode === 0 ? 'PUBLIC' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
+           Governor: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5">{activeTab === 0 ? 'PUBLIC' : activeTab === 1 ? 'WORKSHOP' : 'FLEET'}</span>
         </div>
       </div>
 
@@ -280,7 +298,7 @@ const App: React.FC = () => {
                         {intelligenceMode === 'THINKING' ? 'Deep Reasoning Protocol' : 'Operational Triage'}
                       </span>
                       <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
-                        {operatingMode === 1 ? 'Workshop Governance' : operatingMode === 2 ? 'Fleet Settlement' : 'Public Ignition'}
+                        {activeTab === 1 ? 'Workshop Governance' : activeTab === 2 ? 'Fleet Settlement' : 'Public Ignition'}
                       </span>
                     </div>
                     <div className="flex flex-col items-end">
@@ -326,7 +344,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} status={status} />
+      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={activeTab} status={status} />
       <style>{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
