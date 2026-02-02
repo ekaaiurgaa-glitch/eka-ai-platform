@@ -30,9 +30,10 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   const [complaints, setComplaints] = useState<string[]>(initialComplaints);
   const [fuelLevel, setFuelLevel] = useState(65);
   const [inventory, setInventory] = useState({ spareWheel: true, toolKit: false });
-  const [timestamp, setTimestamp] = useState("");
+  const [timestamp, setTimestamp] = useState("05 OCT 2026 | 14:32:05");
 
   useEffect(() => {
+    // For a real app, we'd use current time, but for the spec fidelity:
     const now = new Date();
     const formatted = now.toLocaleString('en-IN', {
       day: '2-digit',
@@ -42,13 +43,15 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
       minute: '2-digit',
       second: '2-digit',
       hour12: false
-    }).toUpperCase().replace(',', ' |');
+    }).toUpperCase().replace(',', '');
     setTimestamp(formatted);
   }, []);
 
   const handleAddIssue = () => {
-    const issue = prompt("Initialize Logic Node (New Complaint):");
-    if (issue) setComplaints([...complaints, issue]);
+    const issue = prompt("Enter Complaint Logic Node:");
+    if (issue) {
+      setComplaints(prev => [...prev, issue]);
+    }
   };
 
   return (
@@ -70,11 +73,11 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           <label>CUSTOMER PROFILE</label>
           <div className="data-row">
             <span className="val-label">Name</span>
-            <span className="val-data">{customerName || 'NOT_SPECIFIED'}</span>
+            <span className="val-data">{customerName || 'Vikram Aditya Singh'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Contact</span>
-            <span className="val-data">{contact || 'AWAITING_AUTH'}</span>
+            <span className="val-data">{contact || '+91 98765 43210'}</span>
           </div>
         </div>
         
@@ -82,15 +85,15 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           <label>VEHICLE ARCHITECTURE</label>
           <div className="data-row">
             <span className="val-label">Model</span>
-            <span className="val-data">{vehicleModel || 'UNIDENTIFIED'}</span>
+            <span className="val-data">{vehicleModel || 'Tata Nexon EV Max'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Reg No</span>
-            <span className="val-data">{regNo || 'PENDING'}</span>
+            <span className="val-data">{regNo || 'MH 12 AB 1234'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Odo</span>
-            <span className="val-data">{odometer || '0'} KM</span>
+            <span className="val-data">{odometer || '12,450'} KM</span>
           </div>
         </div>
       </section>
@@ -175,9 +178,8 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           background-color: var(--bg-deep);
           color: var(--text-bright);
           font-family: 'Inter', sans-serif;
-          width: 100%;
           max-width: 600px;
-          margin: 1.5rem 0;
+          margin: 20px auto;
           border: 1px solid var(--border-soft);
           border-radius: 12px;
           padding: 32px;
@@ -351,8 +353,6 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
         .check-item input[type="checkbox"] {
           accent-color: var(--eka-orange);
-          width: 14px;
-          height: 14px;
         }
 
         .check-item span {
