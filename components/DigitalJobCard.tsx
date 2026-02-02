@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface DigitalJobCardProps {
   jcId?: string;
@@ -21,25 +20,39 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   vehicleModel,
   regNo,
   odometer,
-  initialComplaints = [],
+  initialComplaints = [
+    "Suspension noise from front left quarter",
+    "Brake pedal feel soft / low pressure",
+    "Infotainment system lag on startup"
+  ],
   onComplete
 }) => {
   const [complaints, setComplaints] = useState<string[]>(initialComplaints);
   const [fuelLevel, setFuelLevel] = useState(65);
   const [inventory, setInventory] = useState({ spareWheel: true, toolKit: false });
-  const timestamp = new Date().toLocaleString('en-IN', { 
-    day: '2-digit', month: 'short', year: 'numeric', 
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    hour12: false 
-  }).toUpperCase();
+  const [timestamp, setTimestamp] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const formatted = now.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).toUpperCase().replace(',', ' |');
+    setTimestamp(formatted);
+  }, []);
 
   const handleAddIssue = () => {
-    const issue = prompt("Enter Technical Complaint / Symptom:");
+    const issue = prompt("Initialize Logic Node (New Complaint):");
     if (issue) setComplaints([...complaints, issue]);
   };
 
   return (
-    <div className="job-card-dossier animate-in fade-in zoom-in duration-700">
+    <div className="job-card-dossier animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* 1. HEADER SECTION */}
       <header className="dossier-header">
         <div className="header-left">
@@ -57,11 +70,11 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           <label>CUSTOMER PROFILE</label>
           <div className="data-row">
             <span className="val-label">Name</span>
-            <span className="val-data">{customerName || 'N/A'}</span>
+            <span className="val-data">{customerName || 'NOT_SPECIFIED'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Contact</span>
-            <span className="val-data">{contact || 'N/A'}</span>
+            <span className="val-data">{contact || 'AWAITING_AUTH'}</span>
           </div>
         </div>
         
@@ -69,11 +82,11 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           <label>VEHICLE ARCHITECTURE</label>
           <div className="data-row">
             <span className="val-label">Model</span>
-            <span className="val-data">{vehicleModel || 'N/A'}</span>
+            <span className="val-data">{vehicleModel || 'UNIDENTIFIED'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Reg No</span>
-            <span className="val-data">{regNo || 'N/A'}</span>
+            <span className="val-data">{regNo || 'PENDING'}</span>
           </div>
           <div className="data-row">
             <span className="val-label">Odo</span>
@@ -86,11 +99,9 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
       <section className="complaints-section">
         <label>VOICE OF CUSTOMER (VOC)</label>
         <ul className="complaint-list">
-          {complaints.length > 0 ? (
-            complaints.map((c, i) => <li key={i}>{c}</li>)
-          ) : (
-            <li className="opacity-50 italic">Awaiting technical symptoms...</li>
-          )}
+          {complaints.map((c, i) => (
+            <li key={i}>{c}</li>
+          ))}
         </ul>
         <button className="btn-add-issue" onClick={handleAddIssue}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -105,10 +116,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
         <label>INTAKE INVENTORY CHECK</label>
         <div className="inventory-controls">
           <div className="fuel-gauge">
-            <span className="val-label flex justify-between">
-              Propulsion Energy 
-              <span className="text-[#FF9F1C]">{fuelLevel}%</span>
-            </span>
+            <span className="val-label">Propulsion Energy</span>
             <input 
               type="range" 
               min="0" 
@@ -117,28 +125,25 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
               onChange={(e) => setFuelLevel(parseInt(e.target.value))}
               className="eka-slider" 
             />
+            <span className="gauge-value">{fuelLevel}%</span>
           </div>
           
           <div className="check-grid">
-            <label className="check-item group">
+            <label className="check-item">
               <input 
                 type="checkbox" 
                 checked={inventory.spareWheel} 
                 onChange={() => setInventory(i => ({...i, spareWheel: !i.spareWheel}))}
-                className="hidden peer"
               />
-              <div className="w-4 h-4 border border-[#222] rounded peer-checked:bg-[#FF9F1C] peer-checked:border-[#FF9F1C] transition-all"></div>
-              <span className="group-hover:text-white transition-colors">Spare Wheel</span>
+              <span>Spare Wheel</span>
             </label>
-            <label className="check-item group">
+            <label className="check-item">
               <input 
                 type="checkbox" 
                 checked={inventory.toolKit} 
                 onChange={() => setInventory(i => ({...i, toolKit: !i.toolKit}))}
-                className="hidden peer"
               />
-              <div className="w-4 h-4 border border-[#222] rounded peer-checked:bg-[#FF9F1C] peer-checked:border-[#FF9F1C] transition-all"></div>
-              <span className="group-hover:text-white transition-colors">Tool Kit</span>
+              <span>Tool Kit</span>
             </label>
           </div>
         </div>
@@ -160,36 +165,45 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
       <style>{`
         .job-card-dossier {
-          background-color: #050505;
-          color: #FFFFFF;
+          --eka-orange: #FF9F1C;
+          --bg-deep: #050505;
+          --bg-card: #0A0A0A;
+          --border-soft: #222222;
+          --text-dim: #666666;
+          --text-bright: #FFFFFF;
+
+          background-color: var(--bg-deep);
+          color: var(--text-bright);
           font-family: 'Inter', sans-serif;
-          max-width: 100%;
-          border: 1px solid #222222;
+          width: 100%;
+          max-width: 600px;
+          margin: 1.5rem 0;
+          border: 1px solid var(--border-soft);
           border-radius: 12px;
           padding: 32px;
           display: flex;
           flex-direction: column;
           gap: 28px;
           box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
-          margin-top: 1rem;
         }
 
         .job-card-dossier label {
           display: block;
           font-family: 'Roboto Mono', monospace;
           font-size: 0.65rem;
-          color: #666666;
+          color: var(--text-dim);
           letter-spacing: 2.5px;
           text-transform: uppercase;
           margin-bottom: 12px;
           font-weight: 700;
         }
 
+        /* --- HEADER --- */
         .dossier-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          border-bottom: 1px solid #222222;
+          border-bottom: 1px solid var(--border-soft);
           padding-bottom: 20px;
         }
 
@@ -214,9 +228,10 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
         .timestamp {
           font-family: 'Roboto Mono', monospace;
           font-size: 0.7rem;
-          color: #666666;
+          color: var(--text-dim);
         }
 
+        /* --- ARCHITECT GRID --- */
         .architect-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -232,7 +247,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
         .val-label {
           font-size: 0.75rem;
-          color: #666666;
+          color: var(--text-dim);
         }
 
         .val-data {
@@ -241,6 +256,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           font-family: 'Roboto Mono', monospace;
         }
 
+        /* --- VOC SECTION --- */
         .complaint-list {
           list-style: none;
           padding: 0;
@@ -251,15 +267,15 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           font-size: 0.85rem;
           padding: 10px 12px;
           background: #0D0D0D;
-          border-left: 2px solid #FF9F1C;
+          border-left: 2px solid var(--eka-orange);
           margin-bottom: 8px;
           border-radius: 0 4px 4px 0;
         }
 
         .btn-add-issue {
           background: transparent;
-          border: 1px dashed #222222;
-          color: #666666;
+          border: 1px dashed var(--border-soft);
+          color: var(--text-dim);
           width: 100%;
           padding: 12px;
           border-radius: 8px;
@@ -275,10 +291,11 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
         }
 
         .btn-add-issue:hover {
-          border-color: #FF9F1C;
-          color: #FF9F1C;
+          border-color: var(--eka-orange);
+          color: var(--eka-orange);
         }
 
+        /* --- INVENTORY --- */
         .inventory-controls {
           background: #080808;
           padding: 20px;
@@ -287,6 +304,17 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
         .fuel-gauge {
           margin-bottom: 20px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .gauge-value {
+          align-self: flex-end;
+          font-family: 'Roboto Mono', monospace;
+          font-size: 0.8rem;
+          color: var(--eka-orange);
+          font-weight: 700;
+          margin-top: -10px;
         }
 
         .eka-slider {
@@ -303,10 +331,10 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           -webkit-appearance: none;
           width: 12px;
           height: 12px;
-          background: #FF9F1C;
+          background: var(--eka-orange);
           border-radius: 50%;
           cursor: pointer;
-          box-shadow: 0 0 10px #FF9F1C;
+          box-shadow: 0 0 10px var(--eka-orange);
         }
 
         .check-grid {
@@ -319,19 +347,34 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           align-items: center;
           gap: 8px;
           cursor: pointer;
+        }
+
+        .check-item input[type="checkbox"] {
+          accent-color: var(--eka-orange);
+          width: 14px;
+          height: 14px;
+        }
+
+        .check-item span {
           font-size: 0.75rem;
-          color: #666666;
+          letter-spacing: 0;
+          color: var(--text-dim);
+        }
+
+        /* --- FOOTER --- */
+        .signature-box {
+          margin-bottom: 32px;
         }
 
         .sig-line {
           height: 1px;
-          background: #222222;
+          background: var(--border-soft);
           width: 200px;
           margin-top: 24px;
         }
 
         .btn-primary {
-          background-color: #FF9F1C;
+          background-color: var(--eka-orange);
           color: #000;
           border: none;
           width: 100%;
