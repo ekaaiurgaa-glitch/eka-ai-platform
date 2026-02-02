@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { VehicleContext, isContextComplete } from '../types';
+import { VehicleContext, isContextComplete, OperatingMode, JobStatus } from '../types';
 
 interface VehicleContextPanelProps {
   context: VehicleContext;
   onUpdate: (updated: VehicleContext) => void;
   onScanRecalls?: () => void;
+  operatingMode?: OperatingMode;
+  status?: JobStatus;
 }
 
 interface ValidationErrors {
@@ -12,6 +15,7 @@ interface ValidationErrors {
   model?: string;
   year?: string;
   fuelType?: string;
+  registrationNumber?: string;
   batteryCapacity?: string;
   motorPower?: string;
   hvSafetyConfirmed?: string;
@@ -31,11 +35,18 @@ const DATA_STORE = {
   years: Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString()) 
 };
 
-const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUpdate, onScanRecalls }) => {
+const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ 
+  context, 
+  onUpdate, 
+  onScanRecalls, 
+  operatingMode, 
+  status 
+}) => {
   const [isEditing, setIsEditing] = useState(!isContextComplete(context));
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const validateField = useCallback((name: string, value: any): string | undefined => {
     const currentYear = new Date().getFullYear();
@@ -54,13 +65,24 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
       case 'fuelType':
         if (!value) return "Required";
         break;
+      case 'registrationNumber':
+        if (operatingMode === 1 && status === 'AUTH_INTAKE') {
+          if (!value) return "Required";
+          const cleanInput = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          const standardRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{0,3}[0-9]{4}$/;
+          const bhSeriesRegex = /^[0-9]{2}BH[0-9]{4}[A-Z]{1,2}$/;
+          if (!standardRegex.test(cleanInput) && !bhSeriesRegex.test(cleanInput)) {
+            return "Invalid Plate Format";
+          }
+        }
+        break;
     }
     return undefined;
-  }, []);
+  }, [operatingMode, status]);
 
   useEffect(() => {
     const newErrors: ValidationErrors = {};
-    const fields = ['brand', 'model', 'year', 'fuelType'];
+    const fields = ['brand', 'model', 'year', 'fuelType', 'registrationNumber'];
     fields.forEach(f => {
       const err = validateField(f, (context as any)[f]);
       if (err) (newErrors as any)[f] = err;
@@ -68,10 +90,15 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     setErrors(newErrors);
   }, [context, validateField]);
 
+  const handleBlur = (name: string) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     onUpdate({ ...context, [name]: val });
+    if (!touched[name]) setTouched(prev => ({ ...prev, [name]: true }));
   };
 
   const handleFuelSelect = (id: string) => {
@@ -113,6 +140,8 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     );
   };
 
+  const showRegistrationField = operatingMode === 1 && status === 'AUTH_INTAKE';
+
   if (isSyncing) {
     return (
       <div className="mx-4 mb-8 p-12 bg-[#050505] border border-zinc-800 rounded-[20px] flex flex-col items-center justify-center gap-8 animate-in fade-in zoom-in duration-500">
@@ -138,10 +167,8 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
     return (
       <div className="mx-4 mb-12 animate-in slide-in-from-top-4 duration-700">
         <div className="bg-[#050505] border border-zinc-800 rounded-[24px] p-10 md:p-14 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] relative overflow-hidden group">
-          {/* Accent bar */}
           <div className="absolute top-0 left-0 w-2.5 h-full bg-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.4)]"></div>
           
-          {/* Subtle Scanning Animation overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#f18a22]/5 to-transparent h-[40%] w-full -translate-y-full animate-scan-slow opacity-30 pointer-events-none"></div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-8 mb-12 border-b border-white/5 pb-10 relative z-10">
@@ -175,7 +202,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
 
           <div className="flex flex-col sm:flex-row items-end justify-between gap-10 relative z-10">
             <div className="flex flex-col">
-              <span className="text-zinc-800 text-4xl font-black font-mono mb-2 tracking-widest">{context.year}</span>
+              <span className="text-zinc-800 text-4xl font-black font-mono mb-2 tracking-widest">
+                {context.year} {context.registrationNumber ? `• ${context.registrationNumber.toUpperCase()}` : ''}
+              </span>
               <h2 className="text-6xl sm:text-8xl font-black text-white tracking-tighter uppercase leading-[0.85]">
                 {context.brand} <br />
                 <span className="text-[#f18a22] drop-shadow-[0_0_10px_rgba(241,138,34,0.3)]">{context.model}</span>
@@ -192,7 +221,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
             </div>
           </div>
           
-          {/* Subtle grid pattern background */}
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         </div>
       </div>
@@ -200,9 +228,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
   }
 
   return (
-    <div className="mx-4 mb-8 bg-[#050505] border border-zinc-800 rounded-[20px] p-10 flex flex-col gap-10 shadow-3xl">
+    <div className="mx-4 mb-8 bg-[#050505] border border-zinc-800 rounded-[20px] p-10 flex flex-col gap-10 shadow-3xl relative">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#f18a22]/5 blur-[180px] rounded-full pointer-events-none"></div>
       
-      {/* Structural Header */}
       <div className="flex items-start gap-6">
         <div className="w-[6px] h-12 bg-[#f18a22] rounded-full shrink-0 shadow-[0_0_15px_rgba(241,138,34,0.5)]"></div>
         <div className="flex flex-col">
@@ -211,7 +239,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         </div>
       </div>
 
-      {/* Architectural Class (50/50 Split) */}
       <div className="form-section">
         <div className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4 font-mono">01. Architectural Class</div>
         <div className="grid grid-cols-2 gap-6">
@@ -236,47 +263,63 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ context, onUp
         </div>
       </div>
 
-      {/* Details Inputs (The Fix: 2fr 2fr 1fr Grid) */}
       <div className="form-section">
-        <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-6 items-end">
+        <div className={`grid grid-cols-1 ${showRegistrationField ? 'sm:grid-cols-[1fr_1fr_1fr_1fr]' : 'sm:grid-cols-[2fr_2fr_1fr]'} gap-6 items-end`}>
+          {showRegistrationField && (
+            <div className="flex flex-col gap-2">
+              <label className={`text-[10px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.registrationNumber && errors.registrationNumber) ? 'text-red-500' : 'text-zinc-600'}`}>Registration Number</label>
+              <input 
+                name="registrationNumber" 
+                value={context.registrationNumber || ''} 
+                onChange={handleChange} 
+                onBlur={() => handleBlur('registrationNumber')}
+                placeholder="MH-12-AB-1234" 
+                className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold uppercase ${(touched.registrationNumber && errors.registrationNumber) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
+              />
+              {(touched.registrationNumber && errors.registrationNumber) && <span className="text-[8px] text-red-500 font-bold uppercase tracking-tighter mt-1">{errors.registrationNumber}</span>}
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono ml-1">Manufacturer Brand</label>
+            <label className={`text-[10px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.brand && errors.brand) ? 'text-red-500' : 'text-zinc-600'}`}>Manufacturer Brand</label>
             <input 
               name="brand" 
               list="brand-list" 
               value={context.brand} 
               onChange={handleChange} 
+              onBlur={() => handleBlur('brand')}
               placeholder="e.g. Tata Motors" 
-              className="bg-[#0A0A0A] border border-zinc-900 rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all w-full box-border font-bold"
+              className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.brand && errors.brand) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
             />
             <datalist id="brand-list">{context.vehicleType === '2W' ? DATA_STORE.brands_2w.map(b => <option key={b} value={b}/>) : DATA_STORE.brands_4w.map(b => <option key={b} value={b}/>)}</datalist>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono ml-1">Series / Model</label>
+            <label className={`text-[10px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.model && errors.model) ? 'text-red-500' : 'text-zinc-600'}`}>Series / Model</label>
             <input 
               name="model" 
               value={context.model} 
               onChange={handleChange} 
+              onBlur={() => handleBlur('model')}
               placeholder="e.g. Nexon EV" 
-              className="bg-[#0A0A0A] border border-zinc-900 rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all w-full box-border font-bold"
+              className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.model && errors.model) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono ml-1">Year</label>
+            <label className={`text-[10px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.year && errors.year) ? 'text-red-500' : 'text-zinc-600'}`}>Year</label>
             <input 
               name="year" 
               value={context.year} 
               onChange={handleChange} 
+              onBlur={() => handleBlur('year')}
               placeholder="2024" 
-              className="bg-[#0A0A0A] border border-zinc-900 rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none focus:border-[#f18a22] transition-all w-full box-border font-bold"
+              className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.year && errors.year) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
             />
           </div>
         </div>
       </div>
 
-      {/* Propulsion Type */}
       <div className="form-section">
         <div className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4 font-mono">02. Propulsion Type</div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">

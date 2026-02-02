@@ -14,6 +14,7 @@ const App: React.FC = () => {
     model: '',
     year: '',
     fuelType: '',
+    registrationNumber: '',
     batteryCapacity: '',
     motorPower: '',
     hvSafetyConfirmed: false
@@ -155,6 +156,8 @@ const App: React.FC = () => {
         return;
       }
       promptOverride = `[SYSTEM_NOTE: VALID_FORMAT] User input: ${trimmedText}`;
+      // Sync to context
+      setVehicleContext(prev => ({ ...prev, registrationNumber: validation.formatted }));
     }
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: trimmedText, timestamp: new Date(), intelligenceMode, operatingMode };
@@ -271,7 +274,12 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto pt-8 pb-4 z-0" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          <VehicleContextPanel context={vehicleContext} onUpdate={setVehicleContext} />
+          <VehicleContextPanel 
+            context={vehicleContext} 
+            onUpdate={setVehicleContext} 
+            operatingMode={activeTab}
+            status={status}
+          />
           <div className="px-4">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} onPlayAudio={handlePlayAudio} isAudioPlaying={isAudioPlaying} vehicleContext={vehicleContext} onUpdateContext={setVehicleContext} />

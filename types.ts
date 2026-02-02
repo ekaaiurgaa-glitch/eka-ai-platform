@@ -65,6 +65,7 @@ export interface VehicleContext {
   model: string;
   year: string;
   fuelType: string;
+  registrationNumber?: string;
   batteryCapacity?: string;
   motorPower?: string;
   hvSafetyConfirmed?: boolean;
