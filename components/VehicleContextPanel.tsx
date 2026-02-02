@@ -65,6 +65,15 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
       case 'fuelType':
         if (!value) return "Required";
         break;
+      case 'batteryCapacity':
+        if (context.fuelType === 'Electric' && !value) return "Required";
+        break;
+      case 'motorPower':
+        if (context.fuelType === 'Electric' && !value) return "Required";
+        break;
+      case 'hvSafetyConfirmed':
+        if ((context.fuelType === 'Electric' || context.fuelType === 'Hybrid') && !value) return "Required";
+        break;
       case 'registrationNumber':
         if (operatingMode === 1 && status === 'AUTH_INTAKE') {
           if (!value) return "Required";
@@ -78,11 +87,11 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         break;
     }
     return undefined;
-  }, [operatingMode, status]);
+  }, [operatingMode, status, context.fuelType]);
 
   useEffect(() => {
     const newErrors: ValidationErrors = {};
-    const fields = ['brand', 'model', 'year', 'fuelType', 'registrationNumber'];
+    const fields = ['brand', 'model', 'year', 'fuelType', 'registrationNumber', 'batteryCapacity', 'motorPower', 'hvSafetyConfirmed'];
     fields.forEach(f => {
       const err = validateField(f, (context as any)[f]);
       if (err) (newErrors as any)[f] = err;
@@ -102,7 +111,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   };
 
   const handleFuelSelect = (id: string) => {
-    onUpdate({ ...context, fuelType: id });
+    onUpdate({ ...context, fuelType: id, batteryCapacity: '', motorPower: '', hvSafetyConfirmed: false });
   };
 
   const handleTypeSelect = (type: '2W' | '4W') => {
@@ -141,6 +150,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   };
 
   const showRegistrationField = operatingMode === 1 && status === 'AUTH_INTAKE';
+  const isEV = context.fuelType === 'Electric';
+  const isHybrid = context.fuelType === 'Hybrid';
+  const isHVSystem = isEV || isHybrid;
 
   if (isSyncing) {
     return (
@@ -215,6 +227,16 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
                  {getFuelIcon(context.fuelType, "w-8 h-8")}
                  <span className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono">{context.fuelType}</span>
               </div>
+              {isEV && (
+                <div className="flex gap-4">
+                  <div className="text-[10px] bg-blue-500/10 border border-blue-500/30 px-3 py-1 rounded font-mono text-blue-400">
+                    {context.batteryCapacity} kWh
+                  </div>
+                  <div className="text-[10px] bg-blue-500/10 border border-blue-500/30 px-3 py-1 rounded font-mono text-blue-400">
+                    {context.motorPower} kW
+                  </div>
+                </div>
+              )}
               <div className="text-[9px] text-zinc-600 font-mono font-bold uppercase tracking-[0.3em] mr-2">
                 Unified Governance Protocol Active
               </div>
@@ -335,6 +357,74 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
           ))}
         </div>
       </div>
+
+      {isEV && (
+        <div className="form-section animate-in slide-in-from-top-2 duration-300">
+          <div className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-4 font-mono">03. Electric Propulsion Parameters</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+              <label className={`text-[10px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.batteryCapacity && errors.batteryCapacity) ? 'text-red-500' : 'text-zinc-600'}`}>Battery Capacity (kWh)</label>
+              <input 
+                name="batteryCapacity" 
+                value={context.batteryCapacity || ''} 
+                onChange={handleChange} 
+                onBlur={() => handleBlur('batteryCapacity')}
+                placeholder="e.g. 40.5" 
+                className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.batteryCapacity && errors.batteryCapacity) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-blue-500'}`}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className={`text-[10px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.motorPower && errors.motorPower) ? 'text-red-500' : 'text-zinc-600'}`}>Motor Power (kW)</label>
+              <input 
+                name="motorPower" 
+                value={context.motorPower || ''} 
+                onChange={handleChange} 
+                onBlur={() => handleBlur('motorPower')}
+                placeholder="e.g. 105" 
+                className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.motorPower && errors.motorPower) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-blue-500'}`}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isHVSystem && (
+        <div className="form-section animate-in slide-in-from-top-2 duration-300">
+          <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-xl flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+               <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+               </svg>
+               <span className="text-[10px] font-black text-red-500 uppercase tracking-widest font-mono">High Voltage Safety Protocol</span>
+            </div>
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="pt-0.5">
+                <input 
+                  type="checkbox" 
+                  name="hvSafetyConfirmed"
+                  checked={context.hvSafetyConfirmed || false}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('hvSafetyConfirmed')}
+                  className="hidden peer"
+                />
+                <div className="w-5 h-5 border-2 rounded border-red-500/30 peer-checked:bg-red-500 peer-checked:border-red-500 transition-all flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-black opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-[11px] font-bold leading-tight transition-colors ${context.hvSafetyConfirmed ? 'text-zinc-200' : 'text-zinc-500 group-hover:text-zinc-400'}`}>
+                  I confirm that HV system safety protocols have been verified and proper disconnect procedures are understood before initial diagnostic handshake.
+                </span>
+                {(touched.hvSafetyConfirmed && errors.hvSafetyConfirmed) && (
+                  <span className="text-[8px] text-red-500 font-black uppercase tracking-tighter mt-1 animate-pulse">Safety confirmation required to proceed</span>
+                )}
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
 
       {isContextComplete(context) && (
         <div className="pt-6 border-t border-white/5">
