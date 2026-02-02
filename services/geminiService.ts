@@ -4,7 +4,7 @@ import { EKA_CONSTITUTION } from "../constants";
 import { VehicleContext, JobStatus, IntelligenceMode } from "../types";
 
 export class GeminiService {
-  private fastModel: string = 'gemini-2.5-flash-lite-latest';
+  private fastModel: string = 'gemini-3-flash-preview';
   private thinkingModel: string = 'gemini-3-pro-preview';
   private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
@@ -18,7 +18,13 @@ export class GeminiService {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
-      const isPartSearch = lastUserMessage.includes('part') || lastUserMessage.includes('source') || lastUserMessage.includes('oem');
+      // Refined Part Sourcing detection
+      const isPartSearch = lastUserMessage.includes('part') || 
+                           lastUserMessage.includes('source') || 
+                           lastUserMessage.includes('oem') || 
+                           lastUserMessage.includes('aftermarket') ||
+                           lastUserMessage.includes('inventory') ||
+                           lastUserMessage.includes('component');
 
       const contextPrompt = `
 [CURRENT SYSTEM STATE]:
@@ -32,12 +38,14 @@ Model: ${context.model}
 Year: ${context.year}
 Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
 
-[INTENT SIGNAL]: ${isPartSearch ? 'IDENTIFY_AND_SOURCE_PARTS_MODE' : 'DIAGNOSTIC_MODE'}
-${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, compatibility, and vendor links using the grounding tool.' : 'Analyze symptoms and provide diagnostic reasoning.'}`;
+[INTENT SIGNAL]: ${isPartSearch ? 'PART_SOURCING_ENGAGED' : 'STANDARD_DIAGNOSTIC_PROTOCOL'}
+${isPartSearch ? 
+  'MISSION: Research exact technical part numbers and compatible suppliers. Provide a technical spec sheet format.' : 
+  'MISSION: Analyze vehicle symptoms and provide step-by-step diagnostic reasoning.'}`;
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + contextPrompt,
-        temperature: mode === 'THINKING' ? 1.0 : 0.1,
+        temperature: mode === 'THINKING' ? 0.7 : 0.1,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
         responseSchema: {
@@ -100,7 +108,9 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
         });
       }
 
-      const result = JSON.parse(response.text || '{}');
+      const rawText = response.text || '{}';
+      const result = JSON.parse(rawText);
+      
       return {
         ...result,
         grounding_urls: groundingUrls
@@ -109,12 +119,12 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
       console.error("EKA-Ai Engine Error:", error);
       return {
         response_content: {
-          visual_text: "1. SYSTEM ERROR: DIAGNOSTIC TIMEOUT\n   a. The EKA-Ai engine encountered an interruption.\n   b. Please re-issue the command.",
-          audio_text: "System error. Diagnostic engine timed out."
+          visual_text: "1. SYSTEM ALERT: ENGINE TIMEOUT\n   a. The EKA diagnostic stream encountered an interruption.\n   b. Protocol reset required. Please re-issue your command.",
+          audio_text: "Engine timeout. Please re-issue the command."
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Vehicle Error", part_display_query: null },
+        visual_assets: { vehicle_display_query: "Engine Error", part_display_query: null },
         grounding_urls: []
       };
     }
@@ -125,7 +135,7 @@ ${isPartSearch ? 'Search specifically for OEM and aftermarket part numbers, comp
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `Speak professionally: ${text}` }] }],
+        contents: [{ parts: [{ text: `Professional Advisor Voice: ${text}` }] }],
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
