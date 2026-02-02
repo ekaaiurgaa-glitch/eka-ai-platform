@@ -103,7 +103,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             odometer="12,450"
             onComplete={(data) => {
               console.log("Job Card Initialized:", data);
-              // Handle completion logic if needed
             }}
           />
         )}
@@ -135,11 +134,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div className={`flex flex-col mb-8 ${isAi ? 'items-start' : 'items-end'} w-full`}>
-      <div className={`relative w-full transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.6)] flex flex-col ${
-        isAi 
-          ? 'bg-[#050505] border border-[#222222] border-l-4 border-l-[#FF9F1C] rounded-[4px_12px_12px_4px] px-[20px] py-[16px]' 
-          : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl px-5 py-4 max-w-[80%]'
-      } ${!isAi && message.ui_triggers?.show_orange_border ? 'border-r-4 border-r-[#f18a22]' : ''}`}>
+      <div className={`message-card transition-all duration-300 ${isAi ? 'ai-message' : 'user-message'} ${!isAi && message.ui_triggers?.show_orange_border ? 'border-r-4 border-r-[#f18a22]' : ''}`}>
         
         <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
            <div className="flex items-center gap-2">
@@ -161,7 +156,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            )}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 overflow-x-auto">
           {renderContent()}
         </div>
 
@@ -177,6 +172,38 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            )}
         </div>
       </div>
+
+      <style>{`
+        .message-card {
+          position: relative;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+
+        .ai-message {
+          background-color: #050505;
+          border: 1px solid #222222;
+          border-left: 4px solid #FF9F1C;
+          border-radius: 4px 12px 12px 4px;
+          padding: 24px 32px;
+        }
+
+        .user-message {
+          background-color: rgba(241, 138, 34, 0.1);
+          border: 1px solid rgba(241, 138, 34, 0.3);
+          border-radius: 16px 4px 16px 16px;
+          padding: 20px 24px;
+          max-width: 80%;
+          align-self: flex-end;
+        }
+
+        /* Perfect alignment for the orange bar content */
+        .ai-message > .flex-1 {
+          margin-left: 4px;
+        }
+      `}</style>
     </div>
   );
 };
