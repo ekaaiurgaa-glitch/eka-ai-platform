@@ -129,42 +129,50 @@ const App: React.FC = () => {
   };
 
   const handleModeChange = (mode: OperatingMode) => {
-    // SILENT MODE SWITCHING
+    // SILENT MODE SWITCHING: Atomic update of state and protocol-specific intake query.
     setOperatingMode(mode);
     
-    let initialResponse = "";
-    let newStatus: JobStatus = 'CREATED';
+    let intakePrompt = "";
+    let entryStatus: JobStatus = 'CREATED';
+    let brandId = 'G4G_IGNITION';
 
     switch (mode) {
       case 0:
-        initialResponse = "[[STATE:CHAT]] EKA-Ai Online. How can I assist with your EV or Service today?";
-        newStatus = 'CREATED';
+        intakePrompt = "[[STATE:CHAT]] EKA-Ai Online. How can I assist with your EV or Service today?";
+        entryStatus = 'CREATED';
+        brandId = 'G4G_IGNITION';
         break;
       case 1:
-        initialResponse = "[[STATE:DASHBOARD]] Vehicle Registration Number:";
-        newStatus = 'AUTH_INTAKE';
+        intakePrompt = "[[STATE:DASHBOARD]] Vehicle Registration Number:";
+        entryStatus = 'AUTH_INTAKE';
+        brandId = 'G4G_WORKSHOP';
         break;
       case 2:
-        initialResponse = "[[STATE:DASHBOARD]] Fleet ID:";
-        newStatus = 'CONTRACT_VALIDATION';
+        intakePrompt = "[[STATE:DASHBOARD]] Fleet ID:";
+        entryStatus = 'CONTRACT_VALIDATION';
+        brandId = 'G4G_FLEET';
         break;
     }
 
-    setStatus(newStatus);
+    setStatus(entryStatus);
     
+    // Immediate injection of the protocol entry prompt.
     setMessages(prev => [...prev, {
-      id: `mode-switch-${Date.now()}`,
+      id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
-      content: initialResponse,
+      content: intakePrompt,
       timestamp: new Date(),
       operatingMode: mode,
-      job_status_update: newStatus,
+      job_status_update: entryStatus,
       ui_triggers: {
         theme_color: '#f18a22',
-        brand_identity: mode === 0 ? 'G4G_IGNITION' : mode === 1 ? 'G4G_WORKSHOP' : 'G4G_FLEET',
+        brand_identity: brandId,
         show_orange_border: true
       }
     }]);
+
+    // Ensure scrolling reflects the new prompt instantly.
+    scrollToBottom();
   };
 
   return (
