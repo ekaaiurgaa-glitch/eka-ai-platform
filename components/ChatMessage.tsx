@@ -125,7 +125,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     <div className={`flex flex-col mb-8 ${isAi ? 'items-start' : 'items-end'}`}>
       <div className={`relative max-w-[80%] transition-all duration-300 shadow-[0_4px_12px_rgba(0,0,0,0.5)] px-6 py-4 flex flex-col ${
         isAi 
-          ? 'bg-[#111111] border border-[#333333] border-l-4 border-l-[#f18a22] rounded-[4px_12px_12px_4px]' 
+          ? 'bg-[#111111] border border-[#333333] border-left-4 border-l-[#f18a22] rounded-[4px_12px_12px_4px]' 
           : 'bg-[#f18a22]/10 border border-[#f18a22]/30 rounded-l-xl rounded-br-xl'
       } ${!isAi && message.ui_triggers?.show_orange_border ? 'border-r-4 border-r-[#f18a22]' : ''}`}>
         

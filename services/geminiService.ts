@@ -20,21 +20,20 @@ export class GeminiService {
 
       const modeInstruction = `
 [GOVERNANCE CONTEXT]:
-Mode: ${opMode}
-State: ${currentStatus}
-Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Dossier'}
+Active Operating Mode: ${opMode} (0:Ignition, 1:Workshop, 2:Fleet)
+Current Logical State: ${currentStatus}
+Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
 
-[OPERATIONAL GOVERNANCE]:
-- SILENT PROTOCOL: Response MUST be raw, action-oriented, and concise. No conversational filler.
-- GST LOGIC (Mode 1): Every estimate line MUST include HSN and GST percentage.
-- EV SAFETY: High Voltage warning is mandatory for Electric/Hybrid technical queries.
-- SETTLEMENT (Mode 2): Enforce Shortfall/Excess logic based on Assured KM vs Actual KM.
-- UI SYNC: Use [[STATE:NAME]] tags for any UI transitions.
+[STATE MACHINE RULES]:
+1. IF state is 'AUTH_INTAKE': You are LOCKED. Your only goal is to receive a valid Vehicle Reg No.
+2. IF [SYSTEM_NOTE: VALID_FORMAT] is present in the latest user prompt, transition state to 'SYMPTOM_RECORDING'.
+3. RESPOND ONLY in valid JSON. No Markdown. No conversational filler.
+4. Keep visual_text concise and technical.
 `;
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + modeInstruction,
-        temperature: 0.1,
+        temperature: 0.2,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
         responseSchema: {
@@ -96,7 +95,7 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
     } catch (error) {
       console.error("EKA Central OS Fatal Error:", error);
       return {
-        response_content: { visual_text: "System interrupted. Critical logic breach. Re-issue query.", audio_text: "System Error." },
+        response_content: { visual_text: "CRITICAL: Logic gate failure. Re-initialize terminal.", audio_text: "System Error." },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true },
         visual_assets: { vehicle_display_query: "Error", part_display_query: null }

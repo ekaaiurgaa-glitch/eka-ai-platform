@@ -138,24 +138,24 @@ const App: React.FC = () => {
       return;
     }
 
-    let finalPrompt = trimmedText;
+    let promptOverride = trimmedText;
 
-    // WORKSHOP INTAKE LOCK
+    // WORKSHOP INTAKE LOCK (Checklist Step 3 & 4)
     if (status === 'AUTH_INTAKE') {
       const validation = isValidRegistrationFormat(trimmedText);
       if (!validation.valid) {
         const errorMessage: Message = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: "Invalid Format. Please enter a valid Registration Number (e.g., MH-12-AB-1234 or 22-BH-1234-AA).",
+          content: "Invalid Format. Please enter a valid Registration Number (e.g., MH-12-AB-1234 or 22-BH-1234-AA) to proceed.",
           timestamp: new Date(),
           ui_triggers: { theme_color: '#FF0000', brand_identity: 'G4G_WORKSHOP', show_orange_border: true }
         };
         setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, errorMessage]);
         return;
       }
-      // Inject System Note for validation success as per checklist
-      finalPrompt = `[SYSTEM_NOTE: VALID_FORMAT] ${trimmedText}`;
+      // Checklist Implementation: Inject System Note so AI transitions state
+      promptOverride = `[SYSTEM_NOTE: VALID_FORMAT] User input: ${trimmedText}`;
     }
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: trimmedText, timestamp: new Date(), intelligenceMode, operatingMode };
@@ -164,7 +164,7 @@ const App: React.FC = () => {
 
     const history = [...messages, userMessage].map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.id === userMessage.id ? finalPrompt : m.content }]
+      parts: [{ text: m.id === userMessage.id ? promptOverride : m.content }]
     }));
 
     const responseData = await geminiService.sendMessage(history, vehicleContext, status, intelligenceMode, operatingMode);
@@ -188,8 +188,7 @@ const App: React.FC = () => {
   };
 
   /**
-   * Refactored for SILENT MODE SWITCHING (Deterministic Protocol)
-   * Updates state immediately and presents the context-relevant input prompt.
+   * SILENT MODE SWITCHING (Deterministic Protocol Implementation)
    */
   const handleModeChange = (mode: OperatingMode) => {
     setOperatingMode(mode);
@@ -258,7 +257,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.25em]">
-           Governor: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5">{activeTab === 0 ? 'PUBLIC' : activeTab === 1 ? 'WORKSHOP' : 'FLEET'}</span>
+           Governor: <span className="text-white bg-zinc-900 px-2 py-1 rounded border border-white/5 uppercase">{activeTab === 0 ? 'PUBLIC' : activeTab === 1 ? 'WORKSHOP' : 'FLEET'}</span>
         </div>
       </div>
 

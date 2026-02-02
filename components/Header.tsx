@@ -22,9 +22,9 @@ interface StatusConfig {
 }
 
 const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig => {
-  // Logic Mapping: CTX_VALIDATING equivalent
+  // Logic Mapping: CTX_VALIDATING
   if (isLoading) {
-    return { label: 'STATUS: VERIFYING...', dotClass: 'bg-yellow-400 animate-flicker' };
+    return { label: 'STATUS: VERIFYING...', dotClass: 'bg-[#FFEA00] animate-flicker shadow-[0_0_8px_#FFEA00]' };
   }
 
   switch (status) {
@@ -49,11 +49,11 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig =>
     case 'UTILIZATION_TRACKING':
     case 'SETTLEMENT_LOGIC':
     case 'SLA_BREACH_CHECK':
-      return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
+      return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' };
 
     case 'CLOSED':
     case 'MG_COMPLETE':
-      return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500' };
+      return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
 
     default:
       return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676]' };
@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) =
           </div>
         )}
 
-        <div className="flex items-center gap-3 px-4 py-1.5 bg-white/5 border border-orange-500/30 rounded-full transition-all duration-300 shadow-sm group hover:border-white/20">
+        <div className="flex items-center gap-2.5 px-4 py-1.5 bg-white/5 border border-orange-500/20 rounded-full transition-all duration-300 shadow-sm group hover:border-white/20">
           <div className={`w-2 h-2 rounded-full transition-all duration-300 ${config.dotClass}`}></div>
           <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[1px] font-mono group-hover:text-white transition-colors">
             {config.label}
@@ -119,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) =
       <style>{`
         @keyframes pulse-orange {
           0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0.7); }
-          70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 159, 28, 0); }
+          70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(255, 159, 28, 0); }
           100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0); }
         }
         .animate-pulse-orange {
@@ -127,10 +127,10 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) =
         }
         @keyframes flicker {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+          50% { opacity: 0.4; }
         }
         .animate-flicker {
-          animation: flicker 1s infinite linear;
+          animation: flicker 0.8s infinite linear;
         }
       `}</style>
     </header>
