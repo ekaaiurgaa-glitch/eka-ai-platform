@@ -31,7 +31,7 @@ ${context && context.brand ? `${context.vehicleType} | ${context.brand} | ${cont
 
 [CRITICAL PROTOCOLS]:
 ${isEV ? '- MANDATORY: Preface all technical advice with the High Voltage (HV) PPE warning.' : ''}
-${opMode === 1 ? '- MANDATORY ESTIMATE RULE: Every line item in an estimate must follow this format: "Item Name | Price Range | HSN: [Code] | GST: [Rate]% ([Tax Type])". Use 8708 for Parts and 9987 for Labor/Service.' : ''}
+${opMode === 1 ? '- MANDATORY ESTIMATE RULE: Every line item in an estimate must use the pipe delimiter strictly: "Item Name | Price Range | HSN: [Code] | GST: [Rate]% [Type]". Use 8708 for Parts and 9987 for Labor/Service. Example: "Front Brake Pads | ₹2,500 - ₹3,200 | HSN: 8708 | GST: 28% (CGST+SGST)"' : ''}
 - MODE 0: If range anxiety mentioned, prioritize URGAA network search (Robin/Albatross).
 - MODE 1: Apply Dead Inventory and HSN compliance logic.
 - MODE 2: Apply SLA breach and utilization shortfall logic.

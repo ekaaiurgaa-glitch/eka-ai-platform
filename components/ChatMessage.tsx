@@ -27,9 +27,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     // Regex for GST Tags
     const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
 
-    let parts = [text];
+    let parts: (string | React.ReactNode)[] = [text];
 
-    // Added React namespace to JSX.Element or used React.ReactNode to fix "Cannot find namespace JSX"
     const applyRegex = (regex: RegExp, className: string, iconType: 'price' | 'hsn' | 'gst') => {
       let nextParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
@@ -75,6 +74,43 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     return parts;
   };
 
+  const renderGovernedLineItem = (line: string, index: number) => {
+    const parts = line.split('|').map(p => p.trim());
+    if (parts.length < 3) return null;
+
+    const [name, price, hsn, gst] = parts;
+
+    return (
+      <div key={`line-${index}`} className="group mb-3 bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden hover:border-[#f18a22]/30 transition-all flex flex-col sm:flex-row items-stretch sm:items-center">
+        <div className="flex-1 p-4 border-b sm:border-b-0 sm:border-r border-zinc-800 bg-gradient-to-r from-zinc-900 to-transparent">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">EKA Governed Logic</span>
+          </div>
+          <h6 className="text-white font-black text-sm uppercase tracking-tight">{name}</h6>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3 p-4 bg-black/40">
+          <div className="flex flex-col items-start min-w-[120px]">
+            <span className="text-[7px] font-black text-[#f18a22] uppercase tracking-[0.2em] mb-0.5">Est. Price</span>
+            <span className="text-xs font-black text-white">{price}</span>
+          </div>
+          
+          <div className="h-8 w-[1px] bg-zinc-800 hidden sm:block"></div>
+
+          <div className="flex flex-col items-start">
+            <span className="text-[7px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">HSN Code</span>
+            <span className="text-[10px] font-black text-zinc-300">{hsn?.replace('HSN:', '').trim() || 'N/A'}</span>
+          </div>
+
+          <div className="flex flex-col items-start">
+            <span className="text-[7px] font-black text-green-400 uppercase tracking-[0.2em] mb-0.5">GST Rate</span>
+            <span className="text-[10px] font-black text-zinc-300">{gst?.replace('GST:', '').trim() || 'N/A'}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderContent = (content: string) => {
     const lines = content.split('\n');
     return lines.map((line, i) => {
@@ -96,6 +132,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             </div>
           </div>
         );
+      }
+
+      // Governed Estimate Line Item Detection (Pipe Delimited)
+      if (trimmedLine.includes('|') && trimmedLine.includes('HSN:') && trimmedLine.includes('GST:')) {
+        const lineItem = renderGovernedLineItem(trimmedLine, i);
+        if (lineItem) return lineItem;
       }
 
       const mainPointerMatch = trimmedLine.match(/^\d+\.\s+(.*)/);
