@@ -154,6 +154,7 @@ const App: React.FC = () => {
       job_status_update: responseData.job_status_update as JobStatus,
       ui_triggers: responseData.ui_triggers,
       visual_assets: responseData.visual_assets,
+      grounding_links: responseData.grounding_links,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode

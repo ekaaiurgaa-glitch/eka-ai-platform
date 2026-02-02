@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { EKA_CONSTITUTION } from "../constants";
-import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types";
+import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode, GroundingLink } from "../types";
 
 export class GeminiService {
   private fastModel: string = 'gemini-3-flash-preview';
@@ -31,10 +31,11 @@ ${context && context.brand ? `${context.vehicleType} | ${context.brand} | ${cont
 
 [CRITICAL PROTOCOLS]:
 ${isEV ? '- MANDATORY: Preface all technical advice with the High Voltage (HV) PPE warning.' : ''}
-${opMode === 1 ? '- MANDATORY ESTIMATE RULE: Every line item in an estimate must use the pipe delimiter strictly: "Item Name | Price Range | HSN: [Code] | GST: [Rate]% [Type]". Use 8708 for Parts and 9987 for Labor/Service. Example: "Front Brake Pads | ₹2,500 - ₹3,200 | HSN: 8708 | GST: 28% (CGST+SGST)"' : ''}
+${opMode === 1 ? '- MANDATORY ESTIMATE RULE: Every line item must use pipe delimiter: "Item | Range | HSN: [Code] | GST: [Rate]% [Type]". Use 8708 for Parts and 9987 for Labor. You cannot move to APPROVAL_GATE until all items are HSN/GST compliant.' : ''}
 - MODE 0: If range anxiety mentioned, prioritize URGAA network search (Robin/Albatross).
 - MODE 1: Apply Dead Inventory and HSN compliance logic.
 - MODE 2: Apply SLA breach and utilization shortfall logic.
+- PART SEARCH: When identifying parts, use 'googleSearch' to find OEM/Aftermarket compatibility and technical specifications.
 - DATA TAGGING: Tag Energy/Outlook data as "Simulated".
 `;
 
@@ -92,8 +93,22 @@ ${opMode === 1 ? '- MANDATORY ESTIMATE RULE: Every line item in an estimate must
 
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
+
+      // Extract grounding metadata if available
+      const groundingLinks: GroundingLink[] = [];
+      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      if (chunks) {
+        chunks.forEach((chunk: any) => {
+          if (chunk.web) {
+            groundingLinks.push({
+              uri: chunk.web.uri,
+              title: chunk.web.title
+            });
+          }
+        });
+      }
       
-      return result;
+      return { ...result, grounding_links: groundingLinks };
     } catch (error) {
       console.error("EKA Central OS Error:", error);
       return {

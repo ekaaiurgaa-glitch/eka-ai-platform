@@ -28,6 +28,11 @@ export type JobStatus =
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
 
+export interface GroundingLink {
+  uri: string;
+  title: string;
+}
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -46,6 +51,7 @@ export interface Message {
     vehicle_display_query: string;
     part_display_query: string | null;
   };
+  grounding_links?: GroundingLink[];
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;

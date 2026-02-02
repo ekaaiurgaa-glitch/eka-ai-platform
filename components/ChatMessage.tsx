@@ -84,27 +84,30 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <div key={`line-${index}`} className="group mb-3 bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden hover:border-[#f18a22]/30 transition-all flex flex-col sm:flex-row items-stretch sm:items-center">
         <div className="flex-1 p-4 border-b sm:border-b-0 sm:border-r border-zinc-800 bg-gradient-to-r from-zinc-900 to-transparent">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">EKA Governed Logic</span>
+            <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-1.5">
+              <svg className="w-2 h-2 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+              EKA Compliance Verified
+            </span>
           </div>
           <h6 className="text-white font-black text-sm uppercase tracking-tight">{name}</h6>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 p-4 bg-black/40">
           <div className="flex flex-col items-start min-w-[120px]">
-            <span className="text-[7px] font-black text-[#f18a22] uppercase tracking-[0.2em] mb-0.5">Est. Price</span>
+            <span className="text-[7px] font-black text-[#f18a22] uppercase tracking-[0.2em] mb-0.5">Governed Estimate</span>
             <span className="text-xs font-black text-white">{price}</span>
           </div>
           
           <div className="h-8 w-[1px] bg-zinc-800 hidden sm:block"></div>
 
           <div className="flex flex-col items-start">
-            <span className="text-[7px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">HSN Code</span>
-            <span className="text-[10px] font-black text-zinc-300">{hsn?.replace('HSN:', '').trim() || 'N/A'}</span>
+            <span className="text-[7px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">HSN Audit</span>
+            <span className="text-[10px] font-black text-zinc-300 bg-blue-500/10 px-1.5 rounded">{hsn?.replace('HSN:', '').trim() || 'N/A'}</span>
           </div>
 
           <div className="flex flex-col items-start">
-            <span className="text-[7px] font-black text-green-400 uppercase tracking-[0.2em] mb-0.5">GST Rate</span>
-            <span className="text-[10px] font-black text-zinc-300">{gst?.replace('GST:', '').trim() || 'N/A'}</span>
+            <span className="text-[7px] font-black text-green-400 uppercase tracking-[0.2em] mb-0.5">GST Logic</span>
+            <span className="text-[10px] font-black text-zinc-300 bg-green-500/10 px-1.5 rounded">{gst?.replace('GST:', '').trim() || 'N/A'}</span>
           </div>
         </div>
       </div>
@@ -259,6 +262,37 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     );
   };
 
+  const renderGroundingLinks = () => {
+    if (!message.grounding_links || message.grounding_links.length === 0) return null;
+    return (
+      <div className="mt-8 pt-6 border-t border-white/5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+          <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Supplier Sourcing (Search Grounded)</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {message.grounding_links.map((link, idx) => (
+            <a 
+              key={idx} 
+              href={link.uri} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="group/link flex items-center justify-between p-3 bg-zinc-900/30 border border-zinc-800 rounded-xl hover:border-blue-500/40 hover:bg-blue-500/5 transition-all"
+            >
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-white text-xs font-bold truncate pr-4">{link.title}</span>
+                <span className="text-[9px] text-zinc-600 truncate opacity-60 group-hover/link:opacity-100 transition-opacity">{link.uri}</span>
+              </div>
+              <svg className="w-4 h-4 text-zinc-700 group-hover/link:text-blue-500 transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`flex w-full mb-10 ${isAi ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[95%] md:max-w-[88%] p-8 md:p-10 rounded-3xl border shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] relative transition-all duration-500 ${isAi ? message.validationError ? 'bg-[#1a0a0a] border-red-900/50 text-zinc-100' : `bg-[#0A0A0A] ${showOrangeBorder ? 'border-[#f18a22]/50' : 'border-[#262626]'} text-zinc-100` : 'bg-[#121212] border-[#f18a22]/40 text-zinc-100'}`}>
@@ -303,6 +337,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         </div>
 
         {isAi && renderVisualAssets()}
+        {isAi && renderGroundingLinks()}
       </div>
     </div>
   );
