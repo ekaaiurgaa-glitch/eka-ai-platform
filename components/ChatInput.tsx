@@ -1,11 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { OperatingMode } from '../types';
+import { OperatingMode, JobStatus } from '../types';
 
 interface ChatInputProps {
   onSend: (text: string) => void;
   isLoading: boolean;
   operatingMode: OperatingMode;
+  status: JobStatus;
 }
 
 declare global {
@@ -15,7 +16,7 @@ declare global {
   }
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode, status }) => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -23,9 +24,12 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode 
 
   const getPlaceholder = () => {
     if (isListening) return "Listening to symptoms...";
+    if (status === 'AUTH_INTAKE') return "Enter Vehicle Registration (e.g., MH-12-AB-1234)...";
+    if (status === 'CONTRACT_VALIDATION') return "Enter Fleet ID or Billing Month...";
+    
     switch (operatingMode) {
-      case 1: return "Enter Vehicle Registration Number...";
-      case 2: return "Enter Fleet ID or Billing Month...";
+      case 1: return "Describe vehicle symptoms or services needed...";
+      case 2: return "Query fleet utilization or penalties...";
       default: return "Enter symptom, DTC or part name...";
     }
   };
@@ -188,7 +192,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode 
         </form>
         <div className="mt-2 flex items-center justify-between">
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
-            {operatingMode === 1 ? 'Workshop OS Locked • Awaiting Registration' : 'Safety Recall, Component Analysis & DTC Engine Active'}
+            {status === 'AUTH_INTAKE' ? 'STATUS: AWAITING_REGISTRATION • EXIT to Cancel' : 'STATUS: OPERATIONAL • Safety Recall & DTC Engine Active'}
           </p>
           {isListening && (
             <div className="flex items-center gap-1.5 animate-pulse">

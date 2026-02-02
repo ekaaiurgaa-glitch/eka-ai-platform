@@ -17,6 +17,7 @@ const FUEL_ICONS: Record<string, string> = {
 
 const Header: React.FC<HeaderProps> = ({ status = 'CREATED', vehicle }) => {
   const isLocked = vehicle && isContextComplete(vehicle);
+  const isPendingInput = status === 'AUTH_INTAKE' || status === 'CONTRACT_VALIDATION';
 
   const renderFuelIcon = () => {
     if (!vehicle?.fuelType || !FUEL_ICONS[vehicle.fuelType]) return null;
@@ -56,10 +57,11 @@ const Header: React.FC<HeaderProps> = ({ status = 'CREATED', vehicle }) => {
           </div>
         )}
 
-        <div className="flex items-center gap-3 bg-[#0A0A0A] border border-[#262626] px-3 py-1.5 rounded-full">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#f18a22] animate-pulse"></div>
+        <div className={`flex items-center gap-3 bg-[#0A0A0A] border px-3 py-1.5 rounded-full transition-all duration-300 ${isPendingInput ? 'border-[#f18a22] shadow-[0_0_10px_rgba(241,138,34,0.2)]' : 'border-[#262626]'}`}>
+          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isPendingInput ? 'bg-red-500' : 'bg-[#f18a22]'}`}></div>
           <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">
-            Protocol: <span className="text-white">{status.replace(/_/g, ' ')}</span>
+            {isPendingInput ? 'AWAITING_INPUT: ' : 'Protocol: '}
+            <span className="text-white">{status.replace(/_/g, ' ')}</span>
           </span>
         </div>
       </div>

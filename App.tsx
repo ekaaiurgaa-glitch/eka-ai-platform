@@ -80,6 +80,16 @@ const App: React.FC = () => {
     }
   }, [intelligenceMode, operatingMode]);
 
+  const isValidRegistrationFormat = (input: string) => {
+    const cleanInput = input.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const standardRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{0,3}[0-9]{4}$/;
+    const bhSeriesRegex = /^[0-9]{2}BH[0-9]{4}[A-Z]{1,2}$/;
+
+    if (standardRegex.test(cleanInput)) return { valid: true, type: 'STANDARD', formatted: cleanInput };
+    if (bhSeriesRegex.test(cleanInput)) return { valid: true, type: 'BH_SERIES', formatted: cleanInput };
+    return { valid: false, type: null };
+  };
+
   const handlePlayAudio = async (text: string) => {
     if (isAudioPlaying) return;
     setIsAudioPlaying(true);
@@ -97,9 +107,28 @@ const App: React.FC = () => {
 
   const handleSendMessage = async (text: string) => {
     const trimmedText = text.trim();
+    const lowerText = trimmedText.toLowerCase();
     
+    // Escape Clause
+    if (lowerText === 'exit' || lowerText === 'cancel' || lowerText === 'menu') {
+      handleModeChange(0);
+      return;
+    }
+
     // Command Interceptor: Start/Status
-    if (trimmedText.toLowerCase() === 'start' || trimmedText.toLowerCase() === 'status') {
+    if (lowerText === 'start' || lowerText === 'status') {
+      // Suppress if already in a specific state
+      if (status !== 'CREATED' && status !== 'IGNITION_TRIAGE') {
+        const warningMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `State Locked: ${status}. Complete current protocol or type 'EXIT'.`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, warningMessage]);
+        return;
+      }
+
       const initResponse: Message = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -110,6 +139,24 @@ const App: React.FC = () => {
       };
       setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, initResponse]);
       return;
+    }
+
+    // STATE MACHINE: Workshop Intake Lock
+    if (status === 'AUTH_INTAKE') {
+      const validation = isValidRegistrationFormat(trimmedText);
+      if (!validation.valid) {
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: "Invalid Format. Please enter a valid Registration Number (e.g., MH-12-AB-1234 or 22-BH-1234-AA).",
+          timestamp: new Date(),
+          ui_triggers: { theme_color: '#FF0000', brand_identity: 'G4G_WORKSHOP', show_orange_border: true }
+        };
+        setMessages(prev => [...prev, { id: (Date.now() - 1).toString(), role: 'user', content: trimmedText, timestamp: new Date() }, errorMessage]);
+        return;
+      }
+      // Valid Format - Proceed to next state in machine
+      setStatus('SYMPTOM_RECORDING');
     }
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: trimmedText, timestamp: new Date(), intelligenceMode, operatingMode };
@@ -279,7 +326,7 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} />
+      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} status={status} />
       <style>{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
