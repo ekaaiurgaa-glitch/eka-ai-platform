@@ -18,26 +18,21 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-      const lastUserMessage = history[history.length - 1].parts[0].text.toLowerCase();
-      
       const modeInstruction = `
-[CURRENT SYSTEM STATE]:
-Active Operating Mode: MODE ${opMode} (${opMode === 0 ? 'DEFAULT' : opMode === 1 ? 'JOB CARD WORKFLOW' : 'MG FLEET MODEL'})
-Intelligence Mode: ${intelMode}
-Current Status: ${currentStatus}
+[GOVERNANCE CONTEXT]:
+Ecosystem Mode: MODE ${opMode} (${opMode === 0 ? 'IGNITION/URGAA' : opMode === 1 ? 'GST WORKSHOP' : 'FLEET MG'})
+Intelligence: ${intelMode}
+State: ${currentStatus}
 
 ${context && context.brand ? `
-Locked Vehicle Context:
-Type: ${context.vehicleType}
-Brand: ${context.brand}
-Model: ${context.model}
-Year: ${context.year}
-Fuel: ${context.fuelType}` : 'Vehicle context not yet fully collected.'}
+Vehicle Identity:
+${context.vehicleType} | ${context.brand} | ${context.model} | ${context.year} | ${context.fuelType}` : 'Context Acquisition Pending.'}
 
-[MODE PROTOCOL]:
-${opMode === 0 ? 'Protocol: MODE 0. General advice only. If user requests Job Card or Fleet features, refuse and direct to workflow mode.' : ''}
-${opMode === 1 ? 'Protocol: MODE 1. Follow the 8-step Job Card order strictly. Current status is ' + currentStatus : ''}
-${opMode === 2 ? 'Protocol: MODE 2. Follow MG Fleet Settlement logic. Current status is ' + currentStatus : ''}
+[SPECIAL INSTRUCTIONS]:
+- If EV context is detected: Apply HV Safety Protocols.
+- If Mode 0 and "Range/Charging" mentioned: Refer to URGAA (Robin/Albatross).
+- If Mode 1: Enforce HSN Compliance and Inventory Gating.
+- If Mode 2: Focus on Actual vs Assured utilization logic.
 `;
 
       const config: any = {
@@ -58,7 +53,7 @@ ${opMode === 2 ? 'Protocol: MODE 2. Follow MG Fleet Settlement logic. Current st
             },
             job_status_update: { 
               type: Type.STRING,
-              description: "Must be one of the JobStatus enums defined in constitution."
+              description: "Must be a valid JobStatus enum for the current mode."
             },
             ui_triggers: {
               type: Type.OBJECT,
@@ -100,12 +95,12 @@ ${opMode === 2 ? 'Protocol: MODE 2. Follow MG Fleet Settlement logic. Current st
       console.error("EKA-Ai Engine Error:", error);
       return {
         response_content: {
-          visual_text: "1. SYSTEM ALERT: ENGINE TIMEOUT\n   a. The EKA diagnostic stream encountered an interruption.\n   b. Protocol reset required. Please re-issue your command.",
+          visual_text: "1. GOVERNANCE ALERT: SYSTEM TIMEOUT\n   a. Ecosystem stream interrupted.\n   b. Please re-verify vehicle context.",
           audio_text: "Engine timeout. Please re-issue the command."
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "G4G_ERROR", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Engine Error", part_display_query: null }
+        visual_assets: { vehicle_display_query: "System Error", part_display_query: null }
       };
     }
   }
@@ -115,7 +110,7 @@ ${opMode === 2 ? 'Protocol: MODE 2. Follow MG Fleet Settlement logic. Current st
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: this.ttsModel,
-        contents: [{ parts: [{ text: `Professional Advisor Voice: ${text}` }] }],
+        contents: [{ parts: [{ text: `EKA Ecosystem Voice: ${text}` }] }],
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {

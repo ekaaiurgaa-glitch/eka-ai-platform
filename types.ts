@@ -1,23 +1,26 @@
 
 export type MessageRole = 'user' | 'assistant';
 
-export type OperatingMode = 0 | 1 | 2; // 0: Default, 1: Job Card, 2: MG Fleet
+export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 2: MG Fleet
 
 export type JobStatus = 
   | 'CREATED' 
-  | 'JOB_CARD_OPENING'
-  | 'PROBLEM_INTAKE'
-  | 'DIAGNOSTIC_REASONING'
-  | 'ESTIMATE_PREPARATION'
-  | 'CUSTOMER_APPROVAL_GATE'
-  | 'WORK_EXECUTION'
-  | 'INVOICING'
-  | 'VEHICLE_CONTEXT_COLLECTED' 
+  // Mode 0 Statuses
+  | 'RSA_TRIAGE'
+  | 'CHARGER_LOCATING'
+  | 'SYMPTOM_TRIAGE'
+  // Mode 1 Statuses
+  | 'AUTH_INTAKE'
+  | 'DIAGNOSTICS_WISDOM'
+  | 'ESTIMATE_GOVERNANCE'
+  | 'APPROVAL_GATE'
+  | 'EXECUTION_QUALITY'
   | 'CLOSED'
-  | 'MG_CONTRACT_SETUP'
-  | 'MG_PERIOD_TRACKING'
-  | 'MG_SETTLEMENT'
-  | 'MG_REPORTING'
+  // Mode 2 Statuses
+  | 'CONTRACT_VALIDATION'
+  | 'UTILIZATION_TRACKING'
+  | 'UPTIME_PENALTY_GOVERNANCE'
+  | 'SETTLEMENT_REPORTING'
   | 'MG_COMPLETE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';

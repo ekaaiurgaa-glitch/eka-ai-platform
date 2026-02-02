@@ -23,14 +23,14 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai SYSTEM INITIALIZED. GOVERNOR ACTIVE.",
+      content: "EKA-Ai Online. Governance Protocols Active. Go4Garage Ecosystem Synced. Awaiting Mode Selection.",
       response_content: {
-        visual_text: "1. EKA-Ai SYSTEM INITIALIZED. GOVERNOR ACTIVE.\n   a. Active Mode: 0 (Default Automobile Q&A).\n   b. I guide governed workshop and fleet workflows.\n   c. Switch modes to initialize 'Job Card' or 'MG Fleet' protocols.",
-        audio_text: "EKA-Ai system initialized. Governor active. I am ready for general automobile diagnostic guidance. Switch to Job Card mode for governed workshop workflows."
+        visual_text: "1. EKA-Ai ONLINE. GOVERNANCE PROTOCOLS ACTIVE.\n   a. Ecosystem Sync: GST, URGAA, Ignition.\n   b. Mode 0: Ignition/Consumer & Charging Locating.\n   c. Mode 1: Workshop (GST) Job Card Workflows.\n   d. Mode 2: Fleet (MG) Settlement Intelligence.",
+        audio_text: "EKA-Ai Online. Governance Protocols Active. Go4Garage Ecosystem Synced. Awaiting Mode Selection."
       },
       job_status_update: 'CREATED',
       ui_triggers: { theme_color: "#f18a22", show_orange_border: true },
-      visual_assets: { vehicle_display_query: "Professional Service Advisor Interface", part_display_query: null },
+      visual_assets: { vehicle_display_query: "Modern EV Ecosystem Dashboard", part_display_query: null },
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -45,35 +45,34 @@ const App: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const STANDARD_PROTOCOL = [
-    "Verification: Domain Boundary Check",
-    "Acquisition: Vehicle Context Lock",
-    "Analysis: DTC & Symptom Reasoning",
-    "Confidence Gating: Root Cause Validation",
-    "Finalization: Safety Governance Audit"
+    "Verification: Ignition/URGAA Boundary",
+    "Acquisition: Identity Context Lock",
+    "Analysis: Symptom/Range Logic",
+    "Synthesis: Ecosystem Handover Check",
+    "Audit: Governance Finalization"
   ];
 
   const JOBCARD_PROTOCOL = [
-    "Verification: Mode 1 Paid Access",
-    "Initialization: Workshop Identity Auth",
-    "Governance: Problem Intake & Normalization",
-    "Reasoning: Diagnostic Mapping",
-    "Audit: Estimate Range Preparation"
+    "Verification: Workshop GST Access",
+    "Governance: Auth & Intake Logic",
+    "Analysis: Diagnostics Wisdom",
+    "Audit: Estimate HSN Compliance",
+    "Quality: PDI Checklist Verification"
   ];
 
   const MG_PROTOCOL = [
-    "Verification: Mode 2 Paid Access",
-    "Initialization: Fleet Identity Auth",
-    "Governance: Period Tracking Logic",
-    "Synthesis: Settlement Analysis",
+    "Verification: Fleet MG Contract",
+    "Analysis: Actual vs Assured Tracking",
+    "Logic: Uptime/Penalty Governance",
+    "Synthesis: Settlement Reporting",
     "Finalization: Reporting Cycle Audit"
   ];
 
   const THINKING_PROTOCOL = [
-    "Verification: High-Reasoning Initialization",
-    "Analysis: Network Intelligence Synapse",
-    "Logic: Deep Diagnostic Branching",
+    "Deep Intelligence: Ecosystem Synapse",
+    "Analysis: Logic Node Branching",
     "Synthesis: Complex Pattern Integration",
-    "Audit: Expert-Grade Solution Validation"
+    "Validation: Expert-Grade Audit"
   ];
 
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
@@ -173,13 +172,13 @@ const App: React.FC = () => {
 
   const handleModeChange = (mode: OperatingMode) => {
     setOperatingMode(mode);
-    setStatus(mode === 1 ? 'JOB_CARD_OPENING' : mode === 2 ? 'MG_CONTRACT_SETUP' : 'CREATED');
+    setStatus(mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'CONTRACT_VALIDATION' : 'CREATED');
     
-    const modeName = mode === 0 ? "Default Mode" : mode === 1 ? "Job Card Mode" : "MG Fleet Mode";
+    const modeName = mode === 0 ? "Ignition Mode" : mode === 1 ? "Workshop Mode" : "Fleet Mode";
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       role: 'assistant',
-      content: `Operating Mode switched to ${modeName}. Protocols updated.`,
+      content: `[GOVERNANCE SIGNAL]: Operating Mode switched to ${modeName}. Initializing ecosystem protocols.`,
       timestamp: new Date(),
       operatingMode: mode
     }]);
@@ -203,7 +202,7 @@ const App: React.FC = () => {
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden">
       <Header status={status} vehicle={vehicleContext} />
       
-      {/* Engine & Operating Mode Toggles */}
+      {/* Ecosystem Engine & Operating Mode Toggles */}
       <div className="bg-[#0A0A0A] border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="flex bg-black border border-white/10 rounded-lg p-0.5">
@@ -225,25 +224,28 @@ const App: React.FC = () => {
             <button 
               onClick={() => handleModeChange(0)}
               className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+              title="Ignition / URGAA Mode"
             >
-              Mode 0
+              Ignition
             </button>
             <button 
               onClick={() => handleModeChange(1)}
               className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-blue-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              title="GST Workshop Mode"
             >
-              Mode 1 (Paid)
+              Workshop
             </button>
             <button 
               onClick={() => handleModeChange(2)}
               className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-emerald-600 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+              title="Fleet MG Model Mode"
             >
-              Mode 2 (Paid)
+              Fleet
             </button>
           </div>
         </div>
         <div className="flex items-center gap-2 text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em]">
-           Governance Mode: <span className="text-white">{operatingMode === 0 ? 'DEFAULT' : operatingMode === 1 ? 'JOB CARD' : 'MG FLEET'}</span>
+           Governor: <span className="text-white">{operatingMode === 0 ? 'IGNITION' : operatingMode === 1 ? 'WORKSHOP' : 'FLEET'}</span>
         </div>
       </div>
 
@@ -274,7 +276,7 @@ const App: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full animate-ping ${getLoadingTextColor().replace('text-', 'bg-')}`}></div>
                       <span className={`text-[10px] font-black uppercase tracking-widest leading-none ${getLoadingTextColor()}`}>
-                        EKA Governance Engine
+                        EKA Central OS
                       </span>
                     </div>
                   </div>
