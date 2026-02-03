@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
-import { EKA_CONSTITUTION } from "../constants";
+import { EKA_CONSTITUTION, GST_HSN_REGISTRY } from "../constants";
 import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode, GroundingLink } from "../types";
 
 export class GeminiService {
@@ -20,21 +20,20 @@ export class GeminiService {
 
       const modeInstruction = `
 [GOVERNANCE CONTEXT]:
-Active Operating Mode: ${opMode} (0:Ignition, 1:Workshop, 2:Fleet)
+Active Operating Mode: ${opMode}
 Current Logical State: ${currentStatus}
-Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
+Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model}` : 'Awaiting Context'}
 
-[ESTIMATE COMPLIANCE INSTRUCTION (MODE 1)]:
-If generating an estimate:
-- Validate that all Parts use HSN 8708 and services use HSN 9987.
-- Ensure GST rates are 18% or 28%.
-- Do NOT move to 'APPROVAL_GATE' unless these are verified.
+[HSN/GST SOURCE OF TRUTH]:
+Reference the following registry for all estimate generation:
+${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
 
-[DTC LOOKUP INSTRUCTION]:
-If the user provides a fault code, use googleSearch to verify it for the specific ${context?.brand || 'Generic'} vehicle. 
-Always return 'diagnostic_data' when a code is detected.
+[ESTIMATE COMPLIANCE]:
+- PART items MUST use HSN starting with 8708 and 28% GST.
+- LABOR/SERVICE items MUST use HSN starting with 9987 and 18% GST.
+- Transition to 'APPROVAL_GATE' only if these rules are satisfied.
 
-[RESPOND ONLY in valid JSON. No Markdown.]
+[RESPOND ONLY in valid JSON.]
 `;
 
       const config: any = {
@@ -168,10 +167,7 @@ Always return 'diagnostic_data' when a code is detected.
     } catch (error: any) {
       console.error("EKA Central OS Fatal Error:", error);
       return {
-        response_content: { 
-          visual_text: "CRITICAL: Logic gate failure. Error reported: " + (error.message || "Unknown XHR/RPC Failure"), 
-          audio_text: "Logic gate failure." 
-        },
+        response_content: { visual_text: "CRITICAL: Logic gate failure. " + (error.message || "XHR Failure"), audio_text: "Logic failure." },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true },
         visual_assets: { vehicle_display_query: "Error", part_display_query: "" }
