@@ -34,7 +34,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai Online. Connected to Go4Garage Ecosystem. Awaiting Mode Selection.",
+      content: "EKA-Ai Online. Connected to Go4Garage Ecosystem. How can I assist with your vehicle today?",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -119,13 +119,11 @@ const App: React.FC = () => {
     const trimmedText = text.trim();
     const lowerText = trimmedText.toLowerCase();
     
-    // Escape Clauses
     if (lowerText === 'exit' || lowerText === 'cancel' || lowerText === 'menu') {
       handleModeChange(0);
       return;
     }
 
-    // Command Interceptor: Start/Status
     if (lowerText === 'start' || lowerText === 'status') {
       const initResponse: Message = {
         id: Date.now().toString(),
@@ -141,14 +139,13 @@ const App: React.FC = () => {
 
     let promptOverride = trimmedText;
 
-    // WORKSHOP INTAKE LOCK
     if (status === 'AUTH_INTAKE') {
       const validation = isValidRegistrationFormat(trimmedText);
       if (!validation.valid) {
         const errorMessage: Message = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: "Invalid Format. Please enter a valid Registration Number (e.g., MH-12-AB-1234 or 22-BH-1234-AA) to proceed.",
+          content: "Invalid Format. Please enter a valid Registration Number (e.g., MH-12-AB-1234) to proceed with Workshop Intake.",
           timestamp: new Date(),
           ui_triggers: { theme_color: '#FF0000', brand_identity: 'G4G_WORKSHOP', show_orange_border: true }
         };
@@ -245,6 +242,8 @@ const App: React.FC = () => {
   };
 
   const activeTab = getActiveTab();
+  // CONDITION: Show panel only if a vehicle is identified or if we are in an operational mode (Workshop/Fleet)
+  const showPanel = activeTab !== 0 || isContextComplete(vehicleContext) || (status !== 'CREATED' && status !== 'IGNITION_TRIAGE');
 
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
@@ -273,12 +272,16 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto pt-8 pb-4 z-0" ref={scrollRef}>
         <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          <VehicleContextPanel 
-            context={vehicleContext} 
-            onUpdate={setVehicleContext} 
-            operatingMode={activeTab}
-            status={status}
-          />
+          {showPanel && (
+            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+              <VehicleContextPanel 
+                context={vehicleContext} 
+                onUpdate={setVehicleContext} 
+                operatingMode={activeTab}
+                status={status}
+              />
+            </div>
+          )}
           <div className="px-4">
             {messages.map((msg) => (
               <ChatMessage 
