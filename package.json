@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend": "cd server && python3 app.py",
+    "start": "./start.sh"
   },
   "dependencies": {
     "@google/genai": "^1.39.0",
