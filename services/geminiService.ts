@@ -28,6 +28,12 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
 Reference the following registry for all estimate generation:
 ${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
 
+[VISUALIZATION MANDATE]:
+- When currentStatus is 'SYMPTOM_RECORDING', you MUST include a 'visual_metrics' object of type 'PIE' showing complaint distribution.
+- When currentStatus is 'EXECUTION_QUALITY', you MUST include a 'visual_metrics' object of type 'PROGRESS' showing repair percentage.
+- Use 'RADAR' for system health checks.
+- Use 'RADIAL' for fuel/battery/health gauges.
+
 [ESTIMATE COMPLIANCE]:
 - PART items MUST use HSN starting with 8708 and 28% GST.
 - LABOR/SERVICE items MUST use HSN starting with 9987 and 18% GST.

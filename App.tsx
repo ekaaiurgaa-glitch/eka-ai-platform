@@ -4,7 +4,8 @@ import Header from './components/Header';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import VehicleContextPanel from './components/VehicleContextPanel';
-import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData } from './types';
+import VehicleVisuals from './components/VehicleVisuals';
+import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData, VisualMetric } from './types';
 import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -23,6 +24,7 @@ const App: React.FC = () => {
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
   const [panelTriggered, setPanelTriggered] = useState(false);
+  const [activeMetric, setActiveMetric] = useState<VisualMetric | null>(null);
 
   const STANDARD_PROTOCOL = ["Boundary Auth", "URGAA Query", "Symptom Triage", "RSA Gating", "Audit Finalization"];
   const JOBCARD_PROTOCOL = ["Workshop Auth", "Service Normalization", "Inventory Gating", "Compliance Audit", "PDI Verification"];
@@ -95,7 +97,6 @@ const App: React.FC = () => {
     const trimmedText = text.trim();
     const lowerText = trimmedText.toLowerCase();
     
-    // Logic to trigger the vehicle context panel if certain keywords are used
     const vehicleKeywords = ['car', 'bike', 'registration', 'vehicle', 'repair', 'service', 'engine', 'fuel', 'hsn', 'estimate', 'job card'];
     if (vehicleKeywords.some(kw => lowerText.includes(kw))) {
       setPanelTriggered(true);
@@ -104,6 +105,7 @@ const App: React.FC = () => {
     if (lowerText === 'exit' || lowerText === 'cancel' || lowerText === 'menu') {
       handleModeChange(0);
       setPanelTriggered(false);
+      setActiveMetric(null);
       return;
     }
 
@@ -118,10 +120,13 @@ const App: React.FC = () => {
 
     const responseData = await geminiService.sendMessage(history, vehicleContext, status, intelligenceMode, operatingMode);
     
-    // If the AI response indicates a vehicle status update, trigger panel
     if (responseData.job_status_update) {
       setStatus(responseData.job_status_update as JobStatus);
       setPanelTriggered(true);
+    }
+
+    if (responseData.visual_metrics) {
+      setActiveMetric(responseData.visual_metrics);
     }
 
     const assistantMessage: Message = {
@@ -167,7 +172,6 @@ const App: React.FC = () => {
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
-    // Lock the status and notify system
     setStatus('APPROVAL_GATE');
     setMessages(prev => [...prev, {
       id: `auth-success-${Date.now()}`,
@@ -178,7 +182,6 @@ const App: React.FC = () => {
       operatingMode: 1
     }]);
     
-    // Scroll to new message
     setTimeout(scrollToBottom, 100);
   };
 
@@ -239,37 +242,75 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto pt-8 pb-4 z-0" ref={scrollRef}>
-        <div className="max-w-4xl mx-auto flex flex-col min-h-full">
-          {showPanel && (
-            <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
-              <VehicleContextPanel 
-                context={vehicleContext} 
-                onUpdate={setVehicleContext} 
-                operatingMode={activeTab}
-                status={status}
-              />
-            </div>
-          )}
-          <div className="px-4">
-            {messages.map((msg) => (
-              <ChatMessage 
-                key={msg.id} 
-                message={msg} 
-                onPlayAudio={handlePlayAudio} 
-                isAudioPlaying={isAudioPlaying} 
-                vehicleContext={vehicleContext} 
-                onUpdateContext={setVehicleContext}
-                onEstimateAuthorize={handleEstimateAuthorize}
-              />
-            ))}
-            {isLoading && (
-              <div className="flex justify-start mb-8 animate-pulse text-[10px] font-black uppercase tracking-[0.2em] text-[#f18a22] px-10">
-                Logic Engine Processing...
+      <main className="flex-1 overflow-hidden flex z-0">
+        {/* CHAT AREA */}
+        <div className="flex-1 overflow-y-auto pt-8 pb-4 relative" ref={scrollRef}>
+          <div className="max-w-4xl mx-auto flex flex-col min-h-full">
+            {showPanel && (
+              <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
+                <VehicleContextPanel 
+                  context={vehicleContext} 
+                  onUpdate={setVehicleContext} 
+                  operatingMode={activeTab}
+                  status={status}
+                />
               </div>
             )}
+            <div className="px-4">
+              {messages.map((msg) => (
+                <ChatMessage 
+                  key={msg.id} 
+                  message={msg} 
+                  onPlayAudio={handlePlayAudio} 
+                  isAudioPlaying={isAudioPlaying} 
+                  vehicleContext={vehicleContext} 
+                  onUpdateContext={setVehicleContext}
+                  onEstimateAuthorize={handleEstimateAuthorize}
+                />
+              ))}
+              {isLoading && (
+                <div className="flex justify-start mb-8 animate-pulse text-[10px] font-black uppercase tracking-[0.2em] text-[#f18a22] px-10">
+                  Logic Engine Processing...
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* PERSISTENT DASHBOARD SIDEBAR (DESKTOP) */}
+        {activeMetric && (
+          <aside className="hidden xl:flex w-96 flex-col bg-[#050505] border-l border-zinc-900 p-6 overflow-y-auto animate-in slide-in-from-right duration-500">
+             <div className="flex items-center justify-between mb-8 border-b border-zinc-900 pb-4">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest font-mono">Real-time Metrics</span>
+                  <span className="text-white font-black uppercase font-mono text-sm">System Health Feed</span>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
+             </div>
+             
+             <div className="space-y-8">
+               <VehicleVisuals metric={activeMetric} />
+               
+               <div className="p-5 bg-zinc-900/30 rounded-xl border border-zinc-800">
+                  <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest font-mono block mb-3">Live Log Summary</span>
+                  <div className="space-y-2">
+                     <div className="flex justify-between text-[10px] font-mono">
+                        <span className="text-zinc-500">Status</span>
+                        <span className="text-[#f18a22] font-black">{status}</span>
+                     </div>
+                     <div className="flex justify-between text-[10px] font-mono">
+                        <span className="text-zinc-500">Mode</span>
+                        <span className="text-white">NODE_{activeTab}</span>
+                     </div>
+                     <div className="flex justify-between text-[10px] font-mono">
+                        <span className="text-zinc-500">Compliance</span>
+                        <span className="text-green-500">VERIFIED</span>
+                     </div>
+                  </div>
+               </div>
+             </div>
+          </aside>
+        )}
       </main>
       <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={activeTab} status={status} />
     </div>
