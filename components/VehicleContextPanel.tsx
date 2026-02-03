@@ -18,6 +18,11 @@ const FUEL_OPTIONS = [
   { id: "Hybrid", label: "Hybrid" }
 ];
 
+const VEHICLE_TYPES = [
+  { id: "2W", label: "Two-Wheeler" },
+  { id: "4W", label: "Four-Wheeler" }
+];
+
 const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ 
   context, 
   onUpdate, 
@@ -49,6 +54,13 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
       case 'fuelType':
         if (!value) error = "Select propulsion";
         break;
+      case 'vin':
+        if (context.vehicleType === '4W') {
+          const vinRegex = /^[A-Z0-9-]{11,17}$/i;
+          if (!value) error = "VIN required for 4W";
+          else if (!vinRegex.test(value)) error = "Invalid format (Alphanumeric/Hyphen)";
+        }
+        break;
       default:
         break;
     }
@@ -60,7 +72,8 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
       brand: validateField('brand', context.brand),
       model: validateField('model', context.model),
       year: validateField('year', context.year),
-      fuelType: validateField('fuelType', context.fuelType)
+      fuelType: validateField('fuelType', context.fuelType),
+      vin: validateField('vin', context.vin || '')
     };
 
     setErrors(newErrors);
@@ -140,14 +153,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
-            <div className="mt-6 flex justify-center gap-8 opacity-40">
-               {['BIOMETRIC', 'REGISTRY', 'COMPLIANCE'].map(n => (
-                 <div key={n} className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#f18a22]"></div>
-                    <span className="text-[7px] font-black text-white uppercase font-mono">{n}</span>
-                 </div>
-               ))}
-            </div>
           </div>
         )}
       </div>
@@ -158,7 +163,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
     return (
       <div className="mb-8 animate-in slide-in-from-top-4 duration-500 group">
         <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl p-8 shadow-2xl relative overflow-hidden">
-          {/* VERIFIED WATERMARK */}
           <div className="absolute -right-4 -bottom-4 opacity-5 rotate-[-25deg] pointer-events-none select-none">
              <span className="text-9xl font-black text-white font-mono">G4G_OK</span>
           </div>
@@ -178,18 +182,12 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-               <div className="flex flex-col items-end mr-4">
-                  <span className="text-[8px] font-black text-zinc-600 uppercase font-mono">Security Clearance</span>
-                  <span className="text-[10px] font-black text-green-500 uppercase font-mono tracking-widest">LOCKED_DTR_v1</span>
-               </div>
-               <button 
-                onClick={() => setIsEditing(true)} 
-                className="px-6 py-2.5 bg-black border-2 border-red-500/40 text-red-500 text-[10px] font-black uppercase rounded hover:bg-red-500 hover:text-black transition-all font-mono tracking-widest"
-              >
-                Security Override
-              </button>
-            </div>
+            <button 
+              onClick={() => setIsEditing(true)} 
+              className="px-6 py-2.5 bg-black border-2 border-red-500/40 text-red-500 text-[10px] font-black uppercase rounded hover:bg-red-500 hover:text-black transition-all font-mono tracking-widest"
+            >
+              Security Override
+            </button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
@@ -197,6 +195,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
              <DataNode label="Model/Variant" value={context.model} />
              <DataNode label="Lifecycle Year" value={context.year} />
              <DataNode label="Energy Node" value={context.fuelType} />
+             {context.vehicleType === '4W' && <DataNode label="VIN Reference" value={context.vin || ''} />}
           </div>
         </div>
       </div>
@@ -219,11 +218,31 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         </div>
       </div>
 
+      <div className="flex flex-col gap-3">
+        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Vehicle Architecture</label>
+        <div className="grid grid-cols-2 gap-3">
+          {VEHICLE_TYPES.map((type) => (
+            <button
+              key={type.id}
+              onClick={() => onUpdate({ ...context, vehicleType: type.id as '2W' | '4W' })}
+              className={`py-4 rounded border-2 text-[10px] font-black uppercase font-mono transition-all duration-300 ${context.vehicleType === type.id ? 'bg-[#f18a22] text-black border-[#f18a22] shadow-[0_0_15px_rgba(241,138,34,0.3)]' : 'bg-transparent border-zinc-800 text-zinc-600 hover:border-zinc-500'}`}
+            >
+              {type.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <InputBox label="Identity Tag" name="registrationNumber" value={context.registrationNumber || ''} placeholder="MH-XX-XX-XXXX" />
         <InputBox label="Manufacturer" name="brand" value={context.brand} placeholder="MARUTI SUZUKI" />
         <InputBox label="Model Variant" name="model" value={context.model} placeholder="SWIFT ZXI" />
         <InputBox label="Production Year" name="year" value={context.year} placeholder="2024" />
+        {context.vehicleType === '4W' && (
+          <div className="col-span-full">
+            <InputBox label="Vehicle Identification Number (VIN)" name="vin" value={context.vin || ''} placeholder="17-CHARACTER ALPHA-NUMERIC VIN" />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

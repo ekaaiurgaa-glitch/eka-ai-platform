@@ -109,6 +109,7 @@ export interface VehicleContext {
   year: string;
   fuelType: string;
   registrationNumber?: string;
+  vin?: string;
   batteryCapacity?: string;
   motorPower?: string;
   hvSafetyConfirmed?: boolean;
@@ -117,6 +118,10 @@ export interface VehicleContext {
 export const isContextComplete = (ctx: VehicleContext): boolean => {
   const baseComplete = !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
   
+  if (ctx.vehicleType === '4W') {
+    if (!ctx.vin) return false;
+  }
+
   if (ctx.fuelType === 'Electric') {
     return baseComplete && !!ctx.batteryCapacity && !!ctx.motorPower && !!ctx.hvSafetyConfirmed;
   }

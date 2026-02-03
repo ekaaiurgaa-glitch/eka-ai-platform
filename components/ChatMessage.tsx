@@ -32,8 +32,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const cleanText = text.replace(/\[\[STATE:.*?\]\]/g, '').trim();
     if (!cleanText && text.includes('[[STATE:')) return null;
 
-    // Improved regex for Price Ranges (Pricing Firewall enforcement)
-    // Matches: ₹5,000 - ₹7,000, 5000-7000, 5k to 7k, etc.
     const priceRangeRegex = /(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)\s*(?:-|to|until)\s*(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)/gi;
     const hsnRegex = /(HSN:\s*\d+)/gi;
     const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
@@ -166,7 +164,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div className={`flex flex-col mb-10 ${isAi ? 'items-start' : 'items-end'} w-full`}>
-      <div className={`message-container transition-all duration-300 ${isAi ? 'ai-style' : 'user-style'}`}>
+      <div className={`message-card transition-all duration-300 ${isAi ? 'ai-style' : 'user-style'}`}>
         <div className="flex items-center gap-2 mb-4 border-b border-[#f18a22]/20 pb-2">
            <span className={`text-[10px] font-black uppercase tracking-[2px] font-mono ${isAi ? 'text-[#f18a22]' : 'text-zinc-500'}`}>
              {isAi ? 'EKA-Ai Architecture' : 'User Terminal'}
@@ -195,28 +193,33 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       </div>
 
       <style>{`
-        .message-container {
-          padding: 24px;
-          border-radius: 12px;
+        .message-card {
+          padding: 24px 24px 24px 32px; /* Increased left padding for alignment with thick border */
+          border-radius: 8px;
           max-width: 90%;
           width: fit-content;
-          min-width: 300px;
+          min-width: 320px;
+          position: relative;
+          box-sizing: border-box;
         }
 
         .ai-style {
           background: #050505;
-          border: 2px solid #f18a22;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+          border: 1px solid #f18a22; /* Bold orange border */
+          border-left: 8px solid #f18a22; /* Bold orange vertical bar */
+          box-shadow: 0 10px 40px rgba(241, 138, 34, 0.15);
         }
 
         .user-style {
           background: #0A0A0A;
           border: 1px solid #333;
+          padding: 24px; /* Default padding for user messages */
           color: #eee;
         }
 
         .content-box {
           position: relative;
+          width: 100%;
         }
       `}</style>
     </div>
