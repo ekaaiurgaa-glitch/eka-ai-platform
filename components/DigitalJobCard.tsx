@@ -103,14 +103,22 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
               <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">VOC: Symptom Observation</span>
             </div>
             <div className="flex flex-col gap-2.5">
-              {complaints.map((c, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 bg-[#080808] border-2 border-[#f18a22]/20 rounded group hover:border-[#f18a22] hover:bg-[#f18a22]/5 transition-all duration-300">
-                  <span className="w-8 h-8 flex items-center justify-center bg-[#f18a22] text-black font-black font-mono text-[11px] rounded shrink-0 shadow-lg">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span className="text-white font-mono text-[13px] font-bold tracking-tight uppercase leading-snug">{c}</span>
-                </div>
-              ))}
+              {complaints.map((c, i) => {
+                const tempHsn = `VOC-${String(i + 1).padStart(3, '0')}`;
+                return (
+                  <div key={i} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[8px] font-black text-[#f18a22] uppercase tracking-[0.2em] font-mono">Temporary HSN: {tempHsn}</span>
+                    </div>
+                    <div className="flex items-center gap-4 p-4 bg-[#080808] border-2 border-[#f18a22]/20 rounded group hover:border-[#f18a22] hover:bg-[#f18a22]/5 transition-all duration-300">
+                      <span className="w-8 h-8 flex items-center justify-center bg-[#f18a22] text-black font-black font-mono text-[11px] rounded shrink-0 shadow-lg">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="text-white font-mono text-[13px] font-bold tracking-tight uppercase leading-snug flex-1">{c}</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
