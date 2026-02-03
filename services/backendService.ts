@@ -37,7 +37,6 @@ export class BackendService {
 
       return await response.json();
     } catch (error: any) {
-      console.error("Backend API Error:", error);
       return {
         response_content: { 
           visual_text: "CRITICAL: Backend connection failure. " + (error.message || "Network Error"), 
@@ -80,7 +79,6 @@ export class BackendService {
       
       return null;
     } catch (error) {
-      console.error("TTS Error:", error);
       return null;
     }
   }

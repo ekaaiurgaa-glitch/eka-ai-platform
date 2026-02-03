@@ -214,7 +214,6 @@ const App: React.FC = () => {
         setIsAudioPlaying(false);
       }
     } catch (error) {
-      console.error("Audio Playback Error:", error);
       setIsAudioPlaying(false);
     }
   };

@@ -172,7 +172,6 @@ ${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
 
       return result;
     } catch (error: any) {
-      console.error("EKA Central OS Fatal Error:", error);
       return {
         response_content: { visual_text: "CRITICAL: Logic gate failure. " + (error.message || "XHR Failure"), audio_text: "Logic failure." },
         job_status_update: currentStatus,
