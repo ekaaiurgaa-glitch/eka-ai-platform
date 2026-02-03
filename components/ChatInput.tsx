@@ -62,10 +62,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
     onSend("Scan for official recalls and common reported mechanical issues for this vehicle.");
   };
 
-  const insertPartHelper = () => {
-    const partPrefix = "Identify technical specifications for this component: ";
-    if (!input.startsWith(partPrefix)) {
-      setInput(partPrefix + input);
+  const insertTechHelper = () => {
+    const techPrefix = "Identify technical specifications for this component: ";
+    if (!input.startsWith(techPrefix)) {
+      setInput(techPrefix + input);
     }
     textareaRef.current?.focus();
   };
@@ -139,7 +139,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
 
             <button
               type="button"
-              onClick={insertPartHelper}
+              onClick={insertTechHelper}
               disabled={isLoading}
               className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-blue-400 hover:border-blue-400 transition-all uppercase tracking-tighter"
               title="Identify Component Tech Specs"
