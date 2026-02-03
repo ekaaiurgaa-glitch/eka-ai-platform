@@ -1,16 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
 
+interface InventoryItem {
+  item: string;
+  status: 'OK' | 'REPLACE' | 'CHECK';
+}
+
 interface DigitalJobCardProps {
   jcId?: string;
   status?: string;
   customerName: string;
-  contact: string;
+  contact?: string;
   vehicleModel: string;
   regNo: string;
   odometer: string;
   initialComplaints?: string[];
-  inventoryItems?: { item: string; status: 'OK' | 'REPLACE' | 'CHECK' }[];
+  initialInventory?: InventoryItem[];
   onComplete?: (data: any) => void;
 }
 
@@ -18,7 +23,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   jcId = "JC-2026-0041",
   status = "OPEN",
   customerName,
-  contact,
+  contact = "+91 98765 43210",
   vehicleModel,
   regNo,
   odometer,
@@ -27,15 +32,18 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
     "Brake pedal feel soft / low pressure",
     "Infotainment system lag on startup"
   ],
-  inventoryItems = [
+  initialInventory = [
     { item: "Engine Oil Level", status: "OK" },
     { item: "Brake Pads (Front)", status: "CHECK" },
     { item: "Coolant Level", status: "OK" },
-    { item: "Wiper Blades", status: "REPLACE" }
+    { item: "Wiper Blades", status: "REPLACE" },
+    { item: "Tyre Pressure", status: "OK" },
+    { item: "Battery Health", status: "OK" }
   ],
   onComplete
 }) => {
   const [complaints, setComplaints] = useState<string[]>(initialComplaints);
+  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
   const [fuelLevel, setFuelLevel] = useState(65);
   const [timestamp, setTimestamp] = useState("");
 
@@ -44,8 +52,8 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   }, []);
 
   const MetaBox = ({ label, value, isOutput = true }: { label: string; value: string; isOutput?: boolean }) => (
-    <div className="flex flex-col gap-1 p-3 bg-[#0A0A0A] border-2 border-[#f18a22] rounded shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-      <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest font-mono leading-none">{label}</span>
+    <div className="flex flex-col gap-1 p-3 bg-[#0A0A0A] border-2 border-[#f18a22] rounded shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+      <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest font-mono leading-none">{label}</span>
       <span className={`text-[12px] font-black uppercase font-mono tracking-tighter ${isOutput ? 'text-[#f18a22]' : 'text-white'}`}>
         {value}
       </span>
@@ -53,77 +61,86 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   );
 
   const getStatusColor = (s: string) => {
-    if (s === 'OK') return 'text-green-500 border-green-500/30 bg-green-500/10';
-    if (s === 'REPLACE') return 'text-red-500 border-red-500/30 bg-red-500/10';
-    return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10';
+    switch (s) {
+      case 'OK': return 'text-green-500 border-green-500/30 bg-green-500/10';
+      case 'REPLACE': return 'text-red-500 border-red-500/30 bg-red-500/10';
+      case 'CHECK': return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/10';
+      default: return 'text-zinc-500 border-zinc-500/30 bg-zinc-500/10';
+    }
   };
 
   return (
-    <div className="message-card bg-[#050505] border-2 border-[#f18a22] border-l-[12px] rounded-xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] animate-in slide-in-from-left-4 duration-500 mb-8">
-      {/* Header Section */}
-      <div className="p-6 border-b-2 border-[#f18a22]/20 bg-gradient-to-r from-[#f18a22]/5 to-transparent flex justify-between items-center">
+    <div className="message-card bg-[#050505] border-2 border-[#f18a22] border-l-[12px] rounded-xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9)] animate-in slide-in-from-left-4 duration-500 mb-8 max-w-full">
+      {/* HEADER SECTION */}
+      <div className="p-6 border-b-2 border-[#f18a22]/30 bg-gradient-to-r from-[#f18a22]/10 via-[#050505] to-transparent flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Official G4G Dossier</span>
-          <span className="text-2xl font-black text-white font-mono tracking-widest">{jcId}</span>
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] font-mono">Dossier Identifier</span>
+          <span className="text-3xl font-black text-white font-mono tracking-[0.1em]">{jcId}</span>
         </div>
-        <div className="px-5 py-2 bg-[#f18a22] text-black font-black font-mono text-[11px] rounded border-2 border-black shadow-[0_0_15px_rgba(241,138,34,0.3)]">
-          STATUS: {status}
+        <div className="flex items-center gap-3">
+          <div className="px-5 py-2 bg-[#f18a22] text-black font-black font-mono text-[12px] rounded border-2 border-black shadow-[0_0_20px_rgba(241,138,34,0.4)] uppercase">
+            STATUS: {status}
+          </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-8">
-        {/* Customer/Vehicle Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="p-6 space-y-10">
+        {/* CUSTOMER & VEHICLE METADATA GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <MetaBox label="Entity Identifier" value={customerName} isOutput={false} />
-          <MetaBox label="Registration" value={regNo} />
-          <MetaBox label="Architecture" value={vehicleModel} isOutput={false} />
-          <MetaBox label="Odo Metrics" value={`${odometer} KM`} />
+          <MetaBox label="Communication Node" value={contact} isOutput={false} />
+          <MetaBox label="Reg Identity" value={regNo} />
+          <MetaBox label="Model Architecture" value={vehicleModel} isOutput={false} />
+          <MetaBox label="Distance Metric" value={`${odometer} KM`} />
+          <MetaBox label="Propulsion System" value="ICE / PETROL" />
         </div>
 
-        {/* VOC (Voice of Customer) Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-[#f18a22]"></div>
-            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">VOC: Symptom Capture</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* VOC (VOICE OF CUSTOMER) SECTION */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-2 h-5 bg-[#f18a22]"></div>
+              <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">VOC: Symptom Observation</span>
+            </div>
+            <div className="flex flex-col gap-2.5">
+              {complaints.map((c, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-[#080808] border-2 border-[#f18a22]/20 rounded group hover:border-[#f18a22] hover:bg-[#f18a22]/5 transition-all duration-300">
+                  <span className="w-8 h-8 flex items-center justify-center bg-[#f18a22] text-black font-black font-mono text-[11px] rounded shrink-0 shadow-lg">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="text-white font-mono text-[13px] font-bold tracking-tight uppercase leading-snug">{c}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-col gap-2">
-            {complaints.map((c, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-[#080808] border border-[#f18a22]/30 rounded group hover:border-[#f18a22] transition-all duration-300">
-                <span className="w-6 h-6 flex items-center justify-center bg-[#f18a22] text-black font-black font-mono text-[10px] rounded shrink-0">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span className="text-zinc-200 font-mono text-[12px] font-bold tracking-tight uppercase">{c}</span>
-              </div>
-            ))}
+
+          {/* INVENTORY & GATING SECTION */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-2 h-5 bg-[#f18a22]"></div>
+              <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Inventory Analysis & Gating</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2.5">
+              {inventory.map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-[#0A0A0A] border-2 border-zinc-900 rounded group hover:border-[#f18a22]/40 transition-all">
+                  <span className="text-[12px] font-mono font-bold text-zinc-400 uppercase tracking-tight">{item.item}</span>
+                  <div className={`px-4 py-1 rounded text-[10px] font-black border-2 font-mono tracking-widest ${getStatusColor(item.status)}`}>
+                    {item.status}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Inventory Section */}
+        {/* ENERGY / FUEL MAPPING SECTION */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-[#f18a22]"></div>
-            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Inventory & Gating</span>
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-5 bg-[#f18a22]"></div>
+            <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono">Energy / Propulsion Mapping</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {inventoryItems.map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-[#0A0A0A] border border-zinc-800 rounded">
-                <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-tighter">{item.item}</span>
-                <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${getStatusColor(item.status)} font-mono`}>
-                  {item.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Energy/Fuel Mapping Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-4 bg-[#f18a22]"></div>
-            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Energy / Propulsion Mapping</span>
-          </div>
-          <div className="p-6 bg-[#0A0A0A] border-2 border-[#f18a22] rounded flex items-center gap-8 shadow-inner">
-            <div className="flex-1 relative h-3 bg-zinc-900 rounded-full border border-white/5 overflow-hidden">
+          <div className="p-8 bg-[#0A0A0A] border-2 border-[#f18a22] rounded-xl flex flex-col md:flex-row items-center gap-8 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+            <div className="flex-1 w-full relative h-4 bg-zinc-900 rounded-full border-2 border-white/5 overflow-hidden">
               <input 
                 type="range" 
                 min="0" 
@@ -133,25 +150,31 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
               />
               <div 
-                className="h-full bg-[#f18a22] rounded-full shadow-[0_0_20px_#f18a22] transition-all duration-300 relative z-10" 
+                className="h-full bg-gradient-to-r from-[#f18a22] to-orange-400 rounded-full shadow-[0_0_30px_#f18a22] transition-all duration-300 relative z-10" 
                 style={{ width: `${fuelLevel}%` }}
               >
-                <div className="absolute top-0 right-0 w-12 h-full bg-white/20 blur-md"></div>
+                <div className="absolute top-0 right-0 w-16 h-full bg-white/20 blur-xl animate-pulse"></div>
               </div>
             </div>
-            <span className="text-2xl font-black text-[#f18a22] font-mono w-20 text-right">{fuelLevel}%</span>
+            <div className="flex flex-col items-end shrink-0">
+               <span className="text-[10px] font-black text-zinc-500 uppercase font-mono mb-[-4px]">Current Level</span>
+               <span className="text-4xl font-black text-[#f18a22] font-mono tracking-tighter leading-none">{fuelLevel}%</span>
+            </div>
           </div>
         </div>
 
-        {/* Footer Section */}
-        <div className="mt-8 pt-6 border-t-2 border-[#f18a22]/20 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex flex-col">
-            <span className="text-[8px] font-bold text-zinc-600 font-mono tracking-widest uppercase">EKA Central OS Timestamp</span>
-            <span className="text-[10px] font-black text-[#f18a22] font-mono">{timestamp}</span>
+        {/* FOOTER SECTION */}
+        <div className="mt-12 pt-8 border-t-2 border-[#f18a22]/30 flex flex-col md:flex-row justify-between items-center gap-8 bg-gradient-to-t from-[#f18a22]/5 to-transparent p-4 rounded-b-xl">
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] font-black text-zinc-600 font-mono tracking-[0.4em] uppercase">Architecture Compliance Sync</span>
+            <div className="flex items-center gap-3">
+               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
+               <span className="text-[12px] font-black text-[#f18a22] font-mono tracking-widest">{timestamp}</span>
+            </div>
           </div>
           <button 
-            onClick={() => onComplete?.({ complaints, fuelLevel, inventoryItems })}
-            className="w-full sm:w-auto px-12 py-4 bg-[#f18a22] text-black font-black uppercase tracking-[0.4em] font-mono rounded hover:bg-white transition-all shadow-2xl active:scale-95 border-2 border-black"
+            onClick={() => onComplete?.({ complaints, fuelLevel, inventory })}
+            className="w-full md:w-auto px-16 py-5 bg-[#f18a22] text-black font-black uppercase tracking-[0.5em] font-mono rounded-lg hover:bg-white hover:text-black hover:scale-105 transition-all shadow-[0_15px_30px_rgba(241,138,34,0.3)] active:scale-95 border-2 border-black"
           >
             Finalize Dossier
           </button>
@@ -161,12 +184,16 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
       <style>{`
         .message-card input[type=range]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
+          height: 30px;
+          width: 30px;
+          border-radius: 4px;
           background: #ffffff;
           cursor: pointer;
-          box-shadow: 0 0 10px rgba(241, 138, 34, 0.5);
+          box-shadow: 0 0 15px rgba(241, 138, 34, 0.8);
+          border: 4px solid #000;
+        }
+        .message-card {
+          border-left-color: #f18a22 !important;
         }
       `}</style>
     </div>
