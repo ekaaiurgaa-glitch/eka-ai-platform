@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Flask app
-app = Flask(__name__, static_folder='../dist', static_url_path='/')
+app = Flask(__name__, static_folder='../dist', static_url_path='')
+
 
 # Configure CORS
 cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
