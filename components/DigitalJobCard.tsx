@@ -60,12 +60,35 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
     }).toUpperCase());
   }, []);
 
-  const handleFinalize = () => {
+  const handleFinalize = async () => {
     setIsFinalizing(true);
-    setTimeout(() => {
-      onComplete?.({ complaints, fuelLevel, inventory });
+    try {
+      const response = await fetch('http://localhost:5000/api/job-cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          registration_number: regNo,
+          customer_name: customerName,
+          status: status,
+          complaints: complaints,
+          fuel_level: fuelLevel,
+          inventory: inventory,
+        }),
+      });
+
+      if (response.ok) {
+        onComplete?.({ complaints, fuelLevel, inventory });
+        setIsFinalizing(false);
+      } else {
+        console.error('Failed to save job card:', response.status);
+        setIsFinalizing(false);
+      }
+    } catch (error) {
+      console.error(error);
       setIsFinalizing(false);
-    }, 2000);
+    }
   };
 
   const MetaBox = ({ label, value, isOutput = true }: { label: string; value: string; isOutput?: boolean }) => (
