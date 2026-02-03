@@ -13,8 +13,18 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 
-# Configure SQLite database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///eka.db'
+# --- DATABASE CONFIGURATION (Cloud-ready: PostgreSQL or SQLite fallback) ---
+# Check for environment variable (Cloud) or fallback to local SQLite
+database_url = os.environ.get('DATABASE_URL')
+
+if database_url:
+    # Fix for Render/Heroku: SQLAlchemy requires 'postgresql://', but some clouds give 'postgres://'
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+else:
+    database_url = 'sqlite:///eka.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy
