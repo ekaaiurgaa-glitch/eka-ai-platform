@@ -35,7 +35,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai Online. Connected to Go4Garage Ecosystem. How can I assist with your vehicle today?",
+      content: "EKA-Ai Online. Architecture Loaded. Awaiting Directive.",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -135,6 +135,7 @@ const App: React.FC = () => {
       grounding_links: responseData.grounding_links,
       service_history: responseData.service_history,
       estimate_data: responseData.estimate_data,
+      visual_metrics: responseData.visual_metrics,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode
@@ -151,17 +152,20 @@ const App: React.FC = () => {
     const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'CONTRACT_VALIDATION' : 'IGNITION_TRIAGE';
     setStatus(entryStatus);
     
+    let promptContent = "EKA-Ai Online. Architecture Loaded. Awaiting Directive.";
+    if (mode === 1) promptContent = "Enter Vehicle Registration Number to proceed with Workshop Intake.";
+    if (mode === 2) promptContent = "Enter Fleet ID or Billing Month to proceed with Contract Governance.";
+
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
-      content: mode === 1 ? "Workshop Mode Active. Awaiting vehicle registration." : mode === 2 ? "Fleet Mode Active. Synchronizing contracts." : "Concierge Mode Active.",
+      content: promptContent,
       timestamp: new Date(),
       operatingMode: mode,
       job_status_update: entryStatus
     }]);
   };
 
-  // Add handlePlayAudio to fix the "Cannot find name 'handlePlayAudio'" error
   const handlePlayAudio = async (text: string) => {
     if (!text || isAudioPlaying) return;
     
