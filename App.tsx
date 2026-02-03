@@ -5,6 +5,7 @@ import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import VehicleContextPanel from './components/VehicleContextPanel';
 import VehicleVisuals from './components/VehicleVisuals';
+import TelemetryDashboard from './components/TelemetryDashboard';
 import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData, VisualMetric } from './types';
 import { geminiService } from './services/geminiService';
 
@@ -240,22 +241,19 @@ const App: React.FC = () => {
             <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
           </div>
         </div>
-        <div className="hidden lg:flex items-center gap-4">
-          <div className="flex flex-col items-end">
-             <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em]">Protocol Sequence</span>
-             <div className="flex gap-2 mt-1">
-                {activeProtocol.map((p, i) => (
-                  <div key={p} className={`w-1.5 h-1.5 rounded-full ${i <= loadingStep && isLoading ? 'bg-[#f18a22] animate-pulse' : 'bg-zinc-800'}`}></div>
-                ))}
-             </div>
-          </div>
-        </div>
       </div>
 
       <main className="flex-1 overflow-hidden flex z-0">
         {/* CHAT AREA */}
         <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
+            <div className="px-4">
+               <TelemetryDashboard 
+                 status={status} 
+                 complianceScore={status === 'APPROVAL_GATE' ? 100 : status === 'ESTIMATE_GOVERNANCE' ? 75 : 40} 
+                 systemHealth={98} 
+               />
+            </div>
             {showPanel && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
                 <VehicleContextPanel 
@@ -312,7 +310,7 @@ const App: React.FC = () => {
                  <div className="p-12 border-4 border-dashed border-zinc-900 rounded-3xl flex flex-col items-center justify-center text-center group hover:border-zinc-700 transition-all">
                     <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 opacity-30 group-hover:opacity-60 transition-opacity">
                       <svg className="w-8 h-8 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                     <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.4em] font-mono leading-relaxed">
@@ -337,27 +335,6 @@ const App: React.FC = () => {
                           {isContextComplete(vehicleContext) ? 'SECURED' : 'AWAITING_ID'}
                         </span>
                      </div>
-                     <div className="flex justify-between items-center group">
-                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Intelligence</span>
-                        <span className="text-white font-black font-mono text-[11px] uppercase tracking-tighter">{intelligenceMode}</span>
-                     </div>
-                     <div className="flex justify-between items-center group">
-                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Governance Gate</span>
-                        <span className="text-blue-500 font-black font-mono text-[11px] uppercase tracking-tighter">EKA_V1.4</span>
-                     </div>
-                  </div>
-               </div>
-
-               {/* RECENT LOGS SECTION */}
-               <div className="space-y-4">
-                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.2em] font-mono block px-1">Recent Logic Transitions</span>
-                  <div className="space-y-2">
-                     {[...messages].reverse().slice(0, 3).map((m, i) => (
-                       <div key={i} className="px-4 py-3 bg-[#080808] border border-zinc-900 rounded-xl flex items-center gap-4 opacity-60 hover:opacity-100 transition-opacity">
-                          <div className={`w-1.5 h-1.5 rounded-full ${m.role === 'assistant' ? 'bg-[#f18a22]' : 'bg-zinc-500'}`}></div>
-                          <span className="text-[9px] font-mono text-zinc-400 truncate flex-1 uppercase tracking-tighter">{m.content}</span>
-                       </div>
-                     ))}
                   </div>
                </div>
              </div>

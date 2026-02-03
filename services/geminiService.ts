@@ -29,9 +29,10 @@ Reference the following registry for all estimate generation:
 ${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
 
 [VISUALIZATION MANDATE]:
-- When currentStatus is 'SYMPTOM_RECORDING', you MUST include a 'visual_metrics' object of type 'PIE' showing complaint distribution.
+- When currentStatus is 'SYMPTOM_RECORDING', you MUST include a 'visual_metrics' object of type 'PIE' showing complaint distribution across domains (e.g., Mechanical, Electrical, Body).
 - When currentStatus is 'EXECUTION_QUALITY', you MUST include a 'visual_metrics' object of type 'PROGRESS' showing repair percentage.
-- Use 'RADAR' for system health checks.
+- Use 'BAR' charts to compare estimate line items or part costs.
+- Use 'RADAR' for multi-point system health equilibrium checks.
 - Use 'RADIAL' for fuel/battery/health gauges.
 
 [ESTIMATE COMPLIANCE]:
