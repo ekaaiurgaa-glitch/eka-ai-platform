@@ -46,10 +46,23 @@ export class GeminiService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
-      // Handle response logic here or return null for now if using placeholder
+
       if (!response.ok) return null;
+
+      const data = await response.json();
+
+      if (data.audio_data) {
+        // Decode Base64 string to Uint8Array
+        const binaryString = atob(data.audio_data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+      }
       return null;
-    } catch {
+    } catch (error) {
+      console.error("TTS Error:", error);
       return null;
     }
   }

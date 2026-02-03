@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import os
 import json
+import base64
 from google import genai
 from dotenv import load_dotenv
 
@@ -163,7 +164,7 @@ def speak():
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
             model='gemini-2.0-flash',
-            contents=[{"parts": [{"text": text}]}],
+            contents=text,
             config={
                 "response_modalities": ["AUDIO"],
                 "speech_config": {
@@ -173,16 +174,18 @@ def speak():
                 }
             }
         )
-        # Extract base64 audio
-        # Note: Audio extraction is a placeholder. Actual implementation depends on SDK version.
-        # For now we return success to prevent crashing while speech feature is being developed.
-        if hasattr(response, 'candidates'):
-            # Logic to extract audio bytes would go here.
-            # For now we return success to prevent crashing.
-            return jsonify({'message': 'Audio generated on server'}), 200
 
-        return jsonify({'error': 'No audio'}), 500
+        # Extract audio bytes
+        # The SDK returns binary data in parts[0].inline_data.data
+        for part in response.candidates[0].content.parts:
+            if part.inline_data and part.inline_data.mime_type and part.inline_data.mime_type.startswith('audio/'):
+                # Convert bytes to base64 string for JSON transport
+                b64_audio = base64.b64encode(part.inline_data.data).decode('utf-8')
+                return jsonify({'audio_data': b64_audio})
+
+        return jsonify({'error': 'No audio generated'}), 500
     except Exception as e:
+        print(f"TTS Error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
