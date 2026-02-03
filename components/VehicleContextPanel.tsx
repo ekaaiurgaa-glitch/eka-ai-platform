@@ -42,6 +42,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(!isContextComplete(context));
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -129,15 +130,17 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
       setSyncProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
+          setShowSuccess(true);
           setTimeout(() => {
+            setShowSuccess(false);
             setIsSyncing(false);
             setIsEditing(false);
-          }, 400);
+          }, 1200);
           return 100;
         }
-        return prev + 4;
+        return prev + 5;
       });
-    }, 30);
+    }, 20);
   };
 
   const getFuelIcon = (fuelId: string, customClass = "w-4 h-4") => {
@@ -152,299 +155,233 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
   if (isSyncing) {
     return (
-      <div className="mx-4 mb-8 p-16 bg-[#030303] border border-zinc-800 rounded-[24px] flex flex-col items-center justify-center gap-10 shadow-[0_0_100px_rgba(241,138,34,0.1)] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f18a22_1px,transparent_1px)] [background-size:20px_20px]"></div>
-        <div className="text-center relative z-10">
-          <div className="flex flex-col items-center gap-2 mb-8">
-            <h4 className="text-[#f18a22] font-black text-3xl uppercase tracking-[0.4em] animate-pulse">Syncing DNA</h4>
-            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">{syncMessage}</span>
-          </div>
-          
-          <div className="relative w-80 h-2 bg-zinc-900 rounded-full overflow-hidden border border-white/5 shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-[#f18a22] via-orange-400 to-[#f18a22] transition-all duration-150 shadow-[0_0_20px_rgba(241,138,34,0.6)]" 
-              style={{ width: `${syncProgress}%` }}
-            ></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-          </div>
-
-          <div className="mt-6 flex justify-between items-center px-2">
-            <div className="flex gap-1">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${syncProgress > (i * 25) ? 'bg-[#f18a22]' : 'bg-zinc-800'}`}></div>
-              ))}
+      <div className="mx-4 mb-8 p-12 bg-[#030303] border border-zinc-800 rounded-[24px] flex flex-col items-center justify-center gap-8 shadow-[0_0_80px_rgba(241,138,34,0.1)] relative overflow-hidden h-[300px]">
+        {showSuccess ? (
+          <div className="text-center relative z-20 animate-in zoom-in-95 fade-in duration-300">
+            <div className="w-20 h-20 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+              <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <span className="text-[12px] font-mono font-black text-white">{syncProgress}%</span>
+            <h4 className="text-white font-black text-2xl uppercase tracking-[0.2em] mb-1 font-mono">Dossier Locked</h4>
+            <p className="text-green-500 font-black text-[9px] uppercase tracking-[0.4em] font-mono">Synchronization Complete</p>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#f18a22_1px,transparent_1px)] [background-size:20px_20px]"></div>
+            <div className="text-center relative z-10 w-full max-w-xs">
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <h4 className="text-[#f18a22] font-black text-2xl uppercase tracking-[0.3em] animate-pulse font-mono">Handshake...</h4>
+                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest">{syncMessage}</span>
+              </div>
+              
+              <div className="relative w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#f18a22] via-orange-400 to-[#f18a22] transition-all duration-150" 
+                  style={{ width: `${syncProgress}%` }}
+                ></div>
+              </div>
+
+              <div className="mt-6 flex justify-between items-center px-1">
+                <span className="text-sm font-mono font-black text-zinc-500">{syncProgress}%</span>
+                <div className="flex gap-1.5">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${syncProgress > (i * 33) ? 'bg-[#f18a22]' : 'bg-zinc-800'}`}></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }
 
   if (!isEditing && isContextComplete(context)) {
     return (
-      <div className="mx-4 mb-12 animate-in slide-in-from-top-4 duration-700">
-        <div className="bg-[#050505] border border-zinc-800 rounded-[28px] p-10 md:p-14 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.9)] relative overflow-hidden group">
-          {/* Subtle Glow Borders */}
-          <div className="absolute top-0 left-0 w-2 h-full bg-[#f18a22] shadow-[0_0_30px_rgba(241,138,34,0.4)]"></div>
-          <div className="absolute top-0 right-0 w-[1px] h-full bg-zinc-800 group-hover:bg-[#f18a22]/20 transition-colors"></div>
+      <div className="mx-4 mb-10 animate-in slide-in-from-top-4 duration-500">
+        <div className="bg-[#050505] border border-zinc-800 rounded-[20px] p-8 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)] relative overflow-hidden group">
+          {/* Subtle Side Accent */}
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.3)]"></div>
           
-          {/* Holographic Scan Effect */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#f18a22]/10 to-transparent h-[60%] w-full -translate-y-full animate-scan-slow opacity-20 pointer-events-none"></div>
-
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-10 mb-14 relative z-10">
-            <div className="flex items-center gap-8">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-8 relative z-10">
+            <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="w-20 h-20 rounded-3xl bg-green-500/5 border border-green-500/30 flex items-center justify-center shadow-[0_0_40px_rgba(34,197,94,0.1)] group-hover:scale-105 transition-transform duration-500">
-                   <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                <div className="w-14 h-14 rounded-2xl bg-green-500/5 border border-green-500/30 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-500">
+                   <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                    </svg>
                 </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-4 border-black animate-ping"></div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-black animate-pulse"></div>
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-3">
-                  <span className="text-white font-black text-4xl tracking-tighter uppercase font-mono">Dossier Locked</span>
-                  <div className="px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]"></span>
-                    <span className="text-[9px] font-black text-green-500 uppercase tracking-widest">Audit Grade Sync</span>
+                <div className="flex items-center gap-2 mb-1">
+                   <span className="text-white font-black text-xl tracking-tighter uppercase font-mono leading-none">Identity Verified</span>
+                   <div className="px-2 py-0.5 bg-green-500/10 border border-green-500/20 rounded-full flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-green-500"></span>
+                    <span className="text-[7px] font-black text-green-500 uppercase tracking-widest font-mono">Locked</span>
                   </div>
                 </div>
-                <span className="text-[11px] text-zinc-500 font-bold uppercase tracking-[0.4em] font-mono mt-2">Verified Ecosystem Twin • Identity Secured</span>
+                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.3em] font-mono">Central OS Triage Protocol Active</span>
               </div>
             </div>
             
             <button 
               onClick={() => setIsEditing(true)} 
-              className="px-10 py-3.5 bg-zinc-900/40 border border-zinc-800 text-zinc-500 text-[11px] font-black uppercase tracking-[0.25em] rounded-2xl hover:border-[#f18a22]/50 hover:text-white hover:bg-zinc-900 transition-all shadow-xl active:scale-95 flex items-center gap-2 group/btn"
+              className="px-6 py-2.5 bg-zinc-900/40 border border-zinc-800 text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:border-[#f18a22]/50 hover:text-white transition-all shadow-lg active:scale-95 flex items-center gap-2"
             >
-              <svg className="w-3.5 h-3.5 opacity-40 group-hover/btn:rotate-45 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <svg className="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              Revoke & Edit
+              Revoke Lock
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-end justify-between gap-12 relative z-10">
+          <div className="mt-8 flex flex-col sm:flex-row items-end justify-between gap-8 relative z-10">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-4 mb-3">
-                <span className="text-zinc-700 text-3xl font-black font-mono tracking-widest">{context.year}</span>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-zinc-700 text-xl font-black font-mono tracking-widest">{context.year}</span>
                 {context.registrationNumber && (
                   <>
                     <div className="w-1 h-1 rounded-full bg-zinc-800"></div>
-                    <span className="text-white text-3xl font-black font-mono tracking-widest bg-zinc-900/50 px-4 py-1 rounded-lg border border-white/5">
+                    <span className="text-white text-lg font-black font-mono tracking-widest bg-zinc-900/50 px-3 py-0.5 rounded border border-white/5">
                       {context.registrationNumber.toUpperCase()}
                     </span>
                   </>
                 )}
               </div>
-              <h2 className="text-7xl sm:text-9xl font-black text-white tracking-tighter uppercase leading-[0.8] mb-1">
-                {context.brand}
+              <h2 className="text-4xl sm:text-5xl font-black text-white tracking-tighter uppercase leading-none">
+                {context.brand} <span className="text-[#f18a22] block sm:inline">{context.model}</span>
               </h2>
-              <h3 className="text-5xl sm:text-7xl font-black text-[#f18a22] tracking-tighter uppercase leading-none drop-shadow-[0_0_20px_rgba(241,138,34,0.2)]">
-                {context.model}
-              </h3>
             </div>
             
-            <div className="flex flex-col items-end gap-5">
-              <div className="flex items-center gap-5 px-10 py-5 bg-zinc-900/60 border border-white/5 rounded-[24px] shadow-2xl backdrop-blur-2xl group/fuel hover:border-[#f18a22]/20 transition-all">
-                 {getFuelIcon(context.fuelType, "w-10 h-10 group-hover/fuel:scale-110 transition-transform")}
-                 <div className="flex flex-col">
-                   <span className="text-zinc-500 text-[9px] font-black uppercase tracking-[0.2em] font-mono leading-none mb-1">Fueling Vector</span>
-                   <span className="text-3xl font-black text-white uppercase tracking-[0.1em] font-mono leading-none">{context.fuelType}</span>
-                 </div>
-              </div>
-              
-              <div className="flex flex-col items-end gap-2 pr-2">
-                {context.fuelType === 'Electric' && (
-                  <div className="flex gap-3">
-                    <div className="text-[10px] bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-lg font-mono font-black text-blue-400 uppercase tracking-tighter">
-                      {context.batteryCapacity} kWh Cap
-                    </div>
-                    <div className="text-[10px] bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-lg font-mono font-black text-blue-400 uppercase tracking-tighter">
-                      {context.motorPower} kW Power
-                    </div>
-                  </div>
-                )}
-                <div className="text-[9px] text-zinc-700 font-mono font-black uppercase tracking-[0.4em]">
-                  Unified Governance Instance: Active
-                </div>
-              </div>
+            <div className="flex items-center gap-4 px-6 py-3 bg-zinc-900/60 border border-white/5 rounded-2xl shadow-xl backdrop-blur-md group/fuel hover:border-[#f18a22]/20 transition-all">
+               {getFuelIcon(context.fuelType, "w-6 h-6")}
+               <div className="flex flex-col">
+                 <span className="text-zinc-500 text-[7px] font-black uppercase tracking-[0.2em] font-mono leading-none mb-1">Propulsion</span>
+                 <span className="text-lg font-black text-white uppercase tracking-[0.1em] font-mono leading-none">{context.fuelType}</span>
+               </div>
             </div>
           </div>
           
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-[0.05] pointer-events-none select-none text-[80px] font-black font-mono whitespace-nowrap">
-            G4G-AUDIT-LOCKED-IDENTITY
-          </div>
+          {/* Subtle scanline overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#f18a22]/5 to-transparent h-[50%] w-full -translate-y-full animate-scan-slow opacity-10 pointer-events-none"></div>
         </div>
       </div>
     );
   }
 
-  // Edit Mode UI
+  // Edit Mode UI (Simplified and Smaller)
   return (
-    <div className="mx-4 mb-8 bg-[#050505] border border-zinc-800 rounded-[28px] p-10 flex flex-col gap-12 shadow-3xl relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#f18a22]/5 blur-[200px] rounded-full pointer-events-none"></div>
+    <div className="mx-4 mb-8 bg-[#050505] border border-zinc-800 rounded-[20px] p-8 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-[#f18a22]/5 blur-[80px] rounded-full pointer-events-none"></div>
       
-      <div className="flex items-center gap-8 relative z-10">
-        <div className="w-2 h-14 bg-[#f18a22] rounded-full shadow-[0_0_25px_rgba(241,138,34,0.6)] animate-pulse"></div>
+      <div className="flex items-center gap-4 relative z-10">
+        <div className="w-1.5 h-10 bg-[#f18a22] rounded-full shadow-[0_0_15px_rgba(241,138,34,0.4)]"></div>
         <div className="flex flex-col">
-          <h2 className="text-3xl font-black text-white uppercase tracking-[0.4em] font-mono leading-none mb-3">Initialize Dossier</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] text-zinc-600 font-bold uppercase tracking-[0.3em] font-mono">EKA OS Governance Mode</span>
-            <div className="w-1 h-1 rounded-full bg-zinc-800"></div>
-            <span className="text-[10px] text-zinc-800 font-black uppercase tracking-widest font-mono">Build: 1.1.0-A</span>
-          </div>
+          <h2 className="text-xl font-black text-white uppercase tracking-[0.3em] font-mono leading-none mb-2">Initialize Dossier</h2>
+          <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-[0.3em] font-mono">EKA OS 1.1.0-STABLE</span>
         </div>
       </div>
 
-      <div className="form-section relative z-10">
-        <div className="text-[11px] font-black text-zinc-700 uppercase tracking-[0.3em] mb-6 font-mono flex items-center gap-2">
-          <span className="text-[#f18a22]">01.</span> Architectural Class
+      <div className="grid grid-cols-2 gap-4 relative z-10">
+        <button 
+          onClick={() => handleTypeSelect('2W')} 
+          className={`flex items-center gap-4 h-20 px-6 rounded-xl border transition-all duration-300 group ${context.vehicleType === '2W' ? 'bg-zinc-900 border-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.1)]' : 'bg-transparent border-zinc-900 hover:border-zinc-800'}`}
+        >
+          <svg className={`w-8 h-8 ${context.vehicleType === '2W' ? 'text-[#f18a22]' : 'text-zinc-800 group-hover:text-zinc-700'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" />
+          </svg>
+          <span className={`text-[11px] font-black uppercase tracking-[0.2em] font-mono ${context.vehicleType === '2W' ? 'text-white' : 'text-zinc-700'}`}>2-Wheeler</span>
+        </button>
+        <button 
+          onClick={() => handleTypeSelect('4W')} 
+          className={`flex items-center gap-4 h-20 px-6 rounded-xl border transition-all duration-300 group ${context.vehicleType === '4W' ? 'bg-zinc-900 border-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.1)]' : 'bg-transparent border-zinc-900 hover:border-zinc-800'}`}
+        >
+          <svg className={`w-8 h-8 ${context.vehicleType === '4W' ? 'text-[#f18a22]' : 'text-zinc-800 group-hover:text-zinc-700'}`} fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z"/>
+          </svg>
+          <span className={`text-[11px] font-black uppercase tracking-[0.2em] font-mono ${context.vehicleType === '4W' ? 'text-white' : 'text-zinc-700'}`}>4-Wheeler</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end relative z-10">
+        <div className="flex flex-col gap-2">
+          <label className={`text-[9px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.registrationNumber && errors.registrationNumber) ? 'text-red-500' : 'text-zinc-700'}`}>Reg No</label>
+          <input 
+            name="registrationNumber" 
+            value={context.registrationNumber || ''} 
+            onChange={handleChange} 
+            onBlur={() => handleBlur('registrationNumber')}
+            placeholder="MH12AB1234" 
+            className={`bg-[#0A0A0A] border rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all w-full box-border font-black uppercase tracking-widest ${(touched.registrationNumber && errors.registrationNumber) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
+          />
         </div>
-        <div className="grid grid-cols-2 gap-8">
-          <button 
-            onClick={() => handleTypeSelect('2W')} 
-            className={`flex flex-col items-center justify-center h-48 rounded-[20px] border transition-all duration-300 group ${context.vehicleType === '2W' ? 'bg-zinc-900 border-[#f18a22] shadow-[0_0_40px_rgba(241,138,34,0.1)]' : 'bg-transparent border-zinc-900 hover:border-zinc-700'}`}
+        <div className="flex flex-col gap-2">
+          <label className={`text-[9px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.brand && errors.brand) ? 'text-red-500' : 'text-zinc-700'}`}>Brand</label>
+          <input 
+            name="brand" 
+            list="brand-list-mini" 
+            value={context.brand} 
+            onChange={handleChange} 
+            onBlur={() => handleBlur('brand')}
+            placeholder="Manufacturer" 
+            className={`bg-[#0A0A0A] border rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.brand && errors.brand) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
+          />
+          <datalist id="brand-list-mini">{context.vehicleType === '2W' ? DATA_STORE.brands_2w.map(b => <option key={b} value={b}/>) : DATA_STORE.brands_4w.map(b => <option key={b} value={b}/>)}</datalist>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className={`text-[9px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.model && errors.model) ? 'text-red-500' : 'text-zinc-700'}`}>Model</label>
+          <input 
+            name="model" 
+            value={context.model} 
+            onChange={handleChange} 
+            onBlur={() => handleBlur('model')}
+            placeholder="Variant" 
+            className={`bg-[#0A0A0A] border rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.model && errors.model) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label className={`text-[9px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.year && errors.year) ? 'text-red-500' : 'text-zinc-700'}`}>Year</label>
+          <input 
+            name="year" 
+            value={context.year} 
+            onChange={handleChange} 
+            onBlur={() => handleBlur('year')}
+            placeholder="YYYY" 
+            className={`bg-[#0A0A0A] border rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.year && errors.year) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-5 gap-3 relative z-10">
+        {DATA_STORE.fuelOptions.map((fuel) => (
+          <button
+            key={fuel.id}
+            onClick={() => handleFuelSelect(fuel.id)}
+            className={`flex flex-col items-center justify-center py-4 rounded-xl border transition-all duration-300 ${context.fuelType === fuel.id ? 'bg-[#f18a22]/10 border-[#f18a22] shadow-sm' : 'bg-transparent border-zinc-900 hover:border-zinc-800'}`}
           >
-            <svg className={`w-16 h-16 mb-6 transition-all duration-500 ${context.vehicleType === '2W' ? 'text-[#f18a22] scale-110' : 'text-zinc-800 group-hover:text-zinc-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3v8h8a9.982 9.982 0 00-1.747-5.63l-.06-.088m-12.396 1.206l.06.088m0 0L8.182 8.09c.401.402.582.97.48 1.533L8 13.5l-3.37-1.517m0 0l-1.047-.47a10 10 0 001.206 12.396l.088.06m0 0l5.63 1.747c-.073.003-.147.003-.22 0z" />
-            </svg>
-            <span className={`text-[13px] font-black uppercase tracking-[0.3em] font-mono transition-colors ${context.vehicleType === '2W' ? 'text-white' : 'text-zinc-700'}`}>2-Wheeler Fleet</span>
+            <div className="mb-2">{getFuelIcon(fuel.id, "w-5 h-5")}</div>
+            <span className={`text-[8px] font-black uppercase tracking-widest font-mono ${context.fuelType === fuel.id ? 'text-white' : 'text-zinc-800'}`}>{fuel.label}</span>
           </button>
-          <button 
-            onClick={() => handleTypeSelect('4W')} 
-            className={`flex flex-col items-center justify-center h-48 rounded-[20px] border transition-all duration-300 group ${context.vehicleType === '4W' ? 'bg-zinc-900 border-[#f18a22] shadow-[0_0_40px_rgba(241,138,34,0.1)]' : 'bg-transparent border-zinc-900 hover:border-zinc-700'}`}
-          >
-            <svg className={`w-16 h-16 mb-6 transition-all duration-500 ${context.vehicleType === '4W' ? 'text-[#f18a22] scale-110' : 'text-zinc-800 group-hover:text-zinc-600'}`} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z"/>
-            </svg>
-            <span className={`text-[13px] font-black uppercase tracking-[0.3em] font-mono transition-colors ${context.vehicleType === '4W' ? 'text-white' : 'text-zinc-700'}`}>4-Wheeler Fleet</span>
-          </button>
-        </div>
+        ))}
       </div>
-
-      <div className="form-section relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-8 items-end">
-          <div className="flex flex-col gap-3">
-            <label className={`text-[11px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.registrationNumber && errors.registrationNumber) ? 'text-red-500' : 'text-zinc-600'}`}>Registration Number</label>
-            <input 
-              name="registrationNumber" 
-              value={context.registrationNumber || ''} 
-              onChange={handleChange} 
-              onBlur={() => handleBlur('registrationNumber')}
-              placeholder="MH12AB1234" 
-              className={`bg-[#0A0A0A] border rounded-xl px-5 py-4 text-base text-white focus:outline-none transition-all w-full box-border font-black uppercase tracking-widest placeholder:text-zinc-800 ${(touched.registrationNumber && errors.registrationNumber) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
-            />
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <label className={`text-[11px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.brand && errors.brand) ? 'text-red-500' : 'text-zinc-600'}`}>Brand</label>
-            <input 
-              name="brand" 
-              list="brand-list" 
-              value={context.brand} 
-              onChange={handleChange} 
-              onBlur={() => handleBlur('brand')}
-              placeholder="Manufacturer" 
-              className={`bg-[#0A0A0A] border rounded-xl px-5 py-4 text-base text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.brand && errors.brand) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
-            />
-            <datalist id="brand-list">{context.vehicleType === '2W' ? DATA_STORE.brands_2w.map(b => <option key={b} value={b}/>) : DATA_STORE.brands_4w.map(b => <option key={b} value={b}/>)}</datalist>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <label className={`text-[11px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.model && errors.model) ? 'text-red-500' : 'text-zinc-600'}`}>Model</label>
-            <input 
-              name="model" 
-              value={context.model} 
-              onChange={handleChange} 
-              onBlur={() => handleBlur('model')}
-              placeholder="Variant Name" 
-              className={`bg-[#0A0A0A] border rounded-xl px-5 py-4 text-base text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.model && errors.model) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
-            />
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <label className={`text-[11px] font-black uppercase tracking-widest font-mono ml-1 ${(touched.year && errors.year) ? 'text-red-500' : 'text-zinc-600'}`}>Year</label>
-            <input 
-              name="year" 
-              value={context.year} 
-              onChange={handleChange} 
-              onBlur={() => handleBlur('year')}
-              placeholder="YYYY" 
-              className={`bg-[#0A0A0A] border rounded-xl px-5 py-4 text-base text-white focus:outline-none transition-all w-full box-border font-bold ${(touched.year && errors.year) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="form-section relative z-10">
-        <div className="text-[11px] font-black text-zinc-700 uppercase tracking-[0.3em] mb-6 font-mono flex items-center gap-2">
-          <span className="text-[#f18a22]">02.</span> Propulsion Protocol
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
-          {DATA_STORE.fuelOptions.map((fuel) => (
-            <button
-              key={fuel.id}
-              onClick={() => handleFuelSelect(fuel.id)}
-              className={`flex flex-col items-center justify-center py-8 rounded-2xl border transition-all duration-300 ${context.fuelType === fuel.id ? 'bg-[#f18a22]/10 border-[#f18a22] shadow-[0_0_20px_rgba(241,138,34,0.1)]' : 'bg-transparent border-zinc-900 hover:border-zinc-700'}`}
-            >
-              <div className="mb-4 transition-transform group-hover:scale-110">{getFuelIcon(fuel.id, "w-10 h-10")}</div>
-              <span className={`text-[11px] font-black uppercase tracking-widest font-mono ${context.fuelType === fuel.id ? 'text-white' : 'text-zinc-800'}`}>{fuel.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {(context.fuelType === 'Electric' || context.fuelType === 'Hybrid') && (
-        <div className="form-section animate-in slide-in-from-top-4 duration-500 relative z-10">
-          <div className="p-8 bg-red-950/10 border border-red-900/30 rounded-[24px] flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-               <svg className="w-8 h-8 text-red-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-               </svg>
-               <div className="flex flex-col">
-                 <span className="text-[12px] font-black text-red-500 uppercase tracking-widest font-mono">HV Safety Attestation Required</span>
-                 <span className="text-[10px] text-zinc-600 font-bold uppercase font-mono">Critical Diagnostic Pre-requisite</span>
-               </div>
-            </div>
-            
-            <label className="flex items-start gap-5 cursor-pointer group/safety">
-              <div className="pt-1">
-                <input 
-                  type="checkbox" 
-                  name="hvSafetyConfirmed"
-                  checked={context.hvSafetyConfirmed || false}
-                  onChange={handleChange}
-                  className="hidden peer"
-                />
-                <div className="w-6 h-6 border-2 rounded-lg border-red-900/50 peer-checked:bg-red-600 peer-checked:border-red-600 transition-all flex items-center justify-center shadow-lg">
-                  <svg className="w-4 h-4 text-black opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <span className={`text-[12px] font-bold leading-relaxed transition-colors ${context.hvSafetyConfirmed ? 'text-zinc-200' : 'text-zinc-500 group-hover/safety:text-zinc-400'}`}>
-                  I hereby confirm that high-voltage system safety protocols have been duly verified. I attest that all isolation procedures and PPE requirements are understood prior to establishing diagnostic link.
-                </span>
-                {!context.hvSafetyConfirmed && touched.hvSafetyConfirmed && (
-                  <span className="text-[9px] text-red-500 font-black uppercase mt-2 tracking-widest font-mono">Governance Error: Confirmation Missing</span>
-                )}
-              </div>
-            </label>
-          </div>
-        </div>
-      )}
 
       {isContextComplete(context) && (
-        <div className="pt-10 border-t border-white/5 relative z-10">
+        <div className="pt-6 border-t border-white/5 relative z-10">
            <button 
              onClick={handleLockIdentity} 
              disabled={!isDataValid}
-             className={`w-full py-6 text-[18px] font-black uppercase tracking-[0.5em] rounded-[20px] transition-all duration-500 font-mono shadow-2xl ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-white hover:scale-[1.01] active:scale-95' : 'bg-zinc-900 text-zinc-700 grayscale cursor-not-allowed'}`}
+             className={`w-full py-4 text-[14px] font-black uppercase tracking-[0.3em] rounded-xl transition-all duration-300 font-mono flex items-center justify-center gap-3 ${isDataValid ? 'bg-[#f18a22] text-black hover:bg-white active:scale-95' : 'bg-zinc-900 text-zinc-800 grayscale cursor-not-allowed'}`}
            >
-            {isDataValid ? 'Synchronize Identity' : 'Incomplete Architecture'}
+            {isDataValid ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Lock Architecture
+              </>
+            ) : 'Incomplete'}
            </button>
         </div>
       )}
@@ -455,14 +392,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
           100% { transform: translateY(280%); }
         }
         .animate-scan-slow {
-          animation: scan-slow 4s ease-in-out infinite;
-        }
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .animate-shimmer {
-          animation: shimmer 2s linear infinite;
+          animation: scan-slow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
       `}</style>
     </div>
