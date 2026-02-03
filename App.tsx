@@ -166,6 +166,22 @@ const App: React.FC = () => {
     }]);
   };
 
+  const handleEstimateAuthorize = (finalData: EstimateData) => {
+    // Lock the status and notify system
+    setStatus('APPROVAL_GATE');
+    setMessages(prev => [...prev, {
+      id: `auth-success-${Date.now()}`,
+      role: 'assistant',
+      content: `ESTIMATE AUTHORIZED: Compliance checks for HSN 8708/9987 passed. Dossier ${finalData.estimate_id} has been moved to APPROVAL_GATE. Awaiting customer signature.`,
+      timestamp: new Date(),
+      job_status_update: 'APPROVAL_GATE',
+      operatingMode: 1
+    }]);
+    
+    // Scroll to new message
+    setTimeout(scrollToBottom, 100);
+  };
+
   const handlePlayAudio = async (text: string) => {
     if (!text || isAudioPlaying) return;
     
@@ -244,7 +260,7 @@ const App: React.FC = () => {
                 isAudioPlaying={isAudioPlaying} 
                 vehicleContext={vehicleContext} 
                 onUpdateContext={setVehicleContext}
-                onEstimateAuthorize={(data) => console.log(data)}
+                onEstimateAuthorize={handleEstimateAuthorize}
               />
             ))}
             {isLoading && (

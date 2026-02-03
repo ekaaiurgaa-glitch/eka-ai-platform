@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { EstimateData, EstimateItem } from '../types';
 
 interface EstimateGovernanceProps {
@@ -10,6 +10,14 @@ interface EstimateGovernanceProps {
 const EstimateGovernance: React.FC<EstimateGovernanceProps> = ({ data, onAuthorize }) => {
   const [items, setItems] = useState<EstimateItem[]>(data.items);
   const [taxType, setTaxType] = useState<'CGST_SGST' | 'IGST'>(data.tax_type || 'CGST_SGST');
+  const [isCrossReferencing, setIsCrossReferencing] = useState(false);
+
+  // Simulation of referencing the GST backend
+  useEffect(() => {
+    setIsCrossReferencing(true);
+    const timer = setTimeout(() => setIsCrossReferencing(false), 1200);
+    return () => clearTimeout(timer);
+  }, [items, taxType]);
 
   const validation = useMemo(() => {
     return items.map(item => {
@@ -75,7 +83,13 @@ const EstimateGovernance: React.FC<EstimateGovernanceProps> = ({ data, onAuthori
     <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl overflow-hidden mt-6 shadow-[0_30px_60px_-12px_rgba(0,0,0,1)]">
       <div className="p-5 bg-[#0A0A0A] border-b-4 border-[#f18a22] flex justify-between items-center">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Governed Compliance Quote</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Governed Compliance Quote</span>
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded bg-black border border-zinc-800 ${isCrossReferencing ? 'animate-pulse' : ''}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isCrossReferencing ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+              <span className="text-[7px] font-black text-zinc-500 uppercase font-mono">GST Backend Sync</span>
+            </div>
+          </div>
           <span className="text-xl font-black text-white font-mono tracking-widest">{data.estimate_id}</span>
         </div>
         <div className="flex gap-2 p-1 bg-black rounded-lg border-2 border-zinc-900">
@@ -155,10 +169,10 @@ const EstimateGovernance: React.FC<EstimateGovernanceProps> = ({ data, onAuthori
       <div className="p-6 bg-black">
         <button 
           onClick={() => onAuthorize({ ...data, items, tax_type: taxType })}
-          disabled={!allValid}
-          className={`w-full py-5 text-[15px] font-black uppercase tracking-[0.4em] rounded-xl border-4 transition-all font-mono shadow-2xl ${allValid ? 'bg-[#f18a22] text-black border-[#f18a22] hover:bg-white active:scale-95' : 'bg-zinc-900 border-zinc-950 text-zinc-700 cursor-not-allowed'}`}
+          disabled={!allValid || isCrossReferencing}
+          className={`w-full py-5 text-[15px] font-black uppercase tracking-[0.4em] rounded-xl border-4 transition-all font-mono shadow-2xl ${allValid && !isCrossReferencing ? 'bg-[#f18a22] text-black border-[#f18a22] hover:bg-white active:scale-95' : 'bg-zinc-900 border-zinc-950 text-zinc-700 cursor-not-allowed'}`}
         >
-          {allValid ? 'Authorize Logic Gates' : 'Compliance Protocol Failed'}
+          {isCrossReferencing ? 'Cross-Referencing GST Backend...' : allValid ? 'Authorize Logic Gates' : 'Compliance Protocol Failed'}
         </button>
       </div>
     </div>
