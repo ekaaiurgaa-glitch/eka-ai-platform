@@ -14,6 +14,7 @@ interface ChatMessageProps {
   vehicleContext?: VehicleContext;
   onUpdateContext?: (context: VehicleContext) => void;
   onEstimateAuthorize?: (data: EstimateData) => void;
+  onJobCardComplete?: (data: any) => void;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
@@ -22,7 +23,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   isAudioPlaying, 
   vehicleContext,
   onUpdateContext,
-  onEstimateAuthorize
+  onEstimateAuthorize,
+  onJobCardComplete
 }) => {
   const isAi = message.role === 'assistant';
 
@@ -87,7 +89,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const renderContent = () => {
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
-    const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
+    const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING' || message.job_status_update === 'AUTH_INTAKE';
     const showHistory = !!message.service_history && message.service_history.length > 0;
     const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
@@ -126,8 +128,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <DigitalJobCard 
             customerName="Authorized Tech"
             vehicleModel={`${vehicleContext?.brand} ${vehicleContext?.model}`}
-            regNo={vehicleContext?.registrationNumber || ''}
+            regNo={vehicleContext?.registrationNumber || 'MH-12-G4G'}
             odometer="12,450"
+            status={message.job_status_update === 'AUTH_INTAKE' ? 'AWAITING_SYNC' : 'IN_PROGRESS'}
+            onComplete={onJobCardComplete}
           />
         )}
 
