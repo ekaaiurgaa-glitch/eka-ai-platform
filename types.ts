@@ -58,9 +58,9 @@ export interface EstimateData {
 }
 
 export interface VisualMetric {
-  type: 'PROGRESS' | 'PIE' | 'BAR';
+  type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL';
   label: string;
-  data: Array<{ name: string; value: number; color?: string }>;
+  data: Array<{ name: string; value: number; color?: string; fullMark?: number }>;
 }
 
 export interface Message {

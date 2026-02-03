@@ -26,9 +26,11 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
 
 [VISUALIZATION PROTOCOL]:
 If providing summaries or progress updates, you MUST populate 'visual_metrics'.
-- For repair status: Use 'PROGRESS' type (value 0-100).
-- For complaint distribution or costs breakdown: Use 'PIE' or 'BAR'.
-- Colors should be brand-aligned (Orange: #f18a22, Green: #22c55e, Red: #ef4444).
+- For repair status: Use 'PROGRESS' (0-100).
+- For health scans across multiple systems: Use 'RADAR'.
+- For historical trends (Voltage, RPM, Temp): Use 'AREA'.
+- For breakdown costs or part distributions: Use 'PIE' or 'BAR'.
+- Colors MUST be brand-aligned (Orange: #f18a22, Green: #22c55e, Red: #ef4444).
 
 [ESTIMATE PROTOCOL (MODE 1)]:
 1. MANDATORY: Every line item MUST have a valid HSN Code.
@@ -86,7 +88,8 @@ If providing summaries or progress updates, you MUST populate 'visual_metrics'.
                     properties: {
                       name: { type: Type.STRING },
                       value: { type: Type.NUMBER },
-                      color: { type: Type.STRING }
+                      color: { type: Type.STRING },
+                      fullMark: { type: Type.NUMBER }
                     },
                     required: ["name", "value"]
                   }
