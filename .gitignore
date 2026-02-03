@@ -1,3 +1,7 @@
+# Environment files
+.env
+server/.env
+
 # Logs
 logs
 *.log
@@ -22,3 +26,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+ENV/
