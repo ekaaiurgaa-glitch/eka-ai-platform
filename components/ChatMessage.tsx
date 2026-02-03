@@ -30,38 +30,56 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const cleanText = text.replace(/\[\[STATE:.*?\]\]/g, '').trim();
     if (!cleanText && text.includes('[[STATE:')) return null;
 
-    const rangeRegex = /((\d+[\d,]*)\s*(?:-|to)\s*(\d+[\d,]*))/gi;
+    // Improved regex for Price Ranges (Pricing Firewall enforcement)
+    // Matches: ₹5,000 - ₹7,000, 5000-7000, 5k to 7k, etc.
+    const priceRangeRegex = /(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)\s*(?:-|to|until)\s*(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)/gi;
     const hsnRegex = /(HSN:\s*\d+)/gi;
     const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
 
     let parts: (string | React.ReactNode)[] = [cleanText];
 
-    const applyRegex = (regex: RegExp, className: string) => {
+    const applyRegex = (regex: RegExp, type: 'RANGE' | 'HSN' | 'GST') => {
       let nextParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
         if (typeof part !== 'string') {
           nextParts.push(part);
           return;
         }
-        const matches = part.split(regex);
-        matches.forEach((subPart, i) => {
-          if (subPart.match(regex)) {
-            nextParts.push(
-              <span key={i} className={`inline-block px-2 py-0.5 rounded border border-[#f18a22] bg-[#f18a22]/10 text-[#f18a22] font-mono text-[10px] mx-0.5`}>
-                {subPart}
-              </span>
-            );
-          } else {
-            nextParts.push(subPart);
+        
+        const splitParts = part.split(regex);
+        const matches = part.match(regex);
+        
+        let matchIdx = 0;
+        splitParts.forEach((subPart, i) => {
+          nextParts.push(subPart);
+          if (matches && matchIdx < matches.length && part.indexOf(matches[matchIdx], subPart.length) !== -1) {
+            const matchText = matches[matchIdx];
+            
+            if (type === 'RANGE') {
+              nextParts.push(
+                <span key={`range-${matchIdx}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-dashed border-[#f18a22]/50 bg-[#f18a22]/5 text-[#f18a22] font-mono text-[11px] font-black mx-1 animate-in fade-in zoom-in duration-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f18a22] animate-pulse"></span>
+                  <span className="opacity-60 text-[8px] tracking-widest">EST:</span>
+                  {matchText}
+                </span>
+              );
+            } else {
+              nextParts.push(
+                <span key={`${type.toLowerCase()}-${matchIdx}`} className={`inline-block px-2 py-0.5 rounded border border-[#f18a22] bg-[#f18a22]/10 text-[#f18a22] font-mono text-[10px] mx-0.5`}>
+                  {matchText}
+                </span>
+              );
+            }
+            matchIdx++;
           }
         });
       });
       parts = nextParts;
     };
 
-    applyRegex(rangeRegex, "");
-    applyRegex(hsnRegex, "");
-    applyRegex(gstRegex, "");
+    applyRegex(priceRangeRegex, 'RANGE');
+    applyRegex(hsnRegex, 'HSN');
+    applyRegex(gstRegex, 'GST');
 
     return parts;
   };
@@ -69,12 +87,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const renderContent = () => {
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
-    // Logical gate checks for specialized UI components
     const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
-    
-    // Explicitly check for service_history availability as per instruction
     const showHistory = !!message.service_history && message.service_history.length > 0;
-    
     const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
     const showDiagnostics = !!message.diagnostic_data;
@@ -86,7 +100,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             const formatted = formatTechnicalTags(line);
             if (!formatted) return null;
             return (
-              <div key={i} className="mb-2">
+              <div key={i} className="mb-2 last:mb-0">
                 {formatted}
               </div>
             );
@@ -101,7 +115,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <VehicleVisuals metric={message.visual_metrics} />
         )}
 
-        {/* Render ServiceHistory if history is available, passing regNo and history data */}
         {showHistory && (
           <ServiceHistory 
             regNo={vehicleContext?.registrationNumber || 'VEHICLE_ARCH'} 
@@ -189,7 +202,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         .ai-style {
           background: #050505;
           border: 2px solid #f18a22;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
         .user-style {
