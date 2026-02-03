@@ -7,7 +7,7 @@ import VehicleContextPanel from './components/VehicleContextPanel';
 import VehicleVisuals from './components/VehicleVisuals';
 import TelemetryDashboard from './components/TelemetryDashboard';
 import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData, VisualMetric } from './types';
-import { geminiService } from './services/geminiService';
+import { backendService } from './services/backendService';
 
 const App: React.FC = () => {
   const [vehicleContext, setVehicleContext] = useState<VehicleContext>({
@@ -119,7 +119,7 @@ const App: React.FC = () => {
       parts: [{ text: m.content }]
     }));
 
-    const responseData = await geminiService.sendMessage(history, vehicleContext, status, intelligenceMode, operatingMode);
+    const responseData = await backendService.sendMessage(history, vehicleContext, status, intelligenceMode, operatingMode);
     
     if (responseData.job_status_update) {
       setStatus(responseData.job_status_update as JobStatus);
@@ -200,9 +200,9 @@ const App: React.FC = () => {
         await audioContextRef.current.resume();
       }
       
-      const audioData = await geminiService.generateSpeech(text);
+      const audioData = await backendService.generateSpeech(text);
       if (audioData) {
-        const audioBuffer = await geminiService.decodeAudioData(audioData, audioContextRef.current);
+        const audioBuffer = await backendService.decodeAudioData(audioData, audioContextRef.current);
         const source = audioContextRef.current.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(audioContextRef.current.destination);
