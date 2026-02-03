@@ -5,6 +5,7 @@ import DigitalJobCard from './DigitalJobCard';
 import ServiceHistory from './ServiceHistory';
 import EstimateGovernance from './EstimateGovernance';
 import VehicleVisuals from './VehicleVisuals';
+import DiagnosticResult from './DiagnosticResult';
 
 interface ChatMessageProps {
   message: Message;
@@ -72,6 +73,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const showHistory = message.service_history !== undefined || (message.job_status_update === 'SYMPTOM_RECORDING' && vehicleContext?.registrationNumber);
     const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
+    const showDiagnostics = !!message.diagnostic_data;
 
     return (
       <div className="space-y-6">
@@ -86,6 +88,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             );
           })}
         </div>
+
+        {showDiagnostics && message.diagnostic_data && (
+          <DiagnosticResult data={message.diagnostic_data} />
+        )}
 
         {showMetrics && message.visual_metrics && (
           <VehicleVisuals metric={message.visual_metrics} />

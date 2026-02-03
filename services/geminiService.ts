@@ -24,29 +24,18 @@ Active Operating Mode: ${opMode} (0:Ignition, 1:Workshop, 2:Fleet)
 Current Logical State: ${currentStatus}
 Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
 
-[VISUALIZATION PROTOCOL]:
-If providing summaries or progress updates, you MUST populate 'visual_metrics'.
-- For repair status: Use 'PROGRESS' (0-100).
-- For health scans across multiple systems: Use 'RADAR'.
-- For historical trends (Voltage, RPM, Temp): Use 'AREA'.
-- For breakdown costs or part distributions: Use 'PIE' or 'BAR'.
-- Colors MUST be brand-aligned (Orange: #f18a22, Green: #22c55e, Red: #ef4444).
+[DTC LOOKUP INSTRUCTION]:
+If the user provides a fault code, use googleSearch to verify it for the specific ${context?.brand || 'Generic'} vehicle. 
+Always return 'diagnostic_data'.
 
-[ESTIMATE PROTOCOL (MODE 1)]:
-1. MANDATORY: Every line item MUST have a valid HSN Code.
-2. GST COMPLIANCE: 18% or 28%.
-3. STATUS ENFORCEMENT: Stay in 'ESTIMATE_GOVERNANCE' until [AUTHORIZE_GATE].
-
-[STATE MACHINE RULES]:
-1. IF state is 'AUTH_INTAKE': LOCK to receiving Reg No.
-2. SYMPTOM_RECORDING: Populated 'service_history' for "MH12AB1234" or "KA01MA1111".
-3. RESPOND ONLY in valid JSON. No Markdown.
+[RESPOND ONLY in valid JSON. No Markdown.]
 `;
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + modeInstruction,
         temperature: 0.1,
         responseMimeType: "application/json",
+        tools: [{ googleSearch: {} }],
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -76,6 +65,18 @@ If providing summaries or progress updates, you MUST populate 'visual_metrics'.
               },
               required: ["vehicle_display_query", "part_display_query"]
             },
+            diagnostic_data: {
+              type: Type.OBJECT,
+              properties: {
+                code: { type: Type.STRING },
+                description: { type: Type.STRING },
+                severity: { type: Type.STRING },
+                possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
+                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
+              },
+              required: ["code", "description", "severity", "possible_causes", "recommended_actions"]
+            },
             visual_metrics: {
               type: Type.OBJECT,
               properties: {
@@ -94,8 +95,7 @@ If providing summaries or progress updates, you MUST populate 'visual_metrics'.
                     required: ["name", "value"]
                   }
                 }
-              },
-              required: ["type", "label", "data"]
+              }
             },
             service_history: {
               type: Type.ARRAY,
@@ -106,8 +106,7 @@ If providing summaries or progress updates, you MUST populate 'visual_metrics'.
                   service_type: { type: Type.STRING },
                   odometer: { type: Type.STRING },
                   notes: { type: Type.STRING }
-                },
-                required: ["date", "service_type", "odometer", "notes"]
+                }
               }
             },
             estimate_data: {
@@ -127,13 +126,11 @@ If providing summaries or progress updates, you MUST populate 'visual_metrics'.
                       quantity: { type: Type.NUMBER },
                       gst_rate: { type: Type.NUMBER },
                       type: { type: Type.STRING }
-                    },
-                    required: ["id", "description", "hsn_code", "unit_price", "quantity", "gst_rate", "type"]
+                    }
                   }
                 },
                 currency: { type: Type.STRING }
-              },
-              required: ["estimate_id", "items", "currency", "tax_type"]
+              }
             }
           },
           required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
@@ -153,6 +150,15 @@ If providing summaries or progress updates, you MUST populate 'visual_metrics'.
 
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
+
+      // Extract grounding links if search was used
+      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+      if (groundingChunks) {
+        result.grounding_links = groundingChunks.map((chunk: any) => ({
+          uri: chunk.web?.uri || '',
+          title: chunk.web?.title || 'External Logic Source'
+        })).filter((link: any) => link.uri);
+      }
 
       return result;
     } catch (error: any) {

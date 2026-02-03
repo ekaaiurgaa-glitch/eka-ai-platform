@@ -57,6 +57,15 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
+export interface DiagnosticData {
+  code: string;
+  description: string;
+  severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY';
+  possible_causes: string[];
+  recommended_actions: string[];
+  systems_affected: string[];
+}
+
 export interface VisualMetric {
   type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL';
   label: string;
@@ -82,6 +91,7 @@ export interface Message {
     part_display_query: string | null;
   };
   visual_metrics?: VisualMetric;
+  diagnostic_data?: DiagnosticData;
   service_history?: ServiceHistoryItem[];
   estimate_data?: EstimateData;
   grounding_links?: GroundingLink[];
