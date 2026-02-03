@@ -28,9 +28,48 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateField = (name: string, value: string) => {
+    let error = "";
+    switch (name) {
+      case 'brand':
+        if (!value.trim()) error = "Manufacturer is required";
+        else if (value.trim().length < 2) error = "Invalid brand name";
+        break;
+      case 'model':
+        if (!value.trim()) error = "Model variant is required";
+        else if (value.trim().length < 2) error = "Invalid model name";
+        break;
+      case 'year':
+        const year = parseInt(value);
+        const currentYear = new Date().getFullYear();
+        if (!value) error = "Year is required";
+        else if (isNaN(year) || year < 1900 || year > currentYear + 1) error = `Enter year (1900-${currentYear + 1})`;
+        break;
+      case 'fuelType':
+        if (!value) error = "Select propulsion type";
+        break;
+      default:
+        break;
+    }
+    return error;
+  };
 
   const handleLockIdentity = () => {
-    if (!isContextComplete(context)) return;
+    // Final validation sweep
+    const newErrors: Record<string, string> = {
+      brand: validateField('brand', context.brand),
+      model: validateField('model', context.model),
+      year: validateField('year', context.year),
+      fuelType: validateField('fuelType', context.fuelType)
+    };
+
+    setErrors(newErrors);
+
+    const hasErrors = Object.values(newErrors).some(err => err !== "");
+    if (hasErrors || !isContextComplete(context)) return;
+
     setIsSyncing(true);
     setSyncProgress(0);
     const interval = setInterval(() => {
@@ -52,11 +91,18 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
     onUpdate({ ...context, [name]: value });
   };
 
+  const handleFuelSelect = (fuelId: string) => {
+    setErrors(prev => ({ ...prev, fuelType: "" }));
+    onUpdate({ ...context, fuelType: fuelId });
+  };
+
   const InputBox = ({ label, name, value, placeholder, type = "text" }: any) => (
-    <div className="flex flex-col gap-1 p-3 bg-[#0A0A0A] border-2 border-[#f18a22] rounded-lg shadow-[0_4px_10px_rgba(241,138,34,0.1)] transition-all">
+    <div className={`flex flex-col gap-1 p-3 bg-[#0A0A0A] border-2 rounded-lg shadow-[0_4px_10px_rgba(241,138,34,0.1)] transition-all ${errors[name] ? 'border-red-500' : 'border-[#f18a22]'}`}>
       <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono leading-none">
         {label}
       </label>
@@ -68,6 +114,11 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         placeholder={placeholder}
         className="bg-transparent text-white text-[13px] font-bold focus:outline-none placeholder:text-zinc-800 font-mono"
       />
+      {errors[name] && (
+        <span className="text-[8px] font-bold text-red-500 uppercase font-mono mt-1 animate-pulse">
+          {errors[name]}
+        </span>
+      )}
     </div>
   );
 
@@ -140,6 +191,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
     );
   }
 
+  const hasAnyErrors = Object.values(errors).some(err => err !== "");
+  const canLock = isContextComplete(context) && !hasAnyErrors;
+
   return (
     <div className="mb-8 bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 flex flex-col gap-6 shadow-2xl">
       <div className="border-b-4 border-[#f18a22] pb-4">
@@ -169,24 +223,34 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         <InputBox label="MFG Year" name="year" value={context.year} placeholder="2024" />
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
-        {FUEL_OPTIONS.map((fuel) => (
-          <button
-            key={fuel.id}
-            onClick={() => onUpdate({ ...context, fuelType: fuel.id })}
-            className={`py-3 rounded border-4 text-[9px] font-black uppercase font-mono transition-all ${context.fuelType === fuel.id ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-600'}`}
-          >
-            {fuel.label}
-          </button>
-        ))}
+      <div className="flex flex-col gap-2">
+        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono leading-none">
+          Propulsion Type
+        </label>
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          {FUEL_OPTIONS.map((fuel) => (
+            <button
+              key={fuel.id}
+              onClick={() => handleFuelSelect(fuel.id)}
+              className={`py-3 rounded border-4 text-[9px] font-black uppercase font-mono transition-all ${context.fuelType === fuel.id ? 'bg-[#f18a22] text-black border-[#f18a22]' : errors.fuelType ? 'bg-red-500/10 border-red-500/50 text-red-500' : 'bg-transparent border-zinc-800 text-zinc-600'}`}
+            >
+              {fuel.label}
+            </button>
+          ))}
+        </div>
+        {errors.fuelType && (
+          <span className="text-[8px] font-bold text-red-500 uppercase font-mono mt-1 animate-pulse">
+            {errors.fuelType}
+          </span>
+        )}
       </div>
 
       <button 
         onClick={handleLockIdentity} 
-        disabled={!isContextComplete(context)}
-        className={`w-full py-5 text-[16px] font-black uppercase tracking-[0.4em] rounded-xl transition-all font-mono shadow-[0_10px_30px_rgba(241,138,34,0.3)] ${isContextComplete(context) ? 'bg-[#f18a22] text-black hover:bg-white active:scale-95' : 'bg-zinc-900 text-zinc-800 cursor-not-allowed border-4 border-zinc-950'}`}
+        disabled={!canLock}
+        className={`w-full py-5 text-[16px] font-black uppercase tracking-[0.4em] rounded-xl transition-all font-mono shadow-[0_10px_30px_rgba(241,138,34,0.3)] ${canLock ? 'bg-[#f18a22] text-black hover:bg-white active:scale-95' : 'bg-zinc-900 text-zinc-800 cursor-not-allowed border-4 border-zinc-950 opacity-50'}`}
       >
-        {isContextComplete(context) ? 'Lock Architecture' : 'Awaiting Metadata...'}
+        {canLock ? 'Lock Architecture' : hasAnyErrors ? 'Correct Logic Errors' : 'Awaiting Metadata...'}
       </button>
     </div>
   );
