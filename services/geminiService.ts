@@ -24,9 +24,15 @@ Active Operating Mode: ${opMode} (0:Ignition, 1:Workshop, 2:Fleet)
 Current Logical State: ${currentStatus}
 Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
 
+[ESTIMATE COMPLIANCE INSTRUCTION (MODE 1)]:
+If generating an estimate:
+- Validate that all Parts use HSN 8708 and services use HSN 9987.
+- Ensure GST rates are 18% or 28%.
+- Do NOT move to 'APPROVAL_GATE' unless these are verified.
+
 [DTC LOOKUP INSTRUCTION]:
 If the user provides a fault code, use googleSearch to verify it for the specific ${context?.brand || 'Generic'} vehicle. 
-Always return 'diagnostic_data'.
+Always return 'diagnostic_data' when a code is detected.
 
 [RESPOND ONLY in valid JSON. No Markdown.]
 `;
@@ -74,8 +80,7 @@ Always return 'diagnostic_data'.
                 possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
                 recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
                 systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
-              },
-              required: ["code", "description", "severity", "possible_causes", "recommended_actions"]
+              }
             },
             visual_metrics: {
               type: Type.OBJECT,
@@ -151,7 +156,6 @@ Always return 'diagnostic_data'.
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
 
-      // Extract grounding links if search was used
       const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
       if (groundingChunks) {
         result.grounding_links = groundingChunks.map((chunk: any) => ({

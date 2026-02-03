@@ -13,12 +13,20 @@ const EstimateGovernance: React.FC<EstimateGovernanceProps> = ({ data, onAuthori
 
   const validation = useMemo(() => {
     return items.map(item => {
+      // STRICT HSN VALIDATION: 8708 for Parts, 9987 for Labor/Service
       const hsnValid = item.type === 'PART' 
         ? item.hsn_code.startsWith('8708') 
         : item.hsn_code.startsWith('9987');
+      
       const hsnLengthValid = item.hsn_code.length >= 4 && item.hsn_code.length <= 8;
       const gstValid = [18, 28].includes(item.gst_rate);
-      return { id: item.id, hsnValid: hsnValid && hsnLengthValid, gstValid, isValid: hsnValid && hsnLengthValid && gstValid };
+      
+      return { 
+        id: item.id, 
+        hsnValid: hsnValid && hsnLengthValid, 
+        gstValid, 
+        isValid: hsnValid && hsnLengthValid && gstValid 
+      };
     });
   }, [items]);
 
@@ -87,46 +95,55 @@ const EstimateGovernance: React.FC<EstimateGovernanceProps> = ({ data, onAuthori
       </div>
 
       <div className="p-6 space-y-6">
-        {items.map((item, idx) => (
-          <div key={item.id} className="p-4 bg-[#080808] border-4 border-zinc-900 rounded-xl flex flex-col gap-4 group hover:border-[#f18a22] transition-all duration-300">
-            <div className="flex justify-between items-center border-b-2 border-zinc-900 pb-2">
-              <span className="text-[14px] font-black text-white font-mono uppercase tracking-tight">{item.description}</span>
-              <span className={`text-[9px] font-black px-3 py-1 rounded-full border-2 border-[#f18a22] text-[#f18a22] uppercase font-mono tracking-widest`}>{item.type}</span>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="flex flex-col gap-1 p-2 bg-black border-2 border-[#f18a22] rounded-lg">
-                <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">HSN Identity</span>
-                <input 
-                  type="text" 
-                  value={item.hsn_code} 
-                  onChange={(e) => updateItem(item.id, { hsn_code: e.target.value })}
-                  className="bg-transparent text-[13px] font-mono font-bold text-white focus:outline-none"
-                />
+        {items.map((item, idx) => {
+          const v = validation.find(val => val.id === item.id);
+          return (
+            <div key={item.id} className={`p-4 bg-[#080808] border-4 rounded-xl flex flex-col gap-4 group transition-all duration-300 ${v?.isValid ? 'border-zinc-900 hover:border-[#f18a22]' : 'border-red-900/50 hover:border-red-500'}`}>
+              <div className="flex justify-between items-center border-b-2 border-zinc-900 pb-2">
+                <span className="text-[14px] font-black text-white font-mono uppercase tracking-tight">{item.description}</span>
+                <span className={`text-[9px] font-black px-3 py-1 rounded-full border-2 border-[#f18a22] text-[#f18a22] uppercase font-mono tracking-widest`}>{item.type}</span>
               </div>
-              <div className="flex flex-col gap-1 p-2 bg-black border-2 border-[#f18a22] rounded-lg">
-                <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Tax Bracket</span>
-                <select 
-                  value={item.gst_rate} 
-                  onChange={(e) => updateItem(item.id, { gst_rate: parseInt(e.target.value) as 18 | 28 })}
-                  className="bg-transparent text-[13px] font-mono font-bold text-white focus:outline-none cursor-pointer"
-                >
-                  <option value={18} className="bg-black">18% GST</option>
-                  <option value={28} className="bg-black">28% GST</option>
-                </select>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={`flex flex-col gap-1 p-2 bg-black border-2 rounded-lg ${v?.hsnValid ? 'border-[#f18a22]' : 'border-red-500 animate-pulse'}`}>
+                  <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">HSN Identity {v?.hsnValid ? '✓' : '⚠️'}</span>
+                  <input 
+                    type="text" 
+                    value={item.hsn_code} 
+                    onChange={(e) => updateItem(item.id, { hsn_code: e.target.value })}
+                    className="bg-transparent text-[13px] font-mono font-bold text-white focus:outline-none"
+                    placeholder={item.type === 'PART' ? '8708...' : '9987...'}
+                  />
+                </div>
+                <div className={`flex flex-col gap-1 p-2 bg-black border-2 rounded-lg ${v?.gstValid ? 'border-[#f18a22]' : 'border-red-500 animate-pulse'}`}>
+                  <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Tax Bracket {v?.gstValid ? '✓' : '⚠️'}</span>
+                  <select 
+                    value={item.gst_rate} 
+                    onChange={(e) => updateItem(item.id, { gst_rate: parseInt(e.target.value) as 18 | 28 })}
+                    className="bg-transparent text-[13px] font-mono font-bold text-white focus:outline-none cursor-pointer"
+                  >
+                    <option value={18} className="bg-black">18% GST</option>
+                    <option value={28} className="bg-black">28% GST</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1 p-2 bg-black border-2 border-zinc-900 rounded-lg">
+                  <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Unit Analysis</span>
+                  <span className="text-[13px] font-mono font-bold text-zinc-400 uppercase tracking-tighter">₹{item.unit_price} x {item.quantity}</span>
+                </div>
+                <div className="flex flex-col gap-1 p-2 bg-black border-2 border-[#f18a22] rounded-lg">
+                  <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Node Total</span>
+                  <span className="text-[13px] font-mono font-black text-[#f18a22] tracking-widest">
+                    ₹{(item.unit_price * item.quantity).toLocaleString()}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col gap-1 p-2 bg-black border-2 border-zinc-900 rounded-lg">
-                <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Unit Analysis</span>
-                <span className="text-[13px] font-mono font-bold text-zinc-400 uppercase tracking-tighter">₹{item.unit_price} x {item.quantity}</span>
-              </div>
-              <div className="flex flex-col gap-1 p-2 bg-black border-2 border-[#f18a22] rounded-lg">
-                <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Node Total</span>
-                <span className="text-[13px] font-mono font-black text-[#f18a22] tracking-widest">
-                  ₹{(item.unit_price * item.quantity).toLocaleString()}
+              {!v?.hsnValid && (
+                <span className="text-[8px] font-bold text-red-500 uppercase font-mono">
+                  Error: {item.type === 'PART' ? 'Parts require HSN 8708 series' : 'Labor requires HSN 9987 series'}
                 </span>
-              </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="p-6 bg-[#0A0A0A] border-t-4 border-[#f18a22] grid grid-cols-1 sm:grid-cols-3 gap-6 shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)]">
