@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VehicleContext, isContextComplete, OperatingMode, JobStatus } from '../types';
 
 interface VehicleContextPanelProps {
@@ -56,7 +56,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   };
 
   const InputBox = ({ label, name, value, placeholder, type = "text" }: any) => (
-    <div className="flex flex-col gap-1.5 p-3 bg-[#0A0A0A] border-2 border-[#f18a22] rounded-lg shadow-[0_0_10px_rgba(241,138,34,0.1)] transition-all">
+    <div className="flex flex-col gap-1 p-3 bg-[#0A0A0A] border-2 border-[#f18a22] rounded-lg shadow-[0_4px_10px_rgba(241,138,34,0.1)] transition-all">
       <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono leading-none">
         {label}
       </label>
@@ -73,10 +73,10 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
   const OutputBox = ({ label, value }: { label: string, value: string }) => (
     <div className="flex flex-col gap-1 p-3 bg-[#080808] border-2 border-[#f18a22] rounded-lg shadow-[inset_0_0_10px_rgba(241,138,34,0.05)]">
-      <label className="text-[8px] font-black text-[#f18a22] uppercase tracking-[0.2em] font-mono leading-none">
+      <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono leading-none">
         {label}
       </label>
-      <span className="text-white text-[14px] font-black uppercase font-mono tracking-widest leading-tight">
+      <span className="text-[#f18a22] text-[14px] font-black uppercase font-mono tracking-widest leading-tight">
         {value || '---'}
       </span>
     </div>
@@ -84,7 +84,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
   if (isSyncing) {
     return (
-      <div className="mb-8 p-10 bg-[#030303] border-2 border-[#f18a22] rounded-xl flex flex-col items-center justify-center gap-6 shadow-[0_0_30px_rgba(241,138,34,0.2)] min-h-[220px]">
+      <div className="mb-8 p-10 bg-[#030303] border-4 border-[#f18a22] rounded-xl flex flex-col items-center justify-center gap-6 shadow-[0_0_40px_rgba(241,138,34,0.3)] min-h-[220px]">
         {showSuccess ? (
           <div className="text-center animate-in zoom-in-95 duration-500 flex flex-col items-center">
             <div className="w-20 h-20 rounded-full border-4 border-green-500 flex items-center justify-center mb-6 animate-bounce">
@@ -92,12 +92,12 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h4 className="text-white font-black text-2xl uppercase tracking-[0.2em] font-mono">Digital Twin Synced</h4>
+            <h4 className="text-white font-black text-2xl uppercase tracking-[0.2em] font-mono">Digital Twin Locked</h4>
           </div>
         ) : (
           <div className="text-center w-full max-w-sm">
-            <h4 className="text-[#f18a22] font-black text-xl uppercase tracking-[0.3em] mb-6 font-mono">Architectural Sync...</h4>
-            <div className="relative w-full h-2 bg-zinc-900 rounded-full overflow-hidden border border-[#f18a22]/30">
+            <h4 className="text-[#f18a22] font-black text-xl uppercase tracking-[0.3em] mb-6 font-mono">Syncing Logic Nodes...</h4>
+            <div className="relative w-full h-3 bg-zinc-900 rounded-full overflow-hidden border-2 border-[#f18a22]">
               <div 
                 className="h-full bg-[#f18a22] transition-all duration-150" 
                 style={{ width: `${syncProgress}%` }}
@@ -112,25 +112,28 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   if (!isEditing && isContextComplete(context)) {
     return (
       <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-        <div className="bg-[#050505] border-2 border-[#f18a22] rounded-xl p-6 shadow-xl">
+        <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 shadow-[0_20px_40px_rgba(0,0,0,0.6)]">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-[#f18a22] font-black text-lg uppercase tracking-widest font-mono">Vehicle Dossier Locked</h3>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest font-mono">Architecture Status</span>
+              <h3 className="text-[#f18a22] font-black text-lg uppercase tracking-widest font-mono">Dossier Locked</h3>
+            </div>
             <button 
               onClick={() => setIsEditing(true)} 
-              className="px-4 py-2 bg-zinc-900 border border-[#f18a22] text-[#f18a22] text-[9px] font-black uppercase rounded hover:bg-[#f18a22] hover:text-black transition-all font-mono"
+              className="px-6 py-2 bg-zinc-900 border-2 border-[#f18a22] text-[#f18a22] text-[10px] font-black uppercase rounded hover:bg-[#f18a22] hover:text-black transition-all font-mono"
             >
-              Modify Logic
+              Unlock Terminal
             </button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-             <OutputBox label="Brand" value={context.brand} />
+             <OutputBox label="Identity" value={context.registrationNumber || 'MH-12-G4G'} />
+             <OutputBox label="Manufacturer" value={context.brand} />
              <OutputBox label="Variant" value={context.model} />
              <OutputBox label="Model Year" value={context.year} />
-             <OutputBox label="Registration" value={context.registrationNumber || 'N/A'} />
           </div>
           <div className="mt-4">
-            <OutputBox label="Propulsion System" value={context.fuelType} />
+            <OutputBox label="Propulsion Configuration" value={context.fuelType} />
           </div>
         </div>
       </div>
@@ -138,37 +141,40 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   }
 
   return (
-    <div className="mb-8 bg-[#050505] border-2 border-[#f18a22] rounded-xl p-6 flex flex-col gap-6 shadow-2xl">
-      <h2 className="text-xl font-black text-white uppercase tracking-[0.2em] font-mono border-b-2 border-[#f18a22] pb-2">Vehicle Initializer</h2>
+    <div className="mb-8 bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 flex flex-col gap-6 shadow-2xl">
+      <div className="border-b-4 border-[#f18a22] pb-4">
+        <h2 className="text-2xl font-black text-white uppercase tracking-[0.2em] font-mono leading-none">Vehicle Initializer</h2>
+        <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-2 font-mono">Set Base Architectural Metadata</p>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div 
+        <button 
           onClick={() => onUpdate({ ...context, vehicleType: '2W' })}
-          className={`cursor-pointer p-3 rounded-lg border-2 font-mono text-center transition-all ${context.vehicleType === '2W' ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-600'}`}
+          className={`p-4 rounded-lg border-4 font-mono transition-all ${context.vehicleType === '2W' ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-500'}`}
         >
-          <span className="text-[12px] font-black uppercase">2-Wheeler</span>
-        </div>
-        <div 
+          <span className="text-[14px] font-black uppercase">2-Wheeler (Motorbike)</span>
+        </button>
+        <button 
           onClick={() => onUpdate({ ...context, vehicleType: '4W' })}
-          className={`cursor-pointer p-3 rounded-lg border-2 font-mono text-center transition-all ${context.vehicleType === '4W' ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-600'}`}
+          className={`p-4 rounded-lg border-4 font-mono transition-all ${context.vehicleType === '4W' ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-500'}`}
         >
-          <span className="text-[12px] font-black uppercase">4-Wheeler</span>
-        </div>
+          <span className="text-[14px] font-black uppercase">4-Wheeler (Car)</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <InputBox label="Reg Identity" name="registrationNumber" value={context.registrationNumber || ''} placeholder="MH12AB1234" />
-        <InputBox label="Manufacturer" name="brand" value={context.brand} placeholder="Maruti" />
-        <InputBox label="Model" name="model" value={context.model} placeholder="Swift" />
-        <InputBox label="Year" name="year" value={context.year} placeholder="2024" />
+        <InputBox label="Reg Identity" name="registrationNumber" value={context.registrationNumber || ''} placeholder="MH-12-AB-1234" />
+        <InputBox label="Manufacturer" name="brand" value={context.brand} placeholder="Maruti Suzuki" />
+        <InputBox label="Model Variant" name="model" value={context.model} placeholder="Swift ZXI" />
+        <InputBox label="MFG Year" name="year" value={context.year} placeholder="2024" />
       </div>
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-5 gap-2">
         {FUEL_OPTIONS.map((fuel) => (
           <button
             key={fuel.id}
             onClick={() => onUpdate({ ...context, fuelType: fuel.id })}
-            className={`py-2 rounded border-2 text-[8px] font-black uppercase font-mono transition-all ${context.fuelType === fuel.id ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-600'}`}
+            className={`py-3 rounded border-4 text-[9px] font-black uppercase font-mono transition-all ${context.fuelType === fuel.id ? 'bg-[#f18a22] text-black border-[#f18a22]' : 'bg-transparent border-zinc-800 text-zinc-600'}`}
           >
             {fuel.label}
           </button>
@@ -178,9 +184,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
       <button 
         onClick={handleLockIdentity} 
         disabled={!isContextComplete(context)}
-        className={`w-full py-4 text-[14px] font-black uppercase tracking-[0.3em] rounded transition-all font-mono ${isContextComplete(context) ? 'bg-[#f18a22] text-black hover:bg-white' : 'bg-zinc-900 text-zinc-700 cursor-not-allowed'}`}
+        className={`w-full py-5 text-[16px] font-black uppercase tracking-[0.4em] rounded-xl transition-all font-mono shadow-[0_10px_30px_rgba(241,138,34,0.3)] ${isContextComplete(context) ? 'bg-[#f18a22] text-black hover:bg-white active:scale-95' : 'bg-zinc-900 text-zinc-800 cursor-not-allowed border-4 border-zinc-950'}`}
       >
-        Authorize Architecture
+        {isContextComplete(context) ? 'Lock Architecture' : 'Awaiting Metadata...'}
       </button>
     </div>
   );

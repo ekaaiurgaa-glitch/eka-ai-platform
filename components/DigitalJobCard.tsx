@@ -36,66 +36,74 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
     setTimestamp(new Date().toLocaleString('en-IN').toUpperCase());
   }, []);
 
-  const MetaBox = ({ label, value, color = "white" }: { label: string, value: string, color?: string }) => (
-    <div className="flex flex-col gap-1 p-3 bg-[#0A0A0A] border-2 border-[#f18a22] rounded-lg shadow-sm">
-      <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest font-mono">{label}</span>
-      <span className={`text-[12px] font-black uppercase font-mono tracking-tight text-${color}`}>{value}</span>
+  const MetaBox = ({ label, value, colorClass = "text-[#f18a22]" }: { label: string, value: string, colorClass?: string }) => (
+    <div className="flex flex-col gap-1 p-3 bg-[#0A0A0A] border-4 border-[#f18a22] rounded-lg shadow-md">
+      <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest font-mono leading-none">{label}</span>
+      <span className={`text-[13px] font-black uppercase font-mono tracking-tighter ${colorClass}`}>{value}</span>
     </div>
   );
 
   return (
-    <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 flex flex-col gap-8 shadow-2xl">
-      <div className="flex justify-between items-center border-b-2 border-[#f18a22] pb-4">
+    <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 flex flex-col gap-8 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]">
+      <div className="flex justify-between items-center border-b-4 border-[#f18a22] pb-6">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em] font-mono">Job Card Identifier</span>
-          <span className="text-xl font-black text-white font-mono">{jcId}</span>
+          <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Official Job Card</span>
+          <span className="text-2xl font-black text-white font-mono tracking-widest">{jcId}</span>
         </div>
-        <div className="px-4 py-2 bg-[#f18a22] text-black font-black font-mono text-sm rounded">
-          {status}
+        <div className="px-6 py-2 bg-[#f18a22] text-black font-black font-mono text-sm rounded-lg shadow-[0_0_15px_rgba(241,138,34,0.4)]">
+          STATUS: {status}
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetaBox label="Customer" value={customerName} />
-        <MetaBox label="Reg Identity" value={regNo} color="[#f18a22]" />
-        <MetaBox label="Model Arch" value={vehicleModel} />
-        <MetaBox label="Distance Meter" value={`${odometer} KM`} />
+        <MetaBox label="Entity Name" value={customerName} colorClass="text-white" />
+        <MetaBox label="Reg Identity" value={regNo} />
+        <MetaBox label="Model Arch" value={vehicleModel} colorClass="text-white" />
+        <MetaBox label="Odo Meter" value={`${odometer} KM`} />
       </div>
 
-      <div className="space-y-4">
-        <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em] font-mono">Symptom Triage Nodes</span>
-        <div className="grid grid-cols-1 gap-2">
+      <div className="flex flex-col gap-4">
+        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono pl-1">Symptom Observation Log</span>
+        <div className="flex flex-col gap-2">
           {complaints.map((c, i) => (
-            <div key={i} className="flex items-center gap-4 p-3 bg-[#080808] border-2 border-zinc-900 rounded group hover:border-[#f18a22]/40 transition-all">
-              <span className="w-5 h-5 flex items-center justify-center bg-[#f18a22] text-black font-black font-mono text-[10px] rounded-full shrink-0">{i + 1}</span>
-              <span className="text-zinc-300 font-mono text-[12px]">{c}</span>
+            <div key={i} className="flex items-center gap-4 p-4 bg-[#080808] border-2 border-[#f18a22] rounded-lg group hover:bg-[#f18a22]/5 transition-all">
+              <span className="w-6 h-6 flex items-center justify-center bg-[#f18a22] text-black font-black font-mono text-[11px] rounded shrink-0">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="text-zinc-200 font-mono text-[12px] font-medium tracking-tight uppercase">{c}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em] font-mono">Energy / Fuel Mapping</span>
-        <div className="p-4 bg-[#0A0A0A] border-2 border-[#f18a22] rounded-lg flex items-center gap-6">
-          <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            value={fuelLevel} 
-            onChange={(e) => setFuelLevel(parseInt(e.target.value))}
-            className="flex-1 accent-[#f18a22]"
-          />
-          <span className="text-lg font-black text-white font-mono w-16 text-right">{fuelLevel}%</span>
+      <div className="flex flex-col gap-4">
+        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono pl-1">Energy / Fuel Map</span>
+        <div className="p-6 bg-[#0A0A0A] border-4 border-[#f18a22] rounded-xl flex items-center gap-8 shadow-inner">
+          <div className="flex-1 relative h-2 bg-zinc-900 rounded-full">
+            <input 
+              type="range" 
+              min="0" 
+              max="100" 
+              value={fuelLevel} 
+              onChange={(e) => setFuelLevel(parseInt(e.target.value))}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="h-full bg-[#f18a22] rounded-full shadow-[0_0_10px_#f18a22]" style={{ width: `${fuelLevel}%` }}></div>
+          </div>
+          <span className="text-2xl font-black text-white font-mono w-20 text-right">{fuelLevel}%</span>
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t-2 border-[#f18a22]/30 flex justify-between items-center">
-        <span className="text-[9px] font-bold text-zinc-600 font-mono tracking-widest">{timestamp}</span>
+      <div className="mt-4 pt-6 border-t-4 border-[#f18a22]/20 flex justify-between items-center">
+        <div className="flex flex-col">
+          <span className="text-[8px] font-bold text-zinc-600 font-mono tracking-widest uppercase">System Timestamp</span>
+          <span className="text-[10px] font-black text-[#f18a22] font-mono">{timestamp}</span>
+        </div>
         <button 
           onClick={() => onComplete?.({ complaints, fuelLevel })}
-          className="px-8 py-3 bg-[#f18a22] text-black font-black uppercase tracking-[0.2em] font-mono rounded hover:bg-white transition-all shadow-lg"
+          className="px-10 py-4 bg-[#f18a22] text-black font-black uppercase tracking-[0.3em] font-mono rounded-lg hover:bg-white hover:text-[#f18a22] transition-all shadow-2xl active:scale-95 border-2 border-black"
         >
-          Initialize Sync
+          Finalize & Sync
         </button>
       </div>
     </div>
