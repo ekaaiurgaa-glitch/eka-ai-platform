@@ -2,6 +2,7 @@
 import React from 'react';
 import { Message, VehicleContext } from '../types';
 import DigitalJobCard from './DigitalJobCard';
+import ServiceHistory from './ServiceHistory';
 
 interface ChatMessageProps {
   message: Message;
@@ -79,6 +80,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
     const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
+    const showHistory = message.service_history !== undefined || (message.job_status_update === 'SYMPTOM_RECORDING' && vehicleContext?.registrationNumber);
 
     return (
       <div className="space-y-4">
@@ -93,6 +95,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             );
           })}
         </div>
+
+        {showHistory && (
+          <ServiceHistory 
+            regNo={vehicleContext?.registrationNumber || 'VEHICLE_ARCH'} 
+            history={message.service_history} 
+          />
+        )}
 
         {showJobCard && (
           <DigitalJobCard 

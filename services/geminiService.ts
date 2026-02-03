@@ -26,10 +26,13 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
 
 [STATE MACHINE RULES]:
 1. IF state is 'AUTH_INTAKE': You are LOCKED. Your only goal is to receive a valid Vehicle Reg No.
-2. IF [SYSTEM_NOTE: VALID_FORMAT] is present in the latest user prompt, transition state to 'SYMPTOM_RECORDING'.
-3. IF state transitions to 'SYMPTOM_RECORDING' in Mode 1, you MUST set visual_assets.vehicle_display_query to 'DIGITAL_JOB_CARD'.
-4. RESPOND ONLY in valid JSON. No Markdown. No conversational filler.
-5. Keep visual_text concise and technical.
+2. IF [SYSTEM_NOTE: VALID_FORMAT] is present, transition to 'SYMPTOM_RECORDING'.
+3. ON TRANSITION TO 'SYMPTOM_RECORDING' in Mode 1:
+   - Perform a virtual lookup for vehicle history based on Reg No.
+   - If Reg No is "MH12AB1234" or "KA01MA1111", return a populated 'service_history' array.
+   - Otherwise, return an empty 'service_history' array.
+   - Set visual_assets.vehicle_display_query to 'DIGITAL_JOB_CARD'.
+4. RESPOND ONLY in valid JSON. No Markdown.
 `;
 
       const config: any = {
@@ -65,6 +68,19 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
                 part_display_query: { type: Type.STRING, nullable: true }
               },
               required: ["vehicle_display_query", "part_display_query"]
+            },
+            service_history: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  date: { type: Type.STRING },
+                  service_type: { type: Type.STRING },
+                  odometer: { type: Type.STRING },
+                  notes: { type: Type.STRING }
+                },
+                required: ["date", "service_type", "odometer", "notes"]
+              }
             }
           },
           required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]

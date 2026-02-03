@@ -33,6 +33,13 @@ export interface GroundingLink {
   title: string;
 }
 
+export interface ServiceHistoryItem {
+  date: string;
+  service_type: string;
+  odometer: string;
+  notes: string;
+}
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -51,6 +58,7 @@ export interface Message {
     vehicle_display_query: string;
     part_display_query: string | null;
   };
+  service_history?: ServiceHistoryItem[];
   grounding_links?: GroundingLink[];
   timestamp: Date;
   isValidated?: boolean;
