@@ -42,6 +42,7 @@ def chat():
     - intelMode: 'FAST' or 'THINKING'
     - opMode: operating mode (0, 1, or 2)
     """
+    current_status = 'CREATED'  # Default value in case of early error
     try:
         data = request.json
         history = data.get('history', [])
@@ -298,4 +299,5 @@ def text_to_speech():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    debug = os.environ.get('FLASK_ENV', 'production') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)

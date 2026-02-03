@@ -94,6 +94,11 @@ export class BackendService {
     return bytes;
   }
 
+  /**
+   * Decodes raw PCM audio data into an AudioBuffer
+   * Note: Requires AudioContext to be passed in as it must be managed
+   * at the application level for proper audio playback lifecycle
+   */
   async decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number = 24000, numChannels: number = 1): Promise<AudioBuffer> {
     const dataInt16 = new Int16Array(data.buffer);
     const frameCount = dataInt16.length / numChannels;

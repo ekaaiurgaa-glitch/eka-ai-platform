@@ -44,17 +44,23 @@ python3 app.py > /tmp/flask-backend.log 2>&1 &
 FLASK_PID=$!
 cd ..
 
-# Give Flask a moment to start
-sleep 3
-
-# Check if Flask started successfully
-if curl -s http://localhost:5000/health > /dev/null; then
-    echo "✅ Flask backend started successfully (PID: $FLASK_PID)"
-else
-    echo "❌ Flask backend failed to start. Check /tmp/flask-backend.log for details"
-    kill $FLASK_PID 2>/dev/null
-    exit 1
-fi
+# Give Flask time to start - retry health check
+echo "⏳ Waiting for Flask backend to be ready..."
+MAX_RETRIES=10
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -s http://localhost:5000/health > /dev/null 2>&1; then
+        echo "✅ Flask backend started successfully (PID: $FLASK_PID)"
+        break
+    fi
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+        echo "❌ Flask backend failed to start after $MAX_RETRIES attempts. Check /tmp/flask-backend.log for details"
+        kill $FLASK_PID 2>/dev/null
+        exit 1
+    fi
+    sleep 1
+done
 
 echo ""
 echo "🌐 Starting React frontend on port 3000..."
