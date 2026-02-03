@@ -62,3 +62,19 @@ npm run build
 ```
 
 The production build will be output to the `dist/` directory.
+
+## Run Production Locally
+
+To run the full production experience locally:
+
+1. **Build the Frontend:**
+   ```bash
+   npm run build
+   ```
+
+2. **Start the Server:**
+   ```bash
+   python server/app.py
+   ```
+
+3. **Access:** Open http://localhost:5000
