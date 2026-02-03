@@ -25,10 +25,12 @@ CORS(app, origins=["http://localhost:3000"])
 class JobCard(db.Model):
     """JobCard model for storing job card information."""
     id = db.Column(db.Integer, primary_key=True)
-    registration_number = db.Column(db.String(100))
-    customer_name = db.Column(db.String(200))
+    registration_number = db.Column(db.String(20))
+    customer_name = db.Column(db.String(100))
     status = db.Column(db.String(50), default='OPEN')
     complaints = db.Column(db.JSON)
+    fuel_level = db.Column(db.Integer)
+    inventory = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -39,7 +41,30 @@ class JobCard(db.Model):
             'customer_name': self.customer_name,
             'status': self.status,
             'complaints': self.complaints,
+            'fuel_level': self.fuel_level,
+            'inventory': self.inventory,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class ServiceHistory(db.Model):
+    """ServiceHistory model for storing service history information."""
+    id = db.Column(db.Integer, primary_key=True)
+    registration_number = db.Column(db.String(20))
+    service_type = db.Column(db.String(100))
+    date = db.Column(db.String(50))
+    odometer = db.Column(db.Integer)
+    notes = db.Column(db.Text)
+
+    def to_dict(self):
+        """Convert ServiceHistory to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'registration_number': self.registration_number,
+            'service_type': self.service_type,
+            'date': self.date,
+            'odometer': self.odometer,
+            'notes': self.notes
         }
 
 
@@ -67,7 +92,9 @@ def create_job_card():
             registration_number=data.get('registration_number'),
             customer_name=data.get('customer_name'),
             status=data.get('status', 'OPEN'),
-            complaints=data.get('complaints')
+            complaints=data.get('complaints'),
+            fuel_level=data.get('fuel_level'),
+            inventory=data.get('inventory')
         )
 
         db.session.add(job_card)
