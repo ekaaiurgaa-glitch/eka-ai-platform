@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ main, develop ]
 
-permissions:
-  contents: read
-  security-events: write
-
 jobs:
   # Frontend build and lint
   frontend:
@@ -17,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -47,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -82,7 +78,7 @@ jobs:
     permissions:
       contents: read
     needs: [frontend, backend]
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -106,12 +102,10 @@ jobs:
     permissions:
       security-events: write
       contents: read
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        persist-credentials: true
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -122,17 +116,10 @@ jobs:
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
       with:
         sarif_file: 'trivy-results.sarif'
-
-    - name: Upload SARIF Artifact (for forks)
-      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
-      uses: actions/upload-artifact@v3
-      with:
-        name: trivy-results-sarif
-        path: trivy-results.sarif
 
   # Dependency check
   dependencies:
@@ -140,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
