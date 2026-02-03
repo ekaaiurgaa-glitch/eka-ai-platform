@@ -28,6 +28,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const isAi = message.role === 'assistant';
 
+  // URL validation to prevent XSS via javascript: or data: URIs
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsedUrl = new URL(url);
+      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const formatTechnicalTags = (text: string) => {
     const cleanText = text.replace(/\[\[STATE:.*?\]\]/g, '').trim();
     if (!cleanText && text.includes('[[STATE:')) return null;
@@ -144,7 +154,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <div className="mt-4 pt-4 border-t border-[#f18a22]/30 space-y-2">
             <span className="text-[9px] font-black text-[#f18a22] uppercase tracking-widest font-mono">Verified References:</span>
             <div className="flex flex-wrap gap-2">
-              {message.grounding_links.map((link, i) => (
+              {message.grounding_links
+                .filter(link => isValidUrl(link.uri))
+                .map((link, i) => (
                 <a 
                   key={i} 
                   href={link.uri} 
