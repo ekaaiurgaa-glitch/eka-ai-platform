@@ -69,8 +69,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const renderContent = () => {
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
+    // Logical gate checks for specialized UI components
     const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
-    const showHistory = message.service_history !== undefined || (message.job_status_update === 'SYMPTOM_RECORDING' && vehicleContext?.registrationNumber);
+    
+    // Explicitly check for service_history availability as per instruction
+    const showHistory = !!message.service_history && message.service_history.length > 0;
+    
     const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
     const showDiagnostics = !!message.diagnostic_data;
@@ -97,6 +101,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <VehicleVisuals metric={message.visual_metrics} />
         )}
 
+        {/* Render ServiceHistory if history is available, passing regNo and history data */}
         {showHistory && (
           <ServiceHistory 
             regNo={vehicleContext?.registrationNumber || 'VEHICLE_ARCH'} 
