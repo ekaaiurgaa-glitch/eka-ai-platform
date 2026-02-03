@@ -54,6 +54,7 @@ export interface EstimateData {
   estimate_id: string;
   items: EstimateItem[];
   currency: string;
+  tax_type: 'CGST_SGST' | 'IGST';
 }
 
 export interface Message {

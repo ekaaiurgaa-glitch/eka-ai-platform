@@ -25,11 +25,16 @@ Current Logical State: ${currentStatus}
 Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
 
 [ESTIMATE PROTOCOL (MODE 1)]:
-- Every line item MUST have a valid HSN Code.
-- PARTS: HSN starting with 8708.
-- LABOR: HSN starting with 9987.
-- GST RATE: MUST be 18% or 28%. Default to 18% for Labor, 28% for specialized parts.
-- Transition from ESTIMATE_GOVERNANCE to APPROVAL_GATE is forbidden until user triggers AUTHORIZE_GATE.
+1. MANDATORY: Every line item MUST have a valid HSN Code.
+   - PARTS: HSN MUST start with '8708'. No exceptions.
+   - LABOR/SERVICE: HSN MUST start with '9987'. No exceptions.
+2. GST COMPLIANCE: 
+   - GST RATE MUST be exactly 18% (Standard Services) or 28% (Luxury Parts/Accessories).
+   - tax_type must be 'CGST_SGST' (Local) or 'IGST' (Interstate). Default to 'CGST_SGST'.
+3. STATUS ENFORCEMENT: 
+   - Transition to 'APPROVAL_GATE' is FORBIDDEN in this turn.
+   - You must stay in 'ESTIMATE_GOVERNANCE' until the user provides the [AUTHORIZE_GATE] signal.
+   - Any estimate generated must be presented for review in this state.
 
 [STATE MACHINE RULES]:
 1. IF state is 'AUTH_INTAKE': You are LOCKED. Your only goal is to receive a valid Vehicle Reg No.
@@ -45,10 +50,8 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + modeInstruction,
-        temperature: 0.1, // Lower temperature for more stable JSON
+        temperature: 0.1,
         responseMimeType: "application/json",
-        // Note: Removed googleSearch tool as it can conflict with responseMimeType: "application/json"
-        // in some preview environments, causing Rpc/xhr errors.
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -95,6 +98,7 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
               type: Type.OBJECT,
               properties: {
                 estimate_id: { type: Type.STRING },
+                tax_type: { type: Type.STRING },
                 items: {
                   type: Type.ARRAY,
                   items: {
@@ -113,7 +117,7 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
                 },
                 currency: { type: Type.STRING }
               },
-              required: ["estimate_id", "items", "currency"]
+              required: ["estimate_id", "items", "currency", "tax_type"]
             }
           },
           required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
@@ -121,8 +125,6 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
       };
 
       if (intelMode === 'THINKING') {
-        // GUIDELINE: Set both maxOutputTokens and thinkingConfig.thinkingBudget at the same time.
-        // Budget for pro is 32768.
         config.maxOutputTokens = 40000;
         config.thinkingConfig = { thinkingBudget: 32768 };
       }
