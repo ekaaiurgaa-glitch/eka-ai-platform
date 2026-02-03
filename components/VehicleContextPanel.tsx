@@ -52,15 +52,15 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
     const currentYear = new Date().getFullYear();
     switch (name) {
       case 'brand':
-        if (!value || value.trim().length < 2) return "Required";
+        if (!value || String(value).trim().length < 2) return "Required";
         break;
       case 'model':
-        if (!value || value.trim().length < 1) return "Required";
+        if (!value || String(value).trim().length < 1) return "Required";
         break;
       case 'year':
         const y = parseInt(value);
         if (!value) return "Required";
-        if (isNaN(y) || y < 1990 || y > currentYear + 1) return "Invalid";
+        if (isNaN(y) || y < 1990 || y > currentYear + 1) return "Invalid Range";
         break;
       case 'fuelType':
         if (!value) return "Required";
@@ -75,19 +75,18 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         if ((context.fuelType === 'Electric' || context.fuelType === 'Hybrid') && !value) return "Required";
         break;
       case 'registrationNumber':
-        if (operatingMode === 1 && status === 'AUTH_INTAKE') {
-          if (!value) return "Required";
-          const cleanInput = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-          const standardRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{0,3}[0-9]{4}$/;
-          const bhSeriesRegex = /^[0-9]{2}BH[0-9]{4}[A-Z]{1,2}$/;
-          if (!standardRegex.test(cleanInput) && !bhSeriesRegex.test(cleanInput)) {
-            return "Invalid Plate Format";
-          }
+        // Validation for registration number
+        if (!value) return "Required";
+        const cleanInput = String(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const standardRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{0,3}[0-9]{4}$/;
+        const bhSeriesRegex = /^[0-9]{2}BH[0-9]{4}[A-Z]{1,2}$/;
+        if (!standardRegex.test(cleanInput) && !bhSeriesRegex.test(cleanInput)) {
+          return "Invalid Plate Format (MH12AB1234 or 22BH1234AA)";
         }
         break;
     }
     return undefined;
-  }, [operatingMode, status, context.fuelType]);
+  }, [context.fuelType]);
 
   useEffect(() => {
     const newErrors: ValidationErrors = {};
@@ -149,7 +148,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
     );
   };
 
-  const showRegistrationField = operatingMode === 1 && status === 'AUTH_INTAKE';
+  const showRegistrationField = true; // Always show in context panel if needed
   const isEV = context.fuelType === 'Electric';
   const isHybrid = context.fuelType === 'Hybrid';
   const isHVSystem = isEV || isHybrid;
@@ -295,8 +294,8 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
                 value={context.registrationNumber || ''} 
                 onChange={handleChange} 
                 onBlur={() => handleBlur('registrationNumber')}
-                placeholder="MH-12-AB-1234" 
-                className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold uppercase ${(touched.registrationNumber && errors.registrationNumber) ? 'border-red-500/50 focus:border-red-500' : 'border-zinc-900 focus:border-[#f18a22]'}`}
+                placeholder="MH12AB1234" 
+                className={`bg-[#0A0A0A] border rounded-lg px-4 py-3.5 text-sm text-white focus:outline-none transition-all w-full box-border font-bold uppercase ${(touched.registrationNumber && errors.registrationNumber) ? 'border-red-500/50 focus:border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-zinc-900 focus:border-[#f18a22]'}`}
               />
               {(touched.registrationNumber && errors.registrationNumber) && <span className="text-[8px] text-red-500 font-bold uppercase tracking-tighter mt-1">{errors.registrationNumber}</span>}
             </div>
@@ -440,15 +439,4 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
       <style>{`
         @keyframes scan-slow {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(250%); }
-        }
-        .animate-scan-slow {
-          animation: scan-slow 5s linear infinite;
-        }
-      `}</style>
-    </div>
-  );
-};
-
-export default VehicleContextPanel;
+          0% { transform: translateY(-1

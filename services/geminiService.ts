@@ -45,9 +45,10 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + modeInstruction,
-        temperature: 0.2,
+        temperature: 0.1, // Lower temperature for more stable JSON
         responseMimeType: "application/json",
-        tools: [{ googleSearch: {} }],
+        // Note: Removed googleSearch tool as it can conflict with responseMimeType: "application/json"
+        // in some preview environments, causing Rpc/xhr errors.
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -73,7 +74,7 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
               type: Type.OBJECT,
               properties: {
                 vehicle_display_query: { type: Type.STRING },
-                part_display_query: { type: Type.STRING, nullable: true }
+                part_display_query: { type: Type.STRING }
               },
               required: ["vehicle_display_query", "part_display_query"]
             },
@@ -120,7 +121,10 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
       };
 
       if (intelMode === 'THINKING') {
-        config.thinkingConfig = { thinkingBudget: 24576 };
+        // GUIDELINE: Set both maxOutputTokens and thinkingConfig.thinkingBudget at the same time.
+        // Budget for pro is 32768.
+        config.maxOutputTokens = 40000;
+        config.thinkingConfig = { thinkingBudget: 32768 };
       }
 
       const response = await ai.models.generateContent({
@@ -132,22 +136,17 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
 
-      const groundingLinks: GroundingLink[] = [];
-      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      if (chunks) {
-        chunks.forEach((chunk: any) => {
-          if (chunk.web) groundingLinks.push({ uri: chunk.web.uri, title: chunk.web.title });
-        });
-      }
-      
-      return { ...result, grounding_links: groundingLinks };
-    } catch (error) {
+      return result;
+    } catch (error: any) {
       console.error("EKA Central OS Fatal Error:", error);
       return {
-        response_content: { visual_text: "CRITICAL: Logic gate failure. Re-initialize terminal.", audio_text: "System Error." },
+        response_content: { 
+          visual_text: "CRITICAL: Logic gate failure. Error reported: " + (error.message || "Unknown XHR/RPC Failure"), 
+          audio_text: "Logic gate failure." 
+        },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Error", part_display_query: null }
+        visual_assets: { vehicle_display_query: "Error", part_display_query: "" }
       };
     }
   }
