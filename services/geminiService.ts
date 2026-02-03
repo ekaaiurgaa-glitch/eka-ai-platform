@@ -24,28 +24,21 @@ Active Operating Mode: ${opMode} (0:Ignition, 1:Workshop, 2:Fleet)
 Current Logical State: ${currentStatus}
 Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
 
+[VISUALIZATION PROTOCOL]:
+If providing summaries or progress updates, you MUST populate 'visual_metrics'.
+- For repair status: Use 'PROGRESS' type (value 0-100).
+- For complaint distribution or costs breakdown: Use 'PIE' or 'BAR'.
+- Colors should be brand-aligned (Orange: #f18a22, Green: #22c55e, Red: #ef4444).
+
 [ESTIMATE PROTOCOL (MODE 1)]:
 1. MANDATORY: Every line item MUST have a valid HSN Code.
-   - PARTS: HSN MUST start with '8708'. No exceptions.
-   - LABOR/SERVICE: HSN MUST start with '9987'. No exceptions.
-2. GST COMPLIANCE: 
-   - GST RATE MUST be exactly 18% (Standard Services) or 28% (Luxury Parts/Accessories).
-   - tax_type must be 'CGST_SGST' (Local) or 'IGST' (Interstate). Default to 'CGST_SGST'.
-3. STATUS ENFORCEMENT: 
-   - Transition to 'APPROVAL_GATE' is FORBIDDEN in this turn.
-   - You must stay in 'ESTIMATE_GOVERNANCE' until the user provides the [AUTHORIZE_GATE] signal.
-   - Any estimate generated must be presented for review in this state.
+2. GST COMPLIANCE: 18% or 28%.
+3. STATUS ENFORCEMENT: Stay in 'ESTIMATE_GOVERNANCE' until [AUTHORIZE_GATE].
 
 [STATE MACHINE RULES]:
-1. IF state is 'AUTH_INTAKE': You are LOCKED. Your only goal is to receive a valid Vehicle Reg No.
-2. IF [SYSTEM_NOTE: VALID_FORMAT] is present, transition to 'SYMPTOM_RECORDING'.
-3. ON TRANSITION TO 'SYMPTOM_RECORDING' in Mode 1:
-   - Perform a virtual lookup for vehicle history based on Reg No.
-   - If Reg No is "MH12AB1234" or "KA01MA1111", return a populated 'service_history' array.
-   - Otherwise, return an empty 'service_history' array.
-   - Set visual_assets.vehicle_display_query to 'DIGITAL_JOB_CARD'.
-4. IF user describes symptoms and requests estimate, transition to 'ESTIMATE_GOVERNANCE'.
-5. RESPOND ONLY in valid JSON. No Markdown.
+1. IF state is 'AUTH_INTAKE': LOCK to receiving Reg No.
+2. SYMPTOM_RECORDING: Populated 'service_history' for "MH12AB1234" or "KA01MA1111".
+3. RESPOND ONLY in valid JSON. No Markdown.
 `;
 
       const config: any = {
@@ -80,6 +73,26 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
                 part_display_query: { type: Type.STRING }
               },
               required: ["vehicle_display_query", "part_display_query"]
+            },
+            visual_metrics: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING },
+                label: { type: Type.STRING },
+                data: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      value: { type: Type.NUMBER },
+                      color: { type: Type.STRING }
+                    },
+                    required: ["name", "value"]
+                  }
+                }
+              },
+              required: ["type", "label", "data"]
             },
             service_history: {
               type: Type.ARRAY,

@@ -57,6 +57,12 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
+export interface VisualMetric {
+  type: 'PROGRESS' | 'PIE' | 'BAR';
+  label: string;
+  data: Array<{ name: string; value: number; color?: string }>;
+}
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -75,6 +81,7 @@ export interface Message {
     vehicle_display_query: string;
     part_display_query: string | null;
   };
+  visual_metrics?: VisualMetric;
   service_history?: ServiceHistoryItem[];
   estimate_data?: EstimateData;
   grounding_links?: GroundingLink[];

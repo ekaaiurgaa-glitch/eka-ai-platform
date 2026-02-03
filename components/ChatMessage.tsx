@@ -4,6 +4,7 @@ import { Message, VehicleContext, EstimateData } from '../types';
 import DigitalJobCard from './DigitalJobCard';
 import ServiceHistory from './ServiceHistory';
 import EstimateGovernance from './EstimateGovernance';
+import VehicleVisuals from './VehicleVisuals';
 
 interface ChatMessageProps {
   message: Message;
@@ -70,6 +71,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
     const showHistory = message.service_history !== undefined || (message.job_status_update === 'SYMPTOM_RECORDING' && vehicleContext?.registrationNumber);
     const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
+    const showMetrics = !!message.visual_metrics;
 
     return (
       <div className="space-y-6">
@@ -85,6 +87,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           })}
         </div>
 
+        {showMetrics && message.visual_metrics && (
+          <VehicleVisuals metric={message.visual_metrics} />
+        )}
+
         {showHistory && (
           <ServiceHistory 
             regNo={vehicleContext?.registrationNumber || 'VEHICLE_ARCH'} 
@@ -95,7 +101,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         {showJobCard && (
           <DigitalJobCard 
             customerName="Authorized Tech"
-            contact="N/A"
             vehicleModel={`${vehicleContext?.brand} ${vehicleContext?.model}`}
             regNo={vehicleContext?.registrationNumber || ''}
             odometer="12,450"
