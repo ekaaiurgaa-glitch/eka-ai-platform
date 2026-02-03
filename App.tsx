@@ -251,7 +251,7 @@ const App: React.FC = () => {
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#f18a22]/5 blur-[120px] rounded-full pointer-events-none"></div>
       <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-green-500/5 blur-[100px] rounded-full pointer-events-none"></div>
 
-      <Header status={status} vehicle={vehicleContext} isLoading={isLoading} />
+      <Header status={status} vehicle={vehicleContext} isLoading={isLoading} operatingMode={activeTab} />
       
       <div className="backdrop-blur-xl bg-black/40 border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4 z-10">
         <div className="flex items-center gap-4">

@@ -1,11 +1,12 @@
 
 import React from 'react';
-import { JobStatus, VehicleContext, isContextComplete } from '../types';
+import { JobStatus, VehicleContext, isContextComplete, OperatingMode } from '../types';
 
 interface HeaderProps {
   status: JobStatus;
   vehicle: VehicleContext;
   isLoading?: boolean;
+  operatingMode: OperatingMode;
 }
 
 const FUEL_ICONS: Record<string, string> = {
@@ -21,48 +22,53 @@ interface StatusConfig {
   dotClass: string;
 }
 
-const getStatusConfig = (status: JobStatus, isLoading: boolean): StatusConfig => {
-  // Logic Mapping: CTX_VALIDATING
+const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingMode): StatusConfig => {
   if (isLoading) {
     return { label: 'STATUS: VERIFYING...', dotClass: 'bg-[#FFEA00] animate-flicker shadow-[0_0_8px_#FFEA00]' };
   }
 
-  switch (status) {
-    // Logic Mapping: CTX_IGNITION
-    case 'CREATED':
-    case 'IGNITION_TRIAGE':
-      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
+  // Completion states
+  if (status === 'CLOSED' || status === 'MG_COMPLETE') {
+    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
+  }
 
-    // Logic Mapping: CTX_WORKSHOP_INTAKE / CTX_FLEET_INTAKE
-    case 'AUTH_INTAKE':
-    case 'CONTRACT_VALIDATION':
+  // Mode-specific logic
+  if (mode === 1) { // Workshop
+    if (status === 'AUTH_INTAKE') {
       return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-[#FF9F1C] animate-pulse-orange' };
-
-    // Logic Mapping: CTX_WORKSHOP_ACTIVE
-    case 'SYMPTOM_RECORDING':
-    case 'DIAGNOSTICS_WISDOM':
-    case 'INVENTORY_GATING':
-    case 'ESTIMATE_GOVERNANCE':
-    case 'APPROVAL_GATE':
-    case 'EXECUTION_QUALITY':
-    case 'PDI_CHECKLIST':
-    case 'UTILIZATION_TRACKING':
-    case 'SETTLEMENT_LOGIC':
-    case 'SLA_BREACH_CHECK':
+    }
+    const workshopActiveStates: JobStatus[] = ['SYMPTOM_RECORDING', 'DIAGNOSTICS_WISDOM', 'INVENTORY_GATING', 'ESTIMATE_GOVERNANCE', 'APPROVAL_GATE', 'EXECUTION_QUALITY', 'PDI_CHECKLIST'];
+    if (workshopActiveStates.includes(status)) {
       return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' };
+    }
+  }
 
-    case 'CLOSED':
-    case 'MG_COMPLETE':
-      return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
+  if (mode === 2) { // Fleet
+    if (status === 'CONTRACT_VALIDATION') {
+      return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-[#FF9F1C] animate-pulse-orange' };
+    }
+    const fleetActiveStates: JobStatus[] = ['UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK'];
+    if (fleetActiveStates.includes(status)) {
+      return { label: 'FLEET: SYNC_ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' };
+    }
+  }
 
+  // Mode 0 or Fallback (Ignition)
+  switch (status) {
+    case 'RSA_ACTIVE':
+      return { label: 'STATUS: RSA_DEPLOYED', dotClass: 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]' };
+    case 'URGAA_QUERY':
+      return { label: 'QUERY: GRID_ACCESS', dotClass: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]' };
+    case 'IGNITION_TRIAGE':
+    case 'CREATED':
     default:
-      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676]' };
+      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
   }
 };
 
-const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false }) => {
+const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, operatingMode }) => {
   const isLocked = vehicle && isContextComplete(vehicle);
-  const config = getStatusConfig(status, isLoading);
+  const config = getStatusConfig(status, isLoading, operatingMode);
 
   const renderFuelIcon = () => {
     if (!vehicle?.fuelType || !FUEL_ICONS[vehicle.fuelType]) return null;

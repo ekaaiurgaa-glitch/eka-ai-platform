@@ -439,4 +439,15 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
       <style>{`
         @keyframes scan-slow {
-          0% { transform: translateY(-1
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(250%); }
+        }
+        .animate-scan-slow {
+          animation: scan-slow 5s linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default VehicleContextPanel;
