@@ -32,37 +32,51 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
   }
 
-  // Mode-specific logic
-  if (mode === 1) { // Workshop
+  // Workshop Mode Logic
+  if (mode === 1) {
     if (status === 'AUTH_INTAKE') {
-      return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-[#FF9F1C] animate-pulse-orange' };
+      return { 
+        label: 'STATUS: AWAITING_ID', 
+        dotClass: 'bg-[#FF9F1C] animate-pulse-orange shadow-[0_0_10px_rgba(255,159,28,0.5)]' 
+      };
     }
-    const workshopActiveStates: JobStatus[] = ['SYMPTOM_RECORDING', 'DIAGNOSTICS_WISDOM', 'INVENTORY_GATING', 'ESTIMATE_GOVERNANCE', 'APPROVAL_GATE', 'EXECUTION_QUALITY', 'PDI_CHECKLIST'];
-    if (workshopActiveStates.includes(status)) {
-      return { label: 'PROTOCOL: ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' };
-    }
+    return { 
+      label: 'PROTOCOL: ACTIVE', 
+      dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' 
+    };
   }
 
-  if (mode === 2) { // Fleet
+  // Fleet Mode Logic
+  if (mode === 2) {
     if (status === 'CONTRACT_VALIDATION') {
-      return { label: 'STATUS: AWAITING_ID', dotClass: 'bg-[#FF9F1C] animate-pulse-orange' };
+      return { 
+        label: 'STATUS: AWAITING_ID', 
+        dotClass: 'bg-[#FF9F1C] animate-pulse-orange shadow-[0_0_10px_rgba(255,159,28,0.5)]' 
+      };
     }
-    const fleetActiveStates: JobStatus[] = ['UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK'];
-    if (fleetActiveStates.includes(status)) {
-      return { label: 'FLEET: SYNC_ACTIVE', dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' };
-    }
+    return { 
+      label: 'FLEET: SYNC_ACTIVE', 
+      dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' 
+    };
   }
 
-  // Mode 0 or Fallback (Ignition)
+  // Ignition (Mode 0) / Global Fallbacks
   switch (status) {
     case 'RSA_ACTIVE':
-      return { label: 'STATUS: RSA_DEPLOYED', dotClass: 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]' };
+      return { 
+        label: 'STATUS: RSA_DEPLOYED', 
+        dotClass: 'bg-red-500 animate-pulse-red shadow-[0_0_12px_rgba(239,68,68,0.6)]' 
+      };
     case 'URGAA_QUERY':
-      return { label: 'QUERY: GRID_ACCESS', dotClass: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]' };
-    case 'IGNITION_TRIAGE':
-    case 'CREATED':
+      return { 
+        label: 'QUERY: GRID_ACCESS', 
+        dotClass: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]' 
+      };
     default:
-      return { label: 'SYSTEM: ONLINE', dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' };
+      return { 
+        label: 'SYSTEM: ONLINE', 
+        dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' 
+      };
   }
 };
 
@@ -124,19 +138,27 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
       </div>
       <style>{`
         @keyframes pulse-orange {
-          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0.7); }
-          70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(255, 159, 28, 0); }
-          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0); }
+          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0.7); opacity: 1; }
+          50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(255, 159, 28, 0); opacity: 0.8; }
+          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0); opacity: 1; }
+        }
+        @keyframes pulse-red {
+          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); opacity: 1; }
+          50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); opacity: 0.6; }
+          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); opacity: 1; }
         }
         .animate-pulse-orange {
-          animation: pulse-orange 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+          animation: pulse-orange 1.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        .animate-pulse-red {
+          animation: pulse-red 1.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
         }
         @keyframes flicker {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
+          0%, 100% { opacity: 1; filter: brightness(1.2); }
+          50% { opacity: 0.3; filter: brightness(0.8); }
         }
         .animate-flicker {
-          animation: flicker 0.8s infinite linear;
+          animation: flicker 0.6s infinite linear;
         }
       `}</style>
     </header>
