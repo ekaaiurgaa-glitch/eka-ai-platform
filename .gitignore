@@ -22,18 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-.env
-.venv
-env/
-venv/
-ENV/
-
-# SQLite database files
-*.db

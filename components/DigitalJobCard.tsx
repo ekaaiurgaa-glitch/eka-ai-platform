@@ -1,7 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface InventoryItem {
   item: string;
@@ -49,7 +47,6 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
   const [fuelLevel, setFuelLevel] = useState(65);
   const [timestamp, setTimestamp] = useState("");
   const [isFinalizing, setIsFinalizing] = useState(false);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   useEffect(() => {
     setTimestamp(new Date().toLocaleString('en-IN', {
@@ -63,68 +60,12 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
     }).toUpperCase());
   }, []);
 
-  const handleFinalize = async () => {
+  const handleFinalize = () => {
     setIsFinalizing(true);
-    try {
-      const response = await fetch('http://localhost:5000/api/job-cards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          registration_number: regNo,
-          customer_name: customerName,
-          status: status,
-          complaints: complaints,
-          fuel_level: fuelLevel,
-          inventory: inventory,
-        }),
-      });
-
-      if (response.ok) {
-        onComplete?.({ complaints, fuelLevel, inventory });
-        setIsFinalizing(false);
-      } else {
-        console.error('Failed to save job card:', response.status);
-        setIsFinalizing(false);
-      }
-    } catch (error) {
-      console.error(error);
+    setTimeout(() => {
+      onComplete?.({ complaints, fuelLevel, inventory });
       setIsFinalizing(false);
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    const input = document.getElementById('digital-job-card-content');
-    if (!input) return;
-
-    setIsGeneratingPdf(true);
-    try {
-      // Capture the DOM element as a canvas
-      const canvas = await html2canvas(input, {
-        scale: 2, // Higher scale for better resolution
-        backgroundColor: '#050505', // Match your dark theme background
-        logging: false,
-        useCORS: true // Important if you have external images
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      // Calculate dimensions to fit A4
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`EKA_Dossier_${jcId}.pdf`);
-    } catch (error) {
-      console.error("PDF Generation failed", error);
-    }
-    setIsGeneratingPdf(false);
+    }, 2000);
   };
 
   const MetaBox = ({ label, value, isOutput = true }: { label: string; value: string; isOutput?: boolean }) => (
@@ -147,10 +88,7 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
   return (
     <div className="digital-dossier-wrapper animate-in slide-in-from-left-4 duration-700 mb-10 w-full max-w-4xl">
-      <div 
-        id="digital-job-card-content" 
-        className="digital-dossier-card border-l-[12px] border-[#f18a22] bg-[#050505] rounded-xl overflow-hidden shadow-2xl border-2 border-zinc-900"
-      >
+      <div className="digital-dossier-card border-l-[12px] border-[#f18a22] bg-[#050505] rounded-xl overflow-hidden shadow-2xl border-2 border-zinc-900">
         
         {/* HEADER: DOSSIER IDENTITY & STATUS */}
         <div className="p-8 bg-zinc-900/30 border-b-2 border-zinc-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative">
@@ -290,39 +228,27 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
               </div>
             </div>
             
-            <div className="flex gap-4 w-full md:w-auto">
-              {/* PDF Download Button */}
-              <button
-                onClick={handleDownloadPDF}
-                disabled={isGeneratingPdf}
-                className="px-8 py-6 text-[#f18a22] font-black uppercase tracking-[0.2em] font-mono rounded-xl border-2 border-[#f18a22] hover:bg-[#f18a22]/10 transition-all active:scale-95 disabled:opacity-50"
-              >
-                {isGeneratingPdf ? 'GENERATING...' : 'DOWNLOAD DOSSIER'}
-              </button>
-
-              {/* Commit Button */}
-              <button 
-                onClick={handleFinalize}
-                disabled={isFinalizing}
-                className={`relative w-full md:w-auto px-20 py-6 text-black font-black uppercase tracking-[0.5em] font-mono rounded-xl border-4 border-black transition-all duration-300 overflow-hidden shadow-2xl active:scale-95 ${isFinalizing ? 'bg-zinc-800 text-zinc-500' : 'bg-[#f18a22] hover:bg-white hover:scale-[1.02]'}`}
-              >
-                {isFinalizing ? (
-                  <div className="flex items-center gap-4">
-                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                     </svg>
-                     <span>Finalizing Node Sync</span>
-                  </div>
-                ) : (
-                  'Commit To Registry'
-                )}
-                {/* SCANNING LINE EFFECT */}
-                {!isFinalizing && (
-                  <div className="absolute inset-0 bg-white/10 -translate-x-full hover:translate-x-full transition-transform duration-1000"></div>
-                )}
-              </button>
-            </div>
+            <button 
+              onClick={handleFinalize}
+              disabled={isFinalizing}
+              className={`relative w-full md:w-auto px-20 py-6 text-black font-black uppercase tracking-[0.5em] font-mono rounded-xl border-4 border-black transition-all duration-300 overflow-hidden shadow-2xl active:scale-95 ${isFinalizing ? 'bg-zinc-800 text-zinc-500' : 'bg-[#f18a22] hover:bg-white hover:scale-[1.02]'}`}
+            >
+              {isFinalizing ? (
+                <div className="flex items-center gap-4">
+                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                   </svg>
+                   <span>Finalizing Node Sync</span>
+                </div>
+              ) : (
+                'Commit To Registry'
+              )}
+              {/* SCANNING LINE EFFECT */}
+              {!isFinalizing && (
+                <div className="absolute inset-0 bg-white/10 -translate-x-full hover:translate-x-full transition-transform duration-1000"></div>
+              )}
+            </button>
           </div>
         </div>
       </div>

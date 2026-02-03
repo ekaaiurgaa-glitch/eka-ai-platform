@@ -9,18 +9,6 @@ import TelemetryDashboard from './components/TelemetryDashboard';
 import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData, VisualMetric } from './types';
 import { geminiService } from './services/geminiService';
 
-// API response type for Job Card
-interface ApiJobCard {
-  id: number;
-  registration_number: string | null;
-  customer_name: string | null;
-  status: string;
-  complaints: unknown[] | null;
-  fuel_level: number | null;
-  inventory: unknown[] | null;
-  created_at: string | null;
-}
-
 const App: React.FC = () => {
   const [vehicleContext, setVehicleContext] = useState<VehicleContext>({
     vehicleType: '',
@@ -73,50 +61,6 @@ const App: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
-
-  // Load the latest Job Card on startup
-  useEffect(() => {
-    const loadLatestJobCard = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/job-cards');
-        if (!response.ok) {
-          return;
-        }
-        const jobCards: ApiJobCard[] = await response.json();
-        
-        if (jobCards && jobCards.length > 0) {
-          // Sort by id descending to get the most recent one
-          const sortedJobCards = [...jobCards].sort((a, b) => b.id - a.id);
-          const latestJobCard = sortedJobCards[0];
-          
-          // Update vehicleContext with registration_number
-          if (latestJobCard.registration_number) {
-            setVehicleContext(prev => ({
-              ...prev,
-              registrationNumber: latestJobCard.registration_number
-            }));
-          }
-          
-          // Update status with job card's status
-          if (latestJobCard.status) {
-            setStatus(latestJobCard.status as JobStatus);
-          }
-          
-          // Add restoration message
-          setMessages(prev => [...prev, {
-            id: `session-restored-${Date.now()}`,
-            role: 'assistant',
-            content: `Session Restored: Retrieved active dossier for ${latestJobCard.registration_number || 'Unknown'}. Previous status: ${latestJobCard.status || 'CREATED'}.`,
-            timestamp: new Date()
-          }]);
-        }
-      } catch (error) {
-        console.error('Failed to load job cards:', error);
-      }
-    };
-    
-    loadLatestJobCard();
-  }, []);
 
   useEffect(() => {
     let interval: any;
