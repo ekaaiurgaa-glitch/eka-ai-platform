@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface DigitalJobCardProps {
@@ -53,71 +54,86 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
   return (
     <div className="job-card-dossier animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* 1. HEADER SECTION */}
+      {/* HEADER SECTION */}
       <header className="dossier-header">
         <div className="header-left">
-          <span className="jc-id">{jcId}</span>
-          <span className="status-pill">{status}</span>
+          <div className="box-container border-orange">
+            <span className="label-text">JOB_CARD_ID</span>
+            <span className="value-text highlight-orange">{jcId}</span>
+          </div>
+          <div className="status-box">
+             <span className="status-pill">{status}</span>
+          </div>
         </div>
         <div className="header-right">
-          <span className="timestamp">{timestamp}</span>
+          <div className="box-container">
+            <span className="label-text">SYS_TIME</span>
+            <span className="value-text">{timestamp}</span>
+          </div>
         </div>
       </header>
 
-      {/* 2. CUSTOMER & VEHICLE GRID */}
+      {/* CUSTOMER & VEHICLE GRID */}
       <section className="architect-grid">
-        <div className="data-block">
-          <label>CUSTOMER PROFILE</label>
-          <div className="data-row">
-            <span className="val-label">Name</span>
-            <span className="val-data">{customerName || 'NOT_SPECIFIED'}</span>
-          </div>
-          <div className="data-row">
-            <span className="val-label">Contact</span>
-            <span className="val-data">{contact || 'AWAITING_AUTH'}</span>
+        <div className="dossier-section">
+          <label className="section-label">01. CUSTOMER_PROFILE</label>
+          <div className="grid-stack">
+            <div className="box-container">
+              <span className="label-text">NAME</span>
+              <span className="value-text">{customerName || 'NOT_SPECIFIED'}</span>
+            </div>
+            <div className="box-container">
+              <span className="label-text">CONTACT</span>
+              <span className="value-text">{contact || 'AWAITING_AUTH'}</span>
+            </div>
           </div>
         </div>
         
-        <div className="data-block">
-          <label>VEHICLE ARCHITECTURE</label>
-          <div className="data-row">
-            <span className="val-label">Model</span>
-            <span className="val-data">{vehicleModel || 'UNIDENTIFIED'}</span>
-          </div>
-          <div className="data-row">
-            <span className="val-label">Reg No</span>
-            <span className="val-data">{regNo || 'PENDING'}</span>
-          </div>
-          <div className="data-row">
-            <span className="val-label">Odo</span>
-            <span className="val-data">{odometer || '0'} KM</span>
+        <div className="dossier-section">
+          <label className="section-label">02. VEHICLE_ARCHITECTURE</label>
+          <div className="grid-stack">
+            <div className="box-container">
+              <span className="label-text">MODEL</span>
+              <span className="value-text highlight-orange">{vehicleModel || 'UNIDENTIFIED'}</span>
+            </div>
+            <div className="box-container">
+              <span className="label-text">REG_NO</span>
+              <span className="value-text highlight-orange">{regNo || 'PENDING'}</span>
+            </div>
+            <div className="box-container">
+              <span className="label-text">ODOMETER</span>
+              <span className="value-text">{odometer || '0'} KM</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 3. VOICE OF CUSTOMER */}
-      <section className="complaints-section">
-        <label>VOICE OF CUSTOMER (VOC)</label>
-        <ul className="complaint-list">
+      {/* VOICE OF CUSTOMER */}
+      <section className="complaints-section dossier-section">
+        <label className="section-label">03. COMPLAINTS_TRIAGE (VOC)</label>
+        <div className="complaint-stack">
           {complaints.map((c, i) => (
-            <li key={i}>{c}</li>
+            <div key={i} className="box-container complaint-box">
+              <span className="label-text">NODE_{String(i+1).padStart(2, '0')}</span>
+              <span className="value-text">{c}</span>
+            </div>
           ))}
-        </ul>
-        <button className="btn-add-issue" onClick={handleAddIssue}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Add Logic Node
-        </button>
+          <button className="btn-add-issue" onClick={handleAddIssue}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            APPEND LOGIC NODE
+          </button>
+        </div>
       </section>
 
-      {/* 4. VEHICLE INVENTORY */}
-      <section className="inventory-section">
-        <label>INTAKE INVENTORY CHECK</label>
-        <div className="inventory-controls">
+      {/* VEHICLE INVENTORY */}
+      <section className="inventory-section dossier-section">
+        <label className="section-label">04. INVENTORY_GATING</label>
+        <div className="inventory-box-main border-orange">
           <div className="fuel-gauge">
-            <span className="val-label">Propulsion Energy</span>
-            <div className="slider-container">
+            <span className="label-text">PROPULSION_LEVEL</span>
+            <div className="slider-box">
               <input 
                 type="range" 
                 min="0" 
@@ -131,32 +147,22 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           </div>
           
           <div className="check-grid">
-            <label className="check-item">
-              <input 
-                type="checkbox" 
-                checked={inventory.spareWheel} 
-                onChange={() => setInventory(i => ({...i, spareWheel: !i.spareWheel}))}
-              />
-              <span className="check-box-ui"></span>
-              <span className="check-label">Spare Wheel</span>
-            </label>
-            <label className="check-item">
-              <input 
-                type="checkbox" 
-                checked={inventory.toolKit} 
-                onChange={() => setInventory(i => ({...i, toolKit: !i.toolKit}))}
-              />
-              <span className="check-box-ui"></span>
-              <span className="check-label">Tool Kit</span>
-            </label>
+            <div className={`check-box-container ${inventory.spareWheel ? 'active' : ''}`} onClick={() => setInventory(i => ({...i, spareWheel: !i.spareWheel}))}>
+              <span className="label-text">SPARE_WHEEL</span>
+              <span className="status-indicator">{inventory.spareWheel ? 'PRESENT' : 'MISSING'}</span>
+            </div>
+            <div className={`check-box-container ${inventory.toolKit ? 'active' : ''}`} onClick={() => setInventory(i => ({...i, toolKit: !i.toolKit}))}>
+              <span className="label-text">TOOL_KIT</span>
+              <span className="status-indicator">{inventory.toolKit ? 'PRESENT' : 'MISSING'}</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 5. FOOTER & CTA */}
+      {/* FOOTER & CTA */}
       <footer className="dossier-footer">
-        <div className="signature-box">
-          <label>TECHNICIAN AUTH_SIGN</label>
+        <div className="box-container signature-box">
+          <span className="label-text">AUTH_SIGNATURE_REQUIRED</span>
           <div className="sig-line"></div>
         </div>
         <button 
@@ -169,36 +175,78 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
       <style>{`
         .job-card-dossier {
-          --eka-orange: #FF9F1C;
+          --eka-orange: #f18a22;
           --bg-deep: #050505;
           --bg-card: #0A0A0A;
-          --border-soft: #222222;
-          --text-dim: #666666;
-          --text-bright: #FFFFFF;
+          --border-soft: #262626;
+          --border-orange: #f18a22;
+          --text-label: #52525b; /* zinc-600 */
+          --text-value: #ffffff;
+          --text-highlight: #f18a22;
 
           background-color: var(--bg-deep);
-          color: var(--text-bright);
+          color: var(--text-value);
           font-family: 'Inter', sans-serif;
           width: 100%;
-          border: 1px solid var(--border-soft);
-          border-radius: 12px;
+          border: 2px solid var(--border-orange);
+          border-radius: 16px;
           padding: 32px;
           display: flex;
           flex-direction: column;
-          gap: 28px;
-          box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
-          margin: 1rem 0;
+          gap: 32px;
+          box-shadow: 0 50px 100px -20px rgba(0,0,0,0.9);
+          margin: 1.5rem 0;
+          position: relative;
+          overflow: hidden;
         }
 
-        .job-card-dossier label {
+        /* --- UI COMPONENTS: BOXES --- */
+        .box-container {
+          background: var(--bg-card);
+          border: 1px solid var(--border-soft);
+          padding: 12px 16px;
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          transition: all 0.2s ease;
+        }
+
+        .box-container.border-orange {
+          border: 2px solid var(--border-orange);
+          box-shadow: 0 0 15px rgba(241, 138, 34, 0.1);
+        }
+
+        .label-text {
+          font-family: 'Roboto Mono', monospace;
+          font-size: 9px;
+          color: var(--text-label);
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+        }
+
+        .value-text {
+          font-family: 'Roboto Mono', monospace;
+          font-size: 14px;
+          color: var(--text-value);
+          font-weight: 700;
+          letter-spacing: -0.5px;
+        }
+
+        .highlight-orange {
+          color: var(--text-highlight);
+        }
+
+        .section-label {
           display: block;
           font-family: 'Roboto Mono', monospace;
-          font-size: 0.65rem;
-          color: var(--text-dim);
-          letter-spacing: 2.5px;
+          font-size: 11px;
+          color: var(--text-label);
+          letter-spacing: 3px;
           text-transform: uppercase;
-          margin-bottom: 12px;
-          font-weight: 700;
+          margin-bottom: 16px;
+          font-weight: 800;
         }
 
         /* --- HEADER --- */
@@ -206,128 +254,104 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          border-bottom: 1px solid var(--border-soft);
-          padding-bottom: 20px;
+          gap: 20px;
         }
 
-        .jc-id {
-          font-family: 'Roboto Mono', monospace;
-          font-weight: 700;
-          font-size: 1.1rem;
-          margin-right: 12px;
-          color: var(--text-bright);
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
         }
 
         .status-pill {
           background: rgba(34, 197, 94, 0.1);
           color: #22c55e;
-          border: 1px solid rgba(34, 197, 94, 0.3);
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 0.6rem;
+          border: 1px solid rgba(34, 197, 94, 0.4);
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 10px;
           font-weight: 900;
-          letter-spacing: 1px;
+          letter-spacing: 2px;
           text-transform: uppercase;
-        }
-
-        .timestamp {
           font-family: 'Roboto Mono', monospace;
-          font-size: 0.7rem;
-          color: var(--text-dim);
         }
 
         /* --- ARCHITECT GRID --- */
         .architect-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 40px;
+          gap: 32px;
         }
 
-        .data-row {
+        .grid-stack {
           display: flex;
-          justify-content: space-between;
-          padding: 6px 0;
-          border-bottom: 1px solid #111;
-        }
-
-        .val-label {
-          font-size: 0.75rem;
-          color: var(--text-dim);
-        }
-
-        .val-data {
-          font-size: 0.8rem;
-          font-weight: 700;
-          font-family: 'Roboto Mono', monospace;
-          color: var(--text-bright);
+          flex-direction: column;
+          gap: 12px;
         }
 
         /* --- VOC SECTION --- */
-        .complaint-list {
-          list-style: none;
-          padding: 0;
-          margin: 0 0 16px 0;
+        .complaint-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
 
-        .complaint-list li {
-          font-size: 0.85rem;
-          padding: 12px 16px;
-          background: #0D0D0D;
-          border-left: 2px solid var(--eka-orange);
-          margin-bottom: 8px;
-          border-radius: 0 4px 4px 0;
-          color: #BBB;
+        .complaint-box {
+          border-left: 4px solid var(--eka-orange);
         }
 
         .btn-add-issue {
-          background: transparent;
+          background: rgba(255, 255, 255, 0.02);
           border: 1px dashed var(--border-soft);
-          color: var(--text-dim);
+          color: var(--text-label);
           width: 100%;
-          padding: 12px;
+          padding: 16px;
           border-radius: 8px;
-          font-size: 0.7rem;
+          font-size: 10px;
           text-transform: uppercase;
-          font-weight: 700;
+          font-weight: 800;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          transition: all 0.2s;
+          gap: 12px;
+          transition: all 0.3s;
           font-family: 'Roboto Mono', monospace;
+          letter-spacing: 2px;
         }
 
         .btn-add-issue:hover {
           border-color: var(--eka-orange);
           color: var(--eka-orange);
-          background: rgba(255, 159, 28, 0.05);
+          background: rgba(241, 138, 34, 0.05);
         }
 
         /* --- INVENTORY --- */
-        .inventory-controls {
+        .inventory-box-main {
           background: #080808;
           padding: 24px;
-          border-radius: 8px;
-          border: 1px solid #111;
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
         }
 
-        .fuel-gauge {
-          margin-bottom: 24px;
-        }
-
-        .slider-container {
+        .slider-box {
           display: flex;
           align-items: center;
           gap: 20px;
+          background: var(--bg-card);
+          padding: 12px;
+          border-radius: 8px;
+          border: 1px solid var(--border-soft);
         }
 
         .gauge-value {
           font-family: 'Roboto Mono', monospace;
-          font-size: 1rem;
+          font-size: 18px;
           color: var(--eka-orange);
-          font-weight: 700;
-          min-width: 50px;
+          font-weight: 900;
+          min-width: 60px;
           text-align: right;
         }
 
@@ -342,80 +366,63 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
 
         .eka-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 14px;
-          height: 14px;
+          width: 16px;
+          height: 16px;
           background: var(--eka-orange);
           border-radius: 50%;
           cursor: pointer;
-          box-shadow: 0 0 10px rgba(255, 159, 28, 0.5);
-          transition: transform 0.1s;
-        }
-
-        .eka-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
+          box-shadow: 0 0 15px rgba(241, 138, 34, 0.6);
         }
 
         .check-grid {
-          display: flex;
-          gap: 32px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
         }
 
-        .check-item {
+        .check-box-container {
+          background: var(--bg-card);
+          border: 1px solid var(--border-soft);
+          padding: 16px;
+          border-radius: 10px;
           display: flex;
-          align-items: center;
-          gap: 12px;
+          flex-direction: column;
+          gap: 8px;
           cursor: pointer;
-          position: relative;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .check-item input {
-          position: absolute;
-          opacity: 0;
-          cursor: pointer;
+        .check-box-container.active {
+          border-color: #22c55e;
+          background: rgba(34, 197, 94, 0.05);
         }
 
-        .check-box-ui {
-          width: 18px;
-          height: 18px;
-          background: #000;
-          border: 2px solid #333;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-        }
-
-        .check-item input:checked + .check-box-ui {
-          border-color: var(--eka-orange);
-          background: var(--eka-orange);
-        }
-
-        .check-item input:checked + .check-box-ui::after {
-          content: '✔';
-          color: #000;
-          font-size: 10px;
+        .status-indicator {
+          font-family: 'Roboto Mono', monospace;
+          font-size: 12px;
           font-weight: 900;
+          color: var(--text-label);
         }
 
-        .check-label {
-          font-size: 0.75rem;
-          color: var(--text-dim);
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+        .active .status-indicator {
+          color: #22c55e;
         }
 
         /* --- FOOTER --- */
         .signature-box {
-          margin-bottom: 32px;
+          width: 300px;
+          height: 100px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          border-style: dashed;
         }
 
         .sig-line {
           height: 1px;
           background: var(--border-soft);
-          width: 220px;
-          margin-top: 24px;
+          width: 100%;
+          margin-top: auto;
         }
 
         .btn-primary {
@@ -423,35 +430,38 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
           color: #000;
           border: none;
           width: 100%;
-          padding: 22px;
-          border-radius: 8px;
-          font-weight: 900;
-          font-size: 0.9rem;
-          letter-spacing: 2px;
+          padding: 24px;
+          border-radius: 12px;
+          font-weight: 950;
+          font-size: 15px;
+          letter-spacing: 3px;
           text-transform: uppercase;
           cursor: pointer;
-          transition: all 0.2s;
-          box-shadow: 0 10px 20px -10px rgba(255, 159, 28, 0.4);
+          transition: all 0.3s;
+          box-shadow: 0 15px 30px -10px rgba(241, 138, 34, 0.5);
+          font-family: 'Roboto Mono', monospace;
         }
 
         .btn-primary:hover {
           background-color: #FFF;
+          box-shadow: 0 20px 40px -10px rgba(255, 255, 255, 0.2);
           transform: translateY(-2px);
-          box-shadow: 0 15px 30px -10px rgba(255, 255, 255, 0.3);
         }
 
         .btn-primary:active {
-          transform: translateY(0);
+          transform: translateY(1px);
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .architect-grid {
             grid-template-columns: 1fr;
-            gap: 20px;
+          }
+          .dossier-header {
+            flex-direction: column;
+            align-items: flex-start;
           }
           .check-grid {
-            flex-direction: column;
-            gap: 16px;
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
