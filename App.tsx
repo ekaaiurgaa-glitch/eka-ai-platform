@@ -240,11 +240,21 @@ const App: React.FC = () => {
             <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
           </div>
         </div>
+        <div className="hidden lg:flex items-center gap-4">
+          <div className="flex flex-col items-end">
+             <span className="text-[10px] font-black text-[#f18a22] uppercase tracking-[0.2em]">Protocol Sequence</span>
+             <div className="flex gap-2 mt-1">
+                {activeProtocol.map((p, i) => (
+                  <div key={p} className={`w-1.5 h-1.5 rounded-full ${i <= loadingStep && isLoading ? 'bg-[#f18a22] animate-pulse' : 'bg-zinc-800'}`}></div>
+                ))}
+             </div>
+          </div>
+        </div>
       </div>
 
       <main className="flex-1 overflow-hidden flex z-0">
         {/* CHAT AREA */}
-        <div className="flex-1 overflow-y-auto pt-8 pb-4 relative" ref={scrollRef}>
+        <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
             {showPanel && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
@@ -269,8 +279,8 @@ const App: React.FC = () => {
                 />
               ))}
               {isLoading && (
-                <div className="flex justify-start mb-8 animate-pulse text-[10px] font-black uppercase tracking-[0.2em] text-[#f18a22] px-10">
-                  Logic Engine Processing...
+                <div className="flex justify-start mb-12 animate-pulse text-[10px] font-black uppercase tracking-[0.3em] text-[#f18a22] px-10 border-l-4 border-[#f18a22] py-2 ml-4">
+                  {activeProtocol[loadingStep]}... [Logic Engine Sync]
                 </div>
               )}
             </div>
@@ -278,39 +288,80 @@ const App: React.FC = () => {
         </div>
 
         {/* PERSISTENT DASHBOARD SIDEBAR (DESKTOP) */}
-        {activeMetric && (
-          <aside className="hidden xl:flex w-96 flex-col bg-[#050505] border-l border-zinc-900 p-6 overflow-y-auto animate-in slide-in-from-right duration-500">
-             <div className="flex items-center justify-between mb-8 border-b border-zinc-900 pb-4">
+        <aside className="hidden xl:flex w-[450px] flex-col bg-[#050505] border-l border-zinc-900 p-8 overflow-y-auto animate-in slide-in-from-right duration-700 shadow-2xl relative">
+             <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#f18a22 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}></div>
+             
+             <div className="flex items-center justify-between mb-10 border-b border-zinc-800 pb-6 relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest font-mono">Real-time Metrics</span>
-                  <span className="text-white font-black uppercase font-mono text-sm">System Health Feed</span>
+                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono">Real-time Telemetry</span>
+                  <span className="text-white font-black uppercase font-mono text-xl tracking-tighter mt-1">Architectural HUD</span>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[8px] font-black text-green-500 font-mono">SYNC_ACTIVE</span>
+                    <span className="text-[10px] font-black text-white font-mono uppercase">Node_v1.4</span>
+                  </div>
+                  <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_15px_#22c55e]"></div>
+                </div>
              </div>
              
-             <div className="space-y-8">
-               <VehicleVisuals metric={activeMetric} />
+             <div className="space-y-10 relative z-10">
+               {activeMetric ? (
+                 <VehicleVisuals metric={activeMetric} />
+               ) : (
+                 <div className="p-12 border-4 border-dashed border-zinc-900 rounded-3xl flex flex-col items-center justify-center text-center group hover:border-zinc-700 transition-all">
+                    <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-6 opacity-30 group-hover:opacity-60 transition-opacity">
+                      <svg className="w-8 h-8 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.4em] font-mono leading-relaxed">
+                      Telemetry Matrix <br/> Awaiting Core Signal
+                    </span>
+                 </div>
+               )}
                
-               <div className="p-5 bg-zinc-900/30 rounded-xl border border-zinc-800">
-                  <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest font-mono block mb-3">Live Log Summary</span>
-                  <div className="space-y-2">
-                     <div className="flex justify-between text-[10px] font-mono">
-                        <span className="text-zinc-500">Status</span>
-                        <span className="text-[#f18a22] font-black">{status}</span>
+               <div className="p-8 bg-zinc-900/30 rounded-3xl border-2 border-zinc-800/50 backdrop-blur-md">
+                  <div className="flex items-center gap-3 mb-6 border-b border-zinc-800 pb-4">
+                     <div className="w-2 h-4 bg-[#f18a22]"></div>
+                     <span className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Session Audit Summary</span>
+                  </div>
+                  <div className="space-y-4">
+                     <div className="flex justify-between items-center group">
+                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Logical State</span>
+                        <span className="text-[#f18a22] font-black font-mono text-[11px] uppercase tracking-tighter">{status}</span>
                      </div>
-                     <div className="flex justify-between text-[10px] font-mono">
-                        <span className="text-zinc-500">Mode</span>
-                        <span className="text-white">NODE_{activeTab}</span>
+                     <div className="flex justify-between items-center group">
+                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Identity Sync</span>
+                        <span className={`text-[11px] font-black font-mono uppercase ${isContextComplete(vehicleContext) ? 'text-green-500' : 'text-red-500'}`}>
+                          {isContextComplete(vehicleContext) ? 'SECURED' : 'AWAITING_ID'}
+                        </span>
                      </div>
-                     <div className="flex justify-between text-[10px] font-mono">
-                        <span className="text-zinc-500">Compliance</span>
-                        <span className="text-green-500">VERIFIED</span>
+                     <div className="flex justify-between items-center group">
+                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Intelligence</span>
+                        <span className="text-white font-black font-mono text-[11px] uppercase tracking-tighter">{intelligenceMode}</span>
+                     </div>
+                     <div className="flex justify-between items-center group">
+                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Governance Gate</span>
+                        <span className="text-blue-500 font-black font-mono text-[11px] uppercase tracking-tighter">EKA_V1.4</span>
                      </div>
                   </div>
                </div>
+
+               {/* RECENT LOGS SECTION */}
+               <div className="space-y-4">
+                  <span className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.2em] font-mono block px-1">Recent Logic Transitions</span>
+                  <div className="space-y-2">
+                     {[...messages].reverse().slice(0, 3).map((m, i) => (
+                       <div key={i} className="px-4 py-3 bg-[#080808] border border-zinc-900 rounded-xl flex items-center gap-4 opacity-60 hover:opacity-100 transition-opacity">
+                          <div className={`w-1.5 h-1.5 rounded-full ${m.role === 'assistant' ? 'bg-[#f18a22]' : 'bg-zinc-500'}`}></div>
+                          <span className="text-[9px] font-mono text-zinc-400 truncate flex-1 uppercase tracking-tighter">{m.content}</span>
+                       </div>
+                     ))}
+                  </div>
+               </div>
              </div>
-          </aside>
-        )}
+        </aside>
       </main>
       <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={activeTab} status={status} />
     </div>
