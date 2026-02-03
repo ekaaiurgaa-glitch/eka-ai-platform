@@ -174,7 +174,8 @@ def speak():
             }
         )
         # Extract base64 audio
-        # Note: Actual path depends on SDK version, looking for inline_data
+        # Note: Audio extraction is a placeholder. Actual implementation depends on SDK version.
+        # For now we return success to prevent crashing while speech feature is being developed.
         if hasattr(response, 'candidates'):
             # Logic to extract audio bytes would go here.
             # For now we return success to prevent crashing.
@@ -198,4 +199,4 @@ def serve(path):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False)
