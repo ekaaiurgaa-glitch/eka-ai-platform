@@ -411,5 +411,65 @@ def chat():
         }), 500
 
 
+@app.route('/api/speak', methods=['POST'])
+def speak():
+    """Handle Text-to-Speech generation server-side."""
+    data = request.get_json()
+
+    if data is None:
+        return jsonify({"error": "Invalid JSON data"}), 400
+
+    text = data.get('text', '')
+    if not text:
+        return jsonify({"error": "Missing 'text' field"}), 400
+
+    # Get API key from environment
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return jsonify({"error": "GEMINI_API_KEY not configured"}), 500
+
+    try:
+        # Configure the Gemini client
+        client = genai.Client(api_key=api_key)
+
+        # TTS model configuration
+        tts_model = 'gemini-2.5-flash-preview-tts'
+
+        # Generate speech
+        response = client.models.generate_content(
+            model=tts_model,
+            contents=[{"parts": [{"text": text}]}],
+            config={
+                "response_modalities": ["AUDIO"],
+                "speech_config": {
+                    "voice_config": {
+                        "prebuilt_voice_config": {
+                            "voice_name": "Kore"
+                        }
+                    }
+                }
+            }
+        )
+
+        # Extract audio data from response
+        audio_data = None
+        try:
+            candidate = response.candidates[0] if response.candidates else None
+            if candidate and candidate.content and candidate.content.parts:
+                inline_data = candidate.content.parts[0].inline_data
+                if inline_data:
+                    audio_data = inline_data.data
+        except (IndexError, AttributeError):
+            pass
+        
+        if audio_data:
+            return jsonify({"audio": audio_data}), 200
+        else:
+            return jsonify({"error": "No audio data in response"}), 500
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

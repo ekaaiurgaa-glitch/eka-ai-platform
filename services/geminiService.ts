@@ -1,9 +1,6 @@
-
-import { GoogleGenAI, Modality } from "@google/genai";
 import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types";
 
 export class GeminiService {
-  private ttsModel: string = 'gemini-2.5-flash-preview-tts';
   private backendUrl: string = 'http://localhost:5000';
 
   async sendMessage(
@@ -48,19 +45,28 @@ export class GeminiService {
 
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: this.ttsModel,
-        contents: [{ parts: [{ text }] }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
+      const response = await fetch(`${this.backendUrl}/api/speak`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ text }),
       });
-      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      if (base64Audio) return this.decodeBase64(base64Audio);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.audio) {
+        return this.decodeBase64(result.audio);
+      }
       return null;
-    } catch (error) { return null; }
+    } catch (error) {
+      console.error("TTS Error:", error);
+      return null;
+    }
   }
 
   private decodeBase64(base64: string): Uint8Array {
