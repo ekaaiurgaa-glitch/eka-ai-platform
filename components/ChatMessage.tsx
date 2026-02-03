@@ -7,6 +7,16 @@ import EstimateGovernance from './EstimateGovernance';
 import VehicleVisuals from './VehicleVisuals';
 import DiagnosticResult from './DiagnosticResult';
 
+// URL validation to prevent XSS via javascript: or data: URIs
+const isValidUrl = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 interface ChatMessageProps {
   message: Message;
   onPlayAudio?: (text: string) => void;
@@ -27,16 +37,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   onJobCardComplete
 }) => {
   const isAi = message.role === 'assistant';
-
-  // URL validation to prevent XSS via javascript: or data: URIs
-  const isValidUrl = (url: string): boolean => {
-    try {
-      const parsedUrl = new URL(url);
-      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
 
   const formatTechnicalTags = (text: string) => {
     const cleanText = text.replace(/\[\[STATE:.*?\]\]/g, '').trim();
