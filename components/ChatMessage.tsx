@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { Message, VehicleContext } from '../types';
+import { Message, VehicleContext, EstimateData } from '../types';
 import DigitalJobCard from './DigitalJobCard';
 import ServiceHistory from './ServiceHistory';
+import EstimateGovernance from './EstimateGovernance';
 
 interface ChatMessageProps {
   message: Message;
@@ -10,6 +11,7 @@ interface ChatMessageProps {
   isAudioPlaying?: boolean;
   vehicleContext?: VehicleContext;
   onUpdateContext?: (context: VehicleContext) => void;
+  onEstimateAuthorize?: (data: EstimateData) => void;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
@@ -17,7 +19,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   onPlayAudio, 
   isAudioPlaying, 
   vehicleContext,
-  onUpdateContext 
+  onUpdateContext,
+  onEstimateAuthorize
 }) => {
   const isAi = message.role === 'assistant';
 
@@ -81,6 +84,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
     const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING';
     const showHistory = message.service_history !== undefined || (message.job_status_update === 'SYMPTOM_RECORDING' && vehicleContext?.registrationNumber);
+    const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
 
     return (
       <div className="space-y-4">
@@ -113,6 +117,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             onComplete={(data) => {
               console.log("Job Card Initialized:", data);
             }}
+          />
+        )}
+
+        {showEstimate && message.estimate_data && (
+          <EstimateGovernance 
+            data={message.estimate_data} 
+            onAuthorize={onEstimateAuthorize} 
           />
         )}
 

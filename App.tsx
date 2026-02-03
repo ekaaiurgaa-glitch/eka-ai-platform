@@ -4,7 +4,7 @@ import Header from './components/Header';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import VehicleContextPanel from './components/VehicleContextPanel';
-import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode } from './types';
+import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData } from './types';
 import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -156,7 +156,6 @@ const App: React.FC = () => {
         return;
       }
       promptOverride = `[SYSTEM_NOTE: VALID_FORMAT] User input: ${trimmedText}`;
-      // Sync to context
       setVehicleContext(prev => ({ ...prev, registrationNumber: validation.formatted }));
     }
 
@@ -179,6 +178,8 @@ const App: React.FC = () => {
       ui_triggers: responseData.ui_triggers,
       visual_assets: responseData.visual_assets,
       grounding_links: responseData.grounding_links,
+      service_history: responseData.service_history,
+      estimate_data: responseData.estimate_data,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode
@@ -189,12 +190,12 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
-  /**
-   * SILENT MODE SWITCHING (Deterministic Protocol Implementation)
-   * Refactored for strictly silent, functional transitions as requested.
-   */
+  const handleEstimateAuthorize = async (finalData: EstimateData) => {
+    const text = `[AUTHORIZE_GATE] Final estimate data confirmed: ${JSON.stringify(finalData)}`;
+    await handleSendMessage(text);
+  };
+
   const handleModeChange = (mode: OperatingMode) => {
-    // 1. Update states immediately
     setOperatingMode(mode);
     
     let intakePrompt = "";
@@ -223,11 +224,9 @@ const App: React.FC = () => {
         break;
     }
 
-    // 2. Apply updates
     setStatus(entryStatus);
     setActiveProtocol(protocol);
     
-    // 3. Issue functional prompt
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
       role: 'assistant',
@@ -282,7 +281,15 @@ const App: React.FC = () => {
           />
           <div className="px-4">
             {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} onPlayAudio={handlePlayAudio} isAudioPlaying={isAudioPlaying} vehicleContext={vehicleContext} onUpdateContext={setVehicleContext} />
+              <ChatMessage 
+                key={msg.id} 
+                message={msg} 
+                onPlayAudio={handlePlayAudio} 
+                isAudioPlaying={isAudioPlaying} 
+                vehicleContext={vehicleContext} 
+                onUpdateContext={setVehicleContext}
+                onEstimateAuthorize={handleEstimateAuthorize}
+              />
             ))}
             
             {isLoading && (
@@ -347,16 +354,6 @@ const App: React.FC = () => {
         </div>
       </main>
       <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={activeTab} status={status} />
-      <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .animate-shimmer {
-          animation: shimmer 1s infinite linear;
-          width: 50%;
-        }
-      `}</style>
     </div>
   );
 };

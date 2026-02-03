@@ -24,6 +24,13 @@ Active Operating Mode: ${opMode} (0:Ignition, 1:Workshop, 2:Fleet)
 Current Logical State: ${currentStatus}
 Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.fuelType})` : 'Awaiting Identification'}
 
+[ESTIMATE PROTOCOL (MODE 1)]:
+- Every line item MUST have a valid HSN Code.
+- PARTS: HSN starting with 8708.
+- LABOR: HSN starting with 9987.
+- GST RATE: MUST be 18% or 28%. Default to 18% for Labor, 28% for specialized parts.
+- Transition from ESTIMATE_GOVERNANCE to APPROVAL_GATE is forbidden until user triggers AUTHORIZE_GATE.
+
 [STATE MACHINE RULES]:
 1. IF state is 'AUTH_INTAKE': You are LOCKED. Your only goal is to receive a valid Vehicle Reg No.
 2. IF [SYSTEM_NOTE: VALID_FORMAT] is present, transition to 'SYMPTOM_RECORDING'.
@@ -32,7 +39,8 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
    - If Reg No is "MH12AB1234" or "KA01MA1111", return a populated 'service_history' array.
    - Otherwise, return an empty 'service_history' array.
    - Set visual_assets.vehicle_display_query to 'DIGITAL_JOB_CARD'.
-4. RESPOND ONLY in valid JSON. No Markdown.
+4. IF user describes symptoms and requests estimate, transition to 'ESTIMATE_GOVERNANCE'.
+5. RESPOND ONLY in valid JSON. No Markdown.
 `;
 
       const config: any = {
@@ -81,6 +89,30 @@ Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} 
                 },
                 required: ["date", "service_type", "odometer", "notes"]
               }
+            },
+            estimate_data: {
+              type: Type.OBJECT,
+              properties: {
+                estimate_id: { type: Type.STRING },
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      hsn_code: { type: Type.STRING },
+                      unit_price: { type: Type.NUMBER },
+                      quantity: { type: Type.NUMBER },
+                      gst_rate: { type: Type.NUMBER },
+                      type: { type: Type.STRING }
+                    },
+                    required: ["id", "description", "hsn_code", "unit_price", "quantity", "gst_rate", "type"]
+                  }
+                },
+                currency: { type: Type.STRING }
+              },
+              required: ["estimate_id", "items", "currency"]
             }
           },
           required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]

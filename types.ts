@@ -40,6 +40,22 @@ export interface ServiceHistoryItem {
   notes: string;
 }
 
+export interface EstimateItem {
+  id: string;
+  description: string;
+  hsn_code: string;
+  unit_price: number;
+  quantity: number;
+  gst_rate: 18 | 28;
+  type: 'PART' | 'LABOR';
+}
+
+export interface EstimateData {
+  estimate_id: string;
+  items: EstimateItem[];
+  currency: string;
+}
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -59,6 +75,7 @@ export interface Message {
     part_display_query: string | null;
   };
   service_history?: ServiceHistoryItem[];
+  estimate_data?: EstimateData;
   grounding_links?: GroundingLink[];
   timestamp: Date;
   isValidated?: boolean;
