@@ -8,13 +8,23 @@ from google.genai.types import GenerateContentConfig, Tool, GoogleSearch, Part
 app = Flask(__name__)
 CORS(app)
 
-# Initialize Gemini client
-client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
-
 # Model configurations
 FAST_MODEL = 'gemini-3-flash-preview'
 THINKING_MODEL = 'gemini-3-pro-preview'
 TTS_MODEL = 'gemini-2.5-flash-preview-tts'
+
+# Lazy client initialization
+_client = None
+
+def get_client():
+    """Get or create Gemini client"""
+    global _client
+    if _client is None:
+        api_key = os.environ.get('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
+        _client = genai.Client(api_key=api_key)
+    return _client
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -186,6 +196,9 @@ Reference the following registry for all estimate generation:
         # Select model
         model = THINKING_MODEL if intel_mode == 'THINKING' else FAST_MODEL
         
+        # Get client
+        client = get_client()
+        
         # Generate response
         response = client.models.generate_content(
             model=model,
@@ -246,6 +259,9 @@ def text_to_speech():
         
         if not text:
             return jsonify({'error': 'Text is required'}), 400
+        
+        # Get client
+        client = get_client()
         
         # Generate speech
         response = client.models.generate_content(
