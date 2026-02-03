@@ -10,6 +10,9 @@ jobs:
     name: Deploy Application
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      packages: write
     
     steps:
     - name: Checkout code
