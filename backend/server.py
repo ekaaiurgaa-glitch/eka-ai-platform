@@ -5,17 +5,17 @@ import json
 import base64
 from google import genai
 from dotenv import load_dotenv
+from asgiref.wsgi import WsgiToAsgi
 
 # Load environment variables
 load_dotenv()
 
 # Initialize Flask app
-app = Flask(__name__, static_folder='../dist', static_url_path='')
-
+flask_app = Flask(__name__, static_folder='../dist', static_url_path='')
 
 # Configure CORS
 cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
-CORS(app, origins=cors_origins)
+CORS(flask_app, origins=cors_origins)
 
 # --- BRAIN CONFIGURATION (Moved from Frontend) ---
 EKA_CONSTITUTION = """
@@ -59,12 +59,13 @@ Vehicle: {ctx_str}
 
 # --- ROUTES ---
 
-@app.route('/health')
+@flask_app.route('/health')
+@flask_app.route('/api/health')
 def health():
     return jsonify({'status': 'healthy', 'service': 'eka-ai-platform'})
 
 
-@app.route('/api/chat', methods=['POST'])
+@flask_app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     if not data:
@@ -152,7 +153,7 @@ def chat():
         })
 
 
-@app.route('/api/speak', methods=['POST'])
+@flask_app.route('/api/speak', methods=['POST'])
 def speak():
     data = request.get_json()
     text = data.get('text', '') if data else ''
@@ -191,16 +192,23 @@ def speak():
 
 
 # Catch-all for React
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@flask_app.route('/', defaults={'path': ''})
+@flask_app.route('/<path:path>')
 def serve(path):
-    static_file_path = os.path.join(app.static_folder, path)
+    # Skip API routes
+    if path.startswith('api/'):
+        return jsonify({'error': 'Not found'}), 404
+    
+    static_file_path = os.path.join(flask_app.static_folder, path)
     if path != "" and os.path.exists(static_file_path):
-        return send_from_directory(app.static_folder, path)
+        return send_from_directory(flask_app.static_folder, path)
     else:
-        return send_from_directory(app.static_folder, 'index.html')
+        return send_from_directory(flask_app.static_folder, 'index.html')
 
+
+# Convert Flask WSGI to ASGI
+app = WsgiToAsgi(flask_app)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8001))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    flask_app.run(host='0.0.0.0', port=port, debug=False)
