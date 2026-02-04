@@ -33,9 +33,11 @@ declare global {
 interface ChatInputProps {
   onSend: (text: string) => void;
   isLoading: boolean;
+  operatingMode: OperatingMode;
+  status: JobStatus;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode, status }) => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -96,11 +98,19 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
     }
   };
 
-  const handleSend = () => {
-    if (!input.trim() || isLoading) return;
-    onSend(input);
-    setInput('');
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   return (
     <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-2xl shadow-2xl flex items-center p-2 focus-within:border-[var(--accent-primary)] transition-colors">
