@@ -17,6 +17,7 @@ const App: React.FC = () => {
     year: '',
     fuelType: '',
     registrationNumber: '',
+    pdiVerified: false
   });
 
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
@@ -120,7 +121,6 @@ const App: React.FC = () => {
     
     if (responseData.job_status_update) {
       setStatus(responseData.job_status_update as JobStatus);
-      setPanelTriggered(true);
     }
 
     if (responseData.visual_metrics) {
@@ -139,8 +139,10 @@ const App: React.FC = () => {
       service_history: responseData.service_history,
       estimate_data: responseData.estimate_data,
       visual_metrics: responseData.visual_metrics,
+      recall_data: responseData.recall_data,
       mg_analysis: responseData.mg_analysis,
       diagnostic_data: responseData.diagnostic_data,
+      pdi_checklist: responseData.pdi_checklist,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode
@@ -152,7 +154,7 @@ const App: React.FC = () => {
 
   const handleModeChange = (mode: OperatingMode) => {
     setOperatingMode(mode);
-    if (mode !== 0) setPanelTriggered(true);
+    setPanelTriggered(mode !== 0);
     
     const entryStatus: JobStatus = mode === 1 ? 'DIAGNOSED' : mode === 2 ? 'CONTRACT_VALIDATION' : 'CREATED';
     setStatus(entryStatus);
@@ -171,6 +173,12 @@ const App: React.FC = () => {
     }]);
   };
 
+  const handleScanRecalls = () => {
+    if (isContextComplete(vehicleContext)) {
+      handleSendMessage(`Scan official safety recalls and common reported mechanical issues for ${vehicleContext.brand} ${vehicleContext.model} ${vehicleContext.year}.`);
+    }
+  };
+
   const handleEstimateAuthorize = (finalData: EstimateData) => {
     setStatus('CUSTOMER_APPROVED');
     setMessages(prev => [...prev, {
@@ -183,6 +191,19 @@ const App: React.FC = () => {
     }]);
     
     setTimeout(scrollToBottom, 100);
+  };
+
+  const handlePdiVerify = (data: { verified: boolean }) => {
+    setVehicleContext(prev => ({ ...prev, pdiVerified: data.verified }));
+    setStatus('COMPLETION');
+    setMessages(prev => [...prev, {
+      id: `pdi-verify-${Date.now()}`,
+      role: 'assistant',
+      content: "PDI VERIFIED. Safety checklist and evidence confirmed on central node. Transitioning to COMPLETION. Vehicle is now INVOICE ELIGIBLE.",
+      timestamp: new Date(),
+      job_status_update: 'COMPLETION',
+      operatingMode: 1
+    }]);
   };
 
   const handlePlayAudio = async (text: string) => {
@@ -219,7 +240,14 @@ const App: React.FC = () => {
   };
 
   const activeTab = getActiveTab();
-  const showPanel = panelTriggered || isContextComplete(vehicleContext) || activeTab !== 0;
+  
+  // Specific Conditional Rendering Logic based on operatingMode state
+  const showVehiclePanel = operatingMode === 1 
+    ? (status === 'AUTH_INTAKE' || status === 'PDI' || status === 'INTAKE') 
+    : (panelTriggered || isContextComplete(vehicleContext) || operatingMode === 2);
+
+  // Telemetry Dashboard visible when operatingMode is 0 (Ignition) or 2 (Fleet)
+  const showTelemetry = operatingMode === 0 || operatingMode === 2;
 
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
@@ -235,15 +263,14 @@ const App: React.FC = () => {
           </div>
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
           <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
-            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
-            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
-            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
+            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
+            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
+            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
           </div>
         </div>
       </div>
 
       <main className="flex-1 overflow-hidden flex z-0">
-        {/* CHAT AREA */}
         <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
             <div className="px-4">
@@ -253,12 +280,13 @@ const App: React.FC = () => {
                  systemHealth={98} 
                />
             </div>
-            {showPanel && (
+            {showVehiclePanel && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
                 <VehicleContextPanel 
                   context={vehicleContext} 
                   onUpdate={setVehicleContext} 
-                  operatingMode={activeTab}
+                  onScanRecalls={handleScanRecalls}
+                  operatingMode={operatingMode}
                   status={status}
                 />
               </div>
@@ -273,6 +301,7 @@ const App: React.FC = () => {
                   vehicleContext={vehicleContext} 
                   onUpdateContext={setVehicleContext}
                   onEstimateAuthorize={handleEstimateAuthorize}
+                  onPdiVerify={handlePdiVerify}
                 />
               ))}
               {isLoading && (
@@ -284,7 +313,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* PERSISTENT DASHBOARD SIDEBAR (DESKTOP) */}
         <aside className="hidden xl:flex w-[450px] flex-col bg-[#050505] border-l border-zinc-900 p-8 overflow-y-auto animate-in slide-in-from-right duration-700 shadow-2xl relative">
              <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#f18a22 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}></div>
              
@@ -339,7 +367,7 @@ const App: React.FC = () => {
              </div>
         </aside>
       </main>
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={activeTab} status={status} />
+      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} status={status} />
     </div>
   );
 };

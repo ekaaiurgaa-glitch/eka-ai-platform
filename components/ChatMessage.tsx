@@ -7,6 +7,8 @@ import EstimateGovernance from './EstimateGovernance';
 import VehicleVisuals from './VehicleVisuals';
 import DiagnosticResult from './DiagnosticResult';
 import MGAnalysisView from './MGAnalysis';
+import PDIChecklist from './PDIChecklist';
+import RecallReport from './RecallReport';
 
 interface ChatMessageProps {
   message: Message;
@@ -16,6 +18,7 @@ interface ChatMessageProps {
   onUpdateContext?: (context: VehicleContext) => void;
   onEstimateAuthorize?: (data: EstimateData) => void;
   onJobCardComplete?: (data: any) => void;
+  onPdiVerify?: (data: { verified: boolean }) => void;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
@@ -25,7 +28,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   vehicleContext,
   onUpdateContext,
   onEstimateAuthorize,
-  onJobCardComplete
+  onJobCardComplete,
+  onPdiVerify
 }) => {
   const isAi = message.role === 'assistant';
 
@@ -35,11 +39,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
     const priceRangeRegex = /(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)\s*(?:-|to|until)\s*(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)/gi;
     const hsnRegex = /(HSN:\s*\d+)/gi;
-    const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
 
     let parts: (string | React.ReactNode)[] = [cleanText];
 
-    const applyRegex = (regex: RegExp, type: 'RANGE' | 'HSN' | 'GST') => {
+    const applyRegex = (regex: RegExp, type: 'RANGE' | 'HSN') => {
       let nextParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
         if (typeof part !== 'string') {
@@ -58,9 +61,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             
             if (type === 'RANGE') {
               nextParts.push(
-                <span key={`range-${matchIdx}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-dashed border-[#f18a22]/50 bg-[#f18a22]/5 text-[#f18a22] font-mono text-[11px] font-black mx-1 animate-in fade-in zoom-in duration-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#f18a22] animate-pulse"></span>
-                  <span className="opacity-60 text-[8px] tracking-widest">EST:</span>
+                <span key={`range-${matchIdx}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-dashed border-[#f18a22]/50 bg-[#f18a22]/5 text-[#f18a22] font-mono text-[11px] font-black mx-1">
                   {matchText}
                 </span>
               );
@@ -80,7 +81,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
     applyRegex(priceRangeRegex, 'RANGE');
     applyRegex(hsnRegex, 'HSN');
-    applyRegex(gstRegex, 'GST');
 
     return parts;
   };
@@ -88,12 +88,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const renderContent = () => {
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
-    const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING' || message.job_status_update === 'AUTH_INTAKE';
+    const showJobCard = message.job_status_update === 'INTAKE' || message.job_status_update === 'AUTH_INTAKE';
     const showHistory = !!message.service_history && message.service_history.length > 0;
-    const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
+    const showEstimate = (message.job_status_update === 'ESTIMATION' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
     const showDiagnostics = !!message.diagnostic_data;
     const showMGAnalysis = !!message.mg_analysis;
+    const showPdi = !!message.pdi_checklist && onPdiVerify;
+    const showRecalls = !!message.recall_data;
 
     return (
       <div className="space-y-6">
@@ -109,19 +111,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           })}
         </div>
 
+        {showRecalls && message.recall_data && (
+          <RecallReport data={message.recall_data} />
+        )}
+
         {showMetrics && message.visual_metrics && (
-          <div className="report-frame animate-in fade-in zoom-in-95 duration-500">
-            <div className="report-header">
-               <div className="flex items-center gap-2">
-                 <div className="w-1 h-3 bg-[#f18a22]"></div>
-                 <span className="text-[9px] font-black text-[#f18a22] uppercase tracking-[0.3em] font-mono">Telemetry Data Visualization</span>
-               </div>
-               <span className="text-[8px] font-bold text-zinc-700 font-mono">EKA_V1.4_VISUAL_NODE</span>
-            </div>
+          <div className="report-frame">
             <VehicleVisuals metric={message.visual_metrics} />
-            <div className="report-footer">
-               <span className="text-[7px] font-black text-zinc-800 font-mono uppercase tracking-widest italic">Encrypted Logic Stream Sync</span>
-            </div>
           </div>
         )}
 
@@ -146,7 +142,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             vehicleModel={`${vehicleContext?.brand} ${vehicleContext?.model}`}
             regNo={vehicleContext?.registrationNumber || 'MH-12-G4G'}
             odometer="12,450"
-            status={message.job_status_update === 'AUTH_INTAKE' ? 'AWAITING_SYNC' : 'IN_PROGRESS'}
+            status={message.job_status_update === 'INTAKE' ? 'IN_PROGRESS' : 'AWAITING_SYNC'}
             onComplete={onJobCardComplete}
           />
         )}
@@ -155,6 +151,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <EstimateGovernance 
             data={message.estimate_data} 
             onAuthorize={onEstimateAuthorize} 
+          />
+        )}
+
+        {showPdi && message.pdi_checklist && (
+          <PDIChecklist 
+            items={message.pdi_checklist.items}
+            technician_declaration={message.pdi_checklist.technician_declaration}
+            evidence_provided={message.pdi_checklist.evidence_provided}
+            onVerify={onPdiVerify}
           />
         )}
 
@@ -183,17 +188,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <div className={`flex flex-col mb-10 ${isAi ? 'items-start' : 'items-end'} w-full`}>
       <div className={`message-card transition-all duration-300 ${isAi ? 'ai-style' : 'user-style'}`}>
-        <div className="flex items-center gap-2 mb-4 border-b border-[#f18a22]/20 pb-2">
+        <div className="flex items-center gap-2 mb-4 border-b border-[#f18a22]/20 pb-3">
            <span className={`text-[10px] font-black uppercase tracking-[2px] font-mono ${isAi ? 'text-[#f18a22]' : 'text-zinc-500'}`}>
              {isAi ? 'EKA-Ai Architecture' : 'User Terminal'}
            </span>
            {isAi && onPlayAudio && message.response_content?.audio_text && (
              <button 
                 onClick={() => onPlayAudio(message.response_content!.audio_text)}
-                className={`ml-auto p-1.5 rounded transition-all ${isAudioPlaying ? 'bg-[#f18a22] text-black' : 'text-[#f18a22] hover:bg-[#f18a22]/10'}`}
+                className={`ml-auto p-1.5 rounded-md transition-all ${isAudioPlaying ? 'bg-[#f18a22] text-black shadow-[0_0_10px_#f18a22]' : 'text-[#f18a22] hover:bg-[#f18a22]/10'}`}
                 disabled={isAudioPlaying}
              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                 </svg>
              </button>
@@ -204,64 +209,77 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           {renderContent()}
         </div>
 
-        <div className="mt-4 flex items-center justify-between opacity-40 text-[9px] font-mono font-bold uppercase">
-           <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-           {isAi && <span>{message.intelligenceMode} MODE</span>}
+        <div className="mt-5 pt-3 border-t border-zinc-900/50 flex items-center justify-between opacity-50 text-[9px] font-mono font-black uppercase tracking-widest">
+           <div className="flex items-center gap-2">
+             <span className="w-1 h-1 rounded-full bg-[#f18a22]"></span>
+             <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+           </div>
+           {isAi && <span>OS: {message.intelligenceMode} • SYNC_OK</span>}
         </div>
       </div>
 
       <style>{`
         .message-card {
-          padding: 24px 24px 24px 32px;
-          border-radius: 8px;
-          max-width: 90%;
+          border-radius: 12px;
+          max-width: 92%;
           width: fit-content;
           min-width: 320px;
           position: relative;
           box-sizing: border-box;
+          overflow: hidden;
+          box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
         }
 
         .ai-style {
-          background: #050505;
-          border: 1px solid #f18a22;
-          border-left: 8px solid #f18a22;
-          box-shadow: 0 10px 40px rgba(241, 138, 34, 0.15);
+          background: #080808;
+          border: 2px solid #f18a22; /* Bold orange border */
+          border-left: 10px solid #f18a22; /* Prominent left bar */
+          padding: 24px 28px 24px 24px; /* Consistent internal padding */
+          box-shadow: inset -5px 0 30px rgba(241, 138, 34, 0.03), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
         }
 
         .user-style {
-          background: #0A0A0A;
-          border: 1px solid #333;
+          background: #0F0F0F;
+          border: 1px solid #262626;
           padding: 24px;
           color: #eee;
-        }
-
-        .report-frame {
-          border: 1px solid #262626;
-          border-radius: 12px;
-          overflow: hidden;
-          background: #000;
-          margin-top: 1.5rem;
-        }
-
-        .report-header {
-          padding: 12px 16px;
-          background: #080808;
-          border-bottom: 1px solid #1a1a1a;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .report-footer {
-          padding: 8px 16px;
-          background: #050505;
-          border-top: 1px solid #1a1a1a;
-          text-align: right;
+          box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.6);
         }
 
         .content-box {
           position: relative;
           width: 100%;
+          z-index: 10;
+        }
+
+        .report-frame {
+          border: 1px solid #262626;
+          border-radius: 16px;
+          overflow: hidden;
+          background: #000;
+          margin-top: 1.5rem;
+          box-shadow: 0 15px 40px -10px rgba(0,0,0,0.4);
+        }
+
+        /* HUD scanline effect for AI messages */
+        .ai-style::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, rgba(241, 138, 34, 0.2), transparent);
+          z-index: 1;
+          pointer-events: none;
+          animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+          0% { transform: translateY(0); opacity: 0; }
+          5% { opacity: 1; }
+          95% { opacity: 1; }
+          100% { transform: translateY(100vh); opacity: 0; }
         }
       `}</style>
     </div>

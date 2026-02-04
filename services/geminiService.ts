@@ -173,7 +173,7 @@ GST/HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
               },
               required: ["theme_color", "brand_identity", "show_orange_border"]
             },
-            visual_assets: {
+            pdi_checklist: {
               type: Type.OBJECT,
               properties: {
                 vehicle_display_query: { type: Type.STRING },

@@ -22,36 +22,57 @@ interface StatusConfig {
   dotClass: string;
 }
 
-const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingMode, isIdentified: boolean): StatusConfig => {
+const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingMode, vehicle: VehicleContext): StatusConfig => {
   if (isLoading) {
     return { label: 'STATUS: VERIFYING...', dotClass: 'bg-[#FFEA00] animate-flicker shadow-[0_0_8px_#FFEA00]' };
   }
 
-  // Workshop Mode Logic
+  // 1. Global / Priority Statuses
+  if (status === 'CLOSED' || status === 'MG_CLOSED') {
+    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]' };
+  }
+
+  if (status === 'RSA_ACTIVE') {
+    return { 
+      label: 'STATUS: RSA_ACTIVE', 
+      dotClass: 'bg-red-500 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.7)]' 
+    };
+  }
+  
+  if (status === 'IGNITION_TRIAGE') {
+    return { 
+      label: 'IGNITION: TRIAGE', 
+      dotClass: 'bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(96,165,250,0.6)]' 
+    };
+  }
+
+  const isIdentified = !!vehicle.registrationNumber;
+
+  // 2. Workshop Mode Logic (Mode 1)
   if (mode === 1) {
     if (!isIdentified) {
       return { 
         label: 'STATUS: AWAITING_ID', 
-        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.5)]' 
+        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.6)]' 
       };
     }
     return { 
       label: 'PROTOCOL: ACTIVE', 
-      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
+      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
     };
   }
 
-  // Fleet Mode Logic
+  // 3. Fleet Mode Logic (Mode 2)
   if (mode === 2) {
     if (!isIdentified) {
       return { 
         label: 'FLEET: AWAITING_ID', 
-        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.5)]' 
+        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.6)]' 
       };
     }
     return { 
       label: 'FLEET: SYNC_ACTIVE', 
-      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
+      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
     };
   }
 
@@ -68,14 +89,14 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
   }
 
   return { 
-    label: isIdentified ? 'SYSTEM: READY' : 'SYSTEM: AWAITING_AUTH', 
-    dotClass: isIdentified ? 'bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-zinc-600' 
+    label: isComplete ? 'SYSTEM: READY' : 'SYSTEM: AWAITING_AUTH', 
+    dotClass: isComplete ? 'bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-zinc-700' 
   };
 };
 
 const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, operatingMode }) => {
   const isLocked = vehicle && isContextComplete(vehicle);
-  const config = getStatusConfig(status, isLoading, operatingMode, !!isLocked);
+  const config = getStatusConfig(status, isLoading, operatingMode, vehicle);
 
   const renderFuelIcon = () => {
     if (!vehicle?.fuelType || !FUEL_ICONS[vehicle.fuelType]) return null;

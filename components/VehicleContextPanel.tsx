@@ -23,9 +23,19 @@ const VEHICLE_TYPES = [
   { id: "4W", label: "Four-Wheeler" }
 ];
 
+const SYNC_MESSAGES = [
+  "Initializing Auth Gate...",
+  "Authenticating VIN Nodes...",
+  "Syncing G4G Registry...",
+  "Encrypting Logic Dossier...",
+  "Securing Terminal Link...",
+  "Finalizing Architecture..."
+];
+
 const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ 
   context, 
   onUpdate, 
+  onScanRecalls,
   operatingMode, 
   status 
 }) => {
@@ -33,32 +43,37 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
+  const [syncMessage, setSyncMessage] = useState(SYNC_MESSAGES[0]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const validateField = (name: string, value: string) => {
     let error = "";
     switch (name) {
       case 'brand':
-        if (!value.trim()) error = "Required";
-        else if (value.trim().length < 2) error = "Invalid";
+        if (!value.trim()) error = "Manufacturer Identity Required";
+        else if (value.trim().length < 2) error = "Logic Minimum: 2 Chars";
         break;
       case 'model':
-        if (!value.trim()) error = "Required";
+        if (!value.trim()) error = "Model Variant Required";
         break;
       case 'year':
         const year = parseInt(value);
         const currentYear = new Date().getFullYear();
-        if (!value) error = "Required";
-        else if (isNaN(year) || year < 1900 || year > currentYear + 1) error = `1900-${currentYear + 1}`;
+        if (!value) error = "Production Year Required";
+        else if (isNaN(year) || year < 1900 || year > currentYear + 1) error = `Range Violation: 1900-${currentYear + 1}`;
         break;
       case 'registrationNumber':
-        if (!value.trim()) error = "Required";
+        if (!value.trim()) error = "DTR Identity (Reg) Required";
+        break;
+      case 'fuelType':
+        if (!value) error = "Energy Type Undefined";
         break;
       case 'vin':
         if (context.vehicleType === '4W') {
           const vinRegex = /^[A-Z0-9-]{11,17}$/i;
-          if (!value) error = "Required for 4W";
-          else if (!vinRegex.test(value)) error = "Invalid format";
+          if (!value) error = "VIN Node Required for 4W";
+          else if (!vinRegex.test(value)) error = "Format Breach: 11-17 Alphanum";
         }
         break;
       default:
@@ -68,24 +83,33 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   };
 
   const handleLockIdentity = () => {
-    const newErrors: Record<string, string> = {
-      brand: validateField('brand', context.brand),
-      model: validateField('model', context.model),
-      year: validateField('year', context.year),
-      registrationNumber: validateField('registrationNumber', context.registrationNumber || ''),
-      fuelType: context.fuelType ? "" : "Required",
-      vin: validateField('vin', context.vin || '')
-    };
+    const allFields = ['brand', 'model', 'year', 'registrationNumber', 'fuelType', 'vin'];
+    const newErrors: Record<string, string> = {};
+    const newTouched: Record<string, boolean> = {};
+    
+    allFields.forEach(field => {
+      const val = (context as any)[field] || '';
+      const err = validateField(field, val);
+      if (err) newErrors[field] = err;
+      newTouched[field] = true;
+    });
 
     setErrors(newErrors);
-    const hasErrors = Object.values(newErrors).some(err => err !== "");
+    setTouched(newTouched);
+
+    const hasErrors = Object.keys(newErrors).length > 0;
     if (hasErrors || !isContextComplete(context)) return;
 
     setIsSyncing(true);
     setSyncProgress(0);
+    
     const interval = setInterval(() => {
       setSyncProgress(prev => {
-        if (prev >= 100) {
+        const next = prev + 4;
+        const msgIndex = Math.floor((next / 100) * SYNC_MESSAGES.length);
+        if (SYNC_MESSAGES[msgIndex]) setSyncMessage(SYNC_MESSAGES[msgIndex]);
+
+        if (next >= 100) {
           clearInterval(interval);
           setShowSuccess(true);
           setTimeout(() => {
@@ -95,66 +119,107 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
           }, 1800);
           return 100;
         }
-        return prev + 4;
+        return next;
       });
-    }, 25);
+    }, 40);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
     const error = validateField(name, value);
     setErrors(prev => ({ ...prev, [name]: error }));
     onUpdate({ ...context, [name]: value });
   };
 
-  const InputBox = ({ label, name, value, placeholder, className = "" }: any) => (
-    <div className={`flex flex-col gap-1.5 p-3 bg-[#080808] border-2 rounded transition-all duration-300 ${errors[name] ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'border-zinc-800 focus-within:border-[#f18a22]'} ${className}`}>
-      <div className="flex justify-between items-center">
-        <label className="text-[8px] font-black text-zinc-600 uppercase tracking-widest font-mono">{label}</label>
-        {errors[name] && <span className="text-[7px] font-bold text-red-500 uppercase font-mono">{errors[name]}</span>}
+  const handleBlur = (name: string) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const error = validateField(name, (context as any)[name] || '');
+    setErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  const InputBox = ({ label, name, value, placeholder, className = "" }: any) => {
+    const showError = touched[name] && !!errors[name];
+    return (
+      <div className={`flex flex-col gap-1.5 p-3 bg-[#080808] border-2 rounded transition-all duration-300 ${showError ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-zinc-800 focus-within:border-[#f18a22]'} ${className}`}>
+        <div className="flex justify-between items-center">
+          <label className={`text-[8px] font-black uppercase tracking-widest font-mono ${showError ? 'text-red-500' : 'text-zinc-600'}`}>{label}</label>
+          {showError && (
+            <div className="flex items-center gap-1 animate-in slide-in-from-right-2 duration-300">
+              <span className="text-[7px] font-black text-red-500 uppercase font-mono tracking-tighter">{errors[name]}</span>
+              <span className="text-[10px]">⚠️</span>
+            </div>
+          )}
+        </div>
+        <input 
+          name={name}
+          value={value}
+          onChange={handleChange}
+          onBlur={() => handleBlur(name)}
+          placeholder={placeholder}
+          className={`bg-transparent text-white text-[12px] font-bold focus:outline-none placeholder:text-zinc-800 font-mono uppercase ${showError ? 'text-red-400' : ''}`}
+        />
       </div>
-      <input 
-        name={name}
-        value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        className="bg-transparent text-white text-[12px] font-bold focus:outline-none placeholder:text-zinc-800 font-mono uppercase"
-      />
-    </div>
-  );
+    );
+  };
 
   const DataNode = ({ label, value }: { label: string, value: string }) => (
-    <div className="flex flex-col border-l-2 border-zinc-800 pl-4 py-1">
-      <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest font-mono mb-1">{label}</span>
-      <span className="text-[13px] font-black text-white font-mono uppercase tracking-tight truncate">{value || 'NOT_SET'}</span>
+    <div className="flex flex-col border-l-2 border-zinc-800 pl-4 py-1 hover:border-[#f18a22] transition-colors group">
+      <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest font-mono mb-1 group-hover:text-[#f18a22]">{label}</span>
+      <span className="text-[13px] font-black text-white font-mono uppercase tracking-tight truncate">{value || 'NULL'}</span>
     </div>
   );
 
   if (isSyncing) {
     return (
-      <div className="mb-8 p-12 bg-black border-4 border-[#f18a22] rounded-xl flex flex-col items-center justify-center relative overflow-hidden min-h-[300px] shadow-2xl">
-        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#f18a22 1px, transparent 1px), linear-gradient(90deg, #f18a22 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-        
+      <div className="mb-8 p-12 bg-[#020202] border-4 border-[#f18a22] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden min-h-[400px] shadow-[0_0_80px_rgba(241,138,34,0.25)] animate-in zoom-in-95 duration-500">
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#f18a22 1px, transparent 1px), linear-gradient(90deg, #f18a22 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black pointer-events-none"></div>
+
         {showSuccess ? (
-          <div className="text-center animate-in zoom-in-95 duration-500 flex flex-col items-center z-10">
-            <div className="w-20 h-20 rounded-2xl bg-green-500 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,197,94,0.4)] rotate-3">
-              <svg className="w-12 h-12 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
-              </svg>
+          <div className="text-center animate-in scale-in duration-700 flex flex-col items-center z-10">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-green-500 blur-3xl opacity-20 animate-pulse"></div>
+              <div className="w-28 h-28 rounded-full bg-green-500 flex items-center justify-center shadow-[0_0_60px_rgba(34,197,94,0.7)] border-8 border-black z-20 relative">
+                <svg className="w-16 h-16 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
             </div>
-            <h4 className="text-white font-black text-2xl uppercase tracking-[0.2em] font-mono mb-2">Terminal Secured</h4>
-            <p className="text-green-500 text-[9px] font-bold uppercase tracking-[0.4em] font-mono animate-pulse">Digital Twin Synchronized</p>
+            <h4 className="text-white font-black text-4xl uppercase tracking-[0.4em] font-mono mb-4">Protocol Active</h4>
+            <p className="text-green-500 text-[12px] font-bold uppercase tracking-[0.6em] font-mono animate-pulse">Vehicle Identity Secured & Synchronized</p>
           </div>
         ) : (
-          <div className="text-center w-full max-w-sm z-10">
-            <div className="flex justify-between items-end mb-4 px-1">
-               <h4 className="text-[#f18a22] font-black text-[10px] uppercase tracking-[0.4em] font-mono">Syncing Logic Nodes...</h4>
-               <span className="text-white font-mono font-black text-xl">{syncProgress}%</span>
+          <div className="text-center w-full max-w-lg z-10 space-y-12">
+            <div className="flex flex-col items-center gap-6">
+               <div className="flex flex-col items-center gap-2">
+                 <div className="flex items-center gap-4">
+                   <div className="w-3 h-3 rounded-full bg-[#f18a22] animate-ping"></div>
+                   <h4 className="text-[#f18a22] font-black text-[14px] uppercase tracking-[0.6em] font-mono leading-none">{syncMessage}</h4>
+                 </div>
+                 <span className="text-zinc-600 text-[9px] font-black font-mono tracking-widest uppercase mt-2">Gate ID: G4G-OS-HUD-SEC-LINK</span>
+               </div>
+               <span className="text-white font-mono font-black text-6xl tracking-tighter drop-shadow-lg">{syncProgress}%</span>
             </div>
-            <div className="relative w-full h-4 bg-zinc-900 rounded border-2 border-[#f18a22] overflow-hidden">
-              <div className="h-full bg-[#f18a22] transition-all duration-100 relative" style={{ width: `${syncProgress}%` }}>
-                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+            
+            <div className="relative w-full h-8 bg-zinc-950 rounded-full border-2 border-zinc-800 overflow-hidden p-1.5 shadow-2xl">
+              <div 
+                className="h-full bg-gradient-to-r from-[#f18a22] via-orange-400 to-white transition-all duration-100 relative rounded-full shadow-[0_0_30px_rgba(241,138,34,0.6)]" 
+                style={{ width: `${syncProgress}%` }}
+              >
+                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.2)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.2)_50%,rgba(255,255,255,0.2)_75%,transparent_75%,transparent)] bg-[length:24px_24px] animate-[progress-move_1s_linear_infinite]"></div>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 pt-4">
+               <div className="flex flex-col items-center gap-1">
+                 <span className="text-[8px] font-black text-zinc-700 font-mono tracking-widest uppercase">Encryption Layer</span>
+                 <span className="text-[10px] font-black text-white font-mono uppercase">AES-256-GCM</span>
+               </div>
+               <div className="flex flex-col items-center gap-1">
+                 <span className="text-[8px] font-black text-zinc-700 font-mono tracking-widest uppercase">Node Reference</span>
+                 <span className="text-[10px] font-black text-white font-mono uppercase">RSA_LOCK_NODE_v1.5</span>
+               </div>
             </div>
           </div>
         )}
@@ -164,71 +229,109 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
 
   if (!isEditing && isContextComplete(context)) {
     return (
-      <div className="mb-8 animate-in slide-in-from-top-4 duration-500 group">
-        <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute -right-4 -bottom-4 opacity-5 rotate-[-25deg] pointer-events-none select-none">
-             <span className="text-9xl font-black text-white font-mono">G4G_OK</span>
+      <div className="mb-8 animate-in slide-in-from-top-8 duration-1000 group">
+        <div className="bg-[#050505] border-[6px] border-[#f18a22] rounded-3xl p-10 shadow-[0_50px_100px_-20px_rgba(241,138,34,0.2)] relative overflow-hidden transition-all hover:scale-[1.01]">
+          <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none select-none">
+             <span className="text-[12rem] font-black text-white font-mono leading-none tracking-tighter">SECURE</span>
+          </div>
+          <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-[#f18a22] via-[#f18a22]/50 to-transparent"></div>
+          <div className="absolute top-0 right-0 p-4">
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/40 rounded-full">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-[8px] font-black text-green-500 font-mono uppercase tracking-[0.2em]">IDENTITY_VERIFIED</span>
+             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10 mb-6 pb-6 border-b-2 border-zinc-900">
-            <div className="flex items-center gap-5">
-              <div className="w-12 h-12 bg-zinc-900 border-2 border-[#f18a22] rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-[#f18a22]/20 transition-all">
-                <svg className="w-7 h-7 text-[#f18a22]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-12 relative z-10 mb-10 pb-10 border-b-2 border-zinc-900/50">
+            <div className="flex items-center gap-8">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#f18a22] blur-2xl opacity-20 animate-pulse"></div>
+                <div className="w-20 h-20 bg-[#f18a22] rounded-[2rem] flex items-center justify-center shadow-[0_20px_50px_rgba(241,138,34,0.5)] border-4 border-black relative z-10 rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                  <svg className="w-12 h-12 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
               </div>
               <div className="flex flex-col">
-                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] font-mono leading-none">Verified Identity Dossier</span>
-                <h3 className="text-white font-black text-xl uppercase tracking-tighter font-mono leading-none mt-2">
+                <div className="flex items-center gap-3">
+                   <span className="text-[12px] font-black text-[#f18a22] uppercase tracking-[0.5em] font-mono leading-none">Identity Terminal Locked</span>
+                </div>
+                <h3 className="text-white font-black text-5xl uppercase tracking-tighter font-mono leading-none mt-4 drop-shadow-xl">
                   {context.registrationNumber || 'MH-12-G4G'}
                 </h3>
               </div>
             </div>
             
-            <button 
-              onClick={() => setIsEditing(true)} 
-              className="px-5 py-2 bg-black border-2 border-red-500/40 text-red-500 text-[10px] font-black uppercase rounded hover:bg-red-500 hover:text-black transition-all font-mono tracking-widest"
-            >
-              Security Override
-            </button>
+            <div className="flex flex-wrap gap-4 w-full lg:w-auto">
+              <button 
+                onClick={onScanRecalls}
+                className="flex-1 lg:flex-none px-10 py-4 bg-[#f18a22] text-black text-[12px] font-black uppercase rounded-xl hover:bg-white hover:shadow-white/20 transition-all font-mono tracking-widest shadow-2xl active:scale-95"
+              >
+                Scan Safety Recalls
+              </button>
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="flex-1 lg:flex-none px-10 py-4 bg-black border-2 border-zinc-800 text-zinc-500 text-[12px] font-black uppercase rounded-xl hover:border-red-500 hover:text-red-500 hover:shadow-red-500/10 transition-all font-mono tracking-widest active:scale-95"
+              >
+                Security Override
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 relative z-10">
-             <DataNode label="Manufacturer" value={context.brand} />
-             <DataNode label="Model Variant" value={context.model} />
-             <DataNode label="Lifecycle Year" value={context.year} />
-             <DataNode label="Energy Node" value={context.fuelType} />
-             {context.vehicleType === '4W' && <DataNode label="VIN Reference" value={context.vin || ''} />}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-12 relative z-10">
+             <DataNode label="Architecture" value={context.brand} />
+             <DataNode label="Model Platform" value={context.model} />
+             <DataNode label="Deployment Year" value={context.year} />
+             <DataNode label="Propulsion Node" value={context.fuelType} />
+             {context.vehicleType === '4W' && <DataNode label="VIN Reference" value={context.vin || 'N/A'} />}
+          </div>
+          
+          <div className="mt-10 flex flex-col md:flex-row items-center justify-between text-[10px] font-mono font-black text-zinc-700 uppercase tracking-[0.6em] pt-6 border-t border-zinc-900/40 gap-4">
+             <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                <span>G4G Node Synchronization: Stable</span>
+             </div>
+             <div className="flex items-center gap-4">
+                <span>Audit ID: {Math.random().toString(36).substr(2, 12).toUpperCase()}</span>
+                <span className="hidden md:inline text-zinc-800">|</span>
+                <span>{new Date().toLocaleTimeString()} IST</span>
+             </div>
           </div>
         </div>
       </div>
     );
   }
 
-  const hasAnyErrors = Object.values(errors).some(err => err !== "");
+  const hasAnyErrors = Object.keys(errors).length > 0;
   const canLock = isContextComplete(context) && !hasAnyErrors;
 
   return (
-    <div className="mb-8 bg-[#050505] border-4 border-[#f18a22] rounded-xl p-6 shadow-2xl flex flex-col gap-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center border-b-4 border-[#f18a22] pb-5">
+    <div className="mb-8 bg-[#050505] border-4 border-[#f18a22] rounded-2xl p-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col gap-10 animate-in fade-in zoom-in-95 duration-700">
+      <div className="flex justify-between items-end border-b-4 border-[#f18a22] pb-8">
         <div className="flex flex-col">
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight font-mono leading-none">Initialization</h2>
-          <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-[0.4em] mt-2 font-mono">Awaiting Architectural Context</p>
+          <h2 className="text-4xl font-black text-white uppercase tracking-tight font-mono leading-none">Identity Capture</h2>
+          <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-[0.6em] mt-4 font-mono">Governed Architectural Context Intake</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded">
-           <div className="w-1.5 h-1.5 rounded-full bg-[#f18a22] animate-pulse"></div>
-           <span className="text-[8px] font-black text-zinc-400 uppercase font-mono tracking-widest">Terminal Active</span>
+        <div className="flex items-center gap-4 px-5 py-2.5 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+           <div className="relative flex items-center justify-center">
+             <div className="w-3 h-3 rounded-full bg-[#f18a22] animate-ping absolute"></div>
+             <div className="w-3 h-3 rounded-full bg-[#f18a22]"></div>
+           </div>
+           <span className="text-[10px] font-black text-zinc-300 uppercase font-mono tracking-[0.3em]">Node Active</span>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Vehicle Architecture</label>
-        <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-5">
+        <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em] font-mono">Vehicle Architecture</label>
+        <div className="grid grid-cols-2 gap-5">
           {VEHICLE_TYPES.map((type) => (
             <button
               key={type.id}
-              onClick={() => onUpdate({ ...context, vehicleType: type.id as '2W' | '4W' })}
-              className={`py-3.5 rounded border-2 text-[10px] font-black uppercase font-mono transition-all duration-300 ${context.vehicleType === type.id ? 'bg-[#f18a22] text-black border-[#f18a22] shadow-[0_0_15px_rgba(241,138,34,0.3)]' : 'bg-transparent border-zinc-800 text-zinc-600 hover:border-zinc-500'}`}
+              onClick={() => {
+                onUpdate({ ...context, vehicleType: type.id as '2W' | '4W' });
+                setTouched(prev => ({ ...prev, vehicleType: true }));
+              }}
+              className={`py-5 rounded-2xl border-2 text-[12px] font-black uppercase font-mono transition-all duration-300 ${context.vehicleType === type.id ? 'bg-[#f18a22] text-black border-black shadow-[0_15px_40px_rgba(241,138,34,0.4)] scale-[1.02]' : 'bg-transparent border-zinc-800 text-zinc-600 hover:border-zinc-700'}`}
             >
               {type.label}
             </button>
@@ -236,37 +339,42 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        {/* ROW 1: Identity */}
+      <div className="grid grid-cols-12 gap-6">
         <div className={`col-span-12 ${context.vehicleType === '4W' ? 'md:col-span-6' : ''}`}>
-          <InputBox label="Identity Tag (Registration)" name="registrationNumber" value={context.registrationNumber || ''} placeholder="MH-XX-XX-XXXX" />
+          <InputBox label="DTR Identity (Registration)" name="registrationNumber" value={context.registrationNumber || ''} placeholder="MH-XX-XX-XXXX" />
         </div>
         {context.vehicleType === '4W' && (
           <div className="col-span-12 md:col-span-6">
-            <InputBox label="VIN Reference" name="vin" value={context.vin || ''} placeholder="17-CHARACTER ALPHA-NUMERIC VIN" />
+            <InputBox label="VIN Reference Node" name="vin" value={context.vin || ''} placeholder="17-CHARACTER VIN CODE" />
           </div>
         )}
 
-        {/* ROW 2: Technical Specs */}
         <div className="col-span-12 md:col-span-5 lg:col-span-4">
-          <InputBox label="Manufacturer" name="brand" value={context.brand} placeholder="MARUTI SUZUKI" />
+          <InputBox label="Manufacturer" name="brand" value={context.brand} placeholder="e.g. TOYOTA" />
         </div>
         <div className="col-span-12 md:col-span-7 lg:col-span-5">
-          <InputBox label="Model Variant" name="model" value={context.model} placeholder="SWIFT ZXI" />
+          <InputBox label="Model Platform" name="model" value={context.model} placeholder="e.g. FORTUNER LEGENDER" />
         </div>
         <div className="col-span-12 md:col-span-12 lg:col-span-3">
-          <InputBox label="Production Year" name="year" value={context.year} placeholder="2024" />
+          <InputBox label="Lifecycle Year" name="year" value={context.year} placeholder="e.g. 2026" />
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] font-mono">Propulsion Configuration</label>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+      <div className="flex flex-col gap-5">
+        <div className="flex justify-between items-center">
+           <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.4em] font-mono">Propulsion Configuration</label>
+           {touched.fuelType && errors.fuelType && <span className="text-[9px] font-black text-red-500 uppercase font-mono tracking-tighter animate-pulse">{errors.fuelType}</span>}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {FUEL_OPTIONS.map((fuel) => (
             <button
               key={fuel.id}
-              onClick={() => onUpdate({ ...context, fuelType: fuel.id })}
-              className={`py-3.5 rounded border-2 text-[10px] font-black uppercase font-mono transition-all duration-300 ${context.fuelType === fuel.id ? 'bg-[#f18a22] text-black border-[#f18a22] shadow-[0_0_15px_rgba(241,138,34,0.3)]' : 'bg-transparent border-zinc-800 text-zinc-600 hover:border-zinc-500'}`}
+              onClick={() => {
+                onUpdate({ ...context, fuelType: fuel.id });
+                setTouched(prev => ({ ...prev, fuelType: true }));
+                setErrors(prev => ({ ...prev, fuelType: "" }));
+              }}
+              className={`py-5 rounded-2xl border-2 text-[11px] font-black uppercase font-mono transition-all duration-300 ${context.fuelType === fuel.id ? 'bg-[#f18a22] text-black border-black shadow-[0_15px_30px_rgba(241,138,34,0.4)] scale-[1.02]' : 'bg-transparent border-zinc-800 text-zinc-600 hover:border-zinc-700'}`}
             >
               {fuel.label}
             </button>
@@ -274,13 +382,23 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
         </div>
       </div>
 
-      <button 
-        onClick={handleLockIdentity} 
-        disabled={!canLock}
-        className={`w-full py-5 text-[16px] font-black uppercase tracking-[0.5em] rounded-xl transition-all font-mono border-4 ${canLock ? 'bg-[#f18a22] text-black border-black hover:bg-white active:scale-95 shadow-[0_20px_40px_rgba(241,138,34,0.3)]' : 'bg-zinc-900 text-zinc-800 border-zinc-950 cursor-not-allowed opacity-40'}`}
-      >
-        {canLock ? 'Lock Identity Terminal' : 'Awaiting Context Nodes...'}
-      </button>
+      <div className="pt-6">
+        <button 
+          onClick={handleLockIdentity} 
+          disabled={!canLock}
+          className={`w-full py-8 text-[20px] font-black uppercase tracking-[0.6em] rounded-[2rem] transition-all font-mono border-4 ${canLock ? 'bg-[#f18a22] text-black border-black hover:bg-white hover:scale-[1.01] active:scale-95 shadow-[0_40px_80px_rgba(241,138,34,0.35)]' : 'bg-zinc-900 text-zinc-800 border-zinc-950 cursor-not-allowed opacity-20'}`}
+        >
+          {canLock ? 'Authorize Identity Lockdown' : 'Awaiting Full Node Context...'}
+        </button>
+        <p className="text-[10px] font-black text-zinc-800 uppercase tracking-[0.6em] text-center mt-8 font-mono">Dossier Auth Gate: Primary • Security v1.5.4</p>
+      </div>
+      
+      <style>{`
+        @keyframes progress-move {
+          0% { background-position: 0 0; }
+          100% { background-position: 48px 0; }
+        }
+      `}</style>
     </div>
   );
 };

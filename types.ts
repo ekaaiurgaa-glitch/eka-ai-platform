@@ -83,9 +83,9 @@ export interface DiagnosticData {
 }
 
 export interface VisualMetric {
-  type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL';
+  type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL' | 'LINE' | 'COMPOSED';
   label: string;
-  data: Array<{ name: string; value: number; color?: string; fullMark?: number }>;
+  data: Array<{ name: string; value: number; color?: string; fullMark?: number; unit?: string }>;
 }
 
 export interface Message {
@@ -108,10 +108,16 @@ export interface Message {
   };
   visual_metrics?: VisualMetric;
   diagnostic_data?: DiagnosticData;
+  recall_data?: RecallData;
   service_history?: ServiceHistoryItem[];
   estimate_data?: EstimateData;
   mg_analysis?: MGAnalysis;
   grounding_links?: GroundingLink[];
+  pdi_checklist?: {
+    items: { task: string; completed: boolean }[];
+    technician_declaration: boolean;
+    evidence_provided: boolean;
+  };
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;
