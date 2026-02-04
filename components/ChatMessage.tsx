@@ -35,18 +35,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <div className={`flex gap-4 ${isAi ? 'flex-row' : 'flex-row-reverse'}`}>
       
-      {/* Avatar */}
-      <div className={`shrink-0 w-8 h-8 rounded flex items-center justify-center text-xs font-bold 
-        ${isAi ? 'bg-[#D97757] text-white' : 'bg-gray-300 text-gray-700'}`}>
-        {isAi ? 'AI' : 'U'}
-      </div>
+      {/* AI Indicator - Orange Square for AI, no avatar for User (right-aligned bubble) */}
+      {isAi ? (
+        <div className="shrink-0 w-2 h-2 mt-2 rounded-sm bg-[var(--accent-primary)]"></div>
+      ) : null}
 
       {/* Content */}
       <div className={`flex-1 max-w-[85%] text-[15px] leading-7 
-        ${isAi ? 'text-[var(--text-primary)]' : 'bg-[var(--bg-secondary)] p-3 rounded-2xl rounded-tr-sm text-[var(--text-primary)]'}`}>
+        ${isAi 
+          ? 'text-[var(--text-primary)]' 
+          : 'bg-[var(--msg-user-bg)] p-4 rounded-2xl rounded-tr-sm text-[var(--text-primary)] ml-auto'
+        }`}>
         
-        {/* Name Label */}
-        {isAi && <div className="font-semibold text-sm mb-1 text-[var(--text-primary)]">EKA-AI</div>}
+        {/* Name Label for AI */}
+        {isAi && (
+          <div className="font-semibold text-xs mb-1 text-[var(--accent-primary)] flex items-center gap-2" style={{ fontFamily: 'var(--font-headers)' }}>
+            EKA
+          </div>
+        )}
         
         {/* Text Body */}
         <div className="whitespace-pre-wrap">
@@ -55,7 +61,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         {/* Dynamic Content Containers (Keep your existing logic here) */}
         {isAi && (
-          <div className="mt-4 space-y-4 border-l-2 border-gray-200 pl-4">
+          <div className="mt-4 space-y-4 border-l-2 border-[var(--accent-primary)]/30 pl-4">
             {message.diagnostic_data && <DiagnosticResult data={message.diagnostic_data} />}
             {message.visual_metrics && <VehicleVisuals metric={message.visual_metrics} />}
             {message.service_history && <ServiceHistory regNo={vehicleContext?.registrationNumber || ''} history={message.service_history} />}

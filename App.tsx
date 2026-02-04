@@ -97,56 +97,68 @@ const App: React.FC = () => {
 
   return (
     <div className="app-layout">
-      {/* 1. Sidebar (New Component for Navigation) */}
+      {/* 1. Sidebar (EKA-AI Dark Theme) */}
       <aside className="sidebar hidden md:flex flex-col">
         <div className="mb-6 px-2">
-           <div className="w-8 h-8 bg-[#D97757] rounded-lg mb-2"></div>
-           <h2 className="font-semibold text-sm text-[var(--text-secondary)]">EKA-AI History</h2>
+           {/* New Chat Button */}
+           <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--accent-primary)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-black transition-all mb-4" style={{ fontFamily: 'var(--font-headers)' }}>
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+             New Chat
+           </button>
+           <h2 className="font-semibold text-sm text-[var(--text-secondary)]" style={{ fontFamily: 'var(--font-headers)' }}>History</h2>
         </div>
         {/* Placeholder for history items */}
         <div className="flex-1 overflow-y-auto space-y-2">
-           <div className="p-2 text-sm bg-white/50 rounded cursor-pointer">Previous Chat...</div>
+           <div className="p-2 text-sm text-[var(--text-secondary)] bg-[var(--border-color)] rounded-lg cursor-pointer hover:bg-[var(--accent-primary)]/20 transition-all">Previous Chat...</div>
         </div>
         {/* User Profile / Settings at bottom */}
-        <div className="mt-auto border-t border-black/5 pt-4">
-           <div className="text-xs font-medium">Go4Garage User</div>
+        <div className="mt-auto border-t border-[var(--border-color)] pt-4">
+           <div className="flex items-center gap-2">
+             <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary)] flex items-center justify-center text-black font-bold text-sm">G</div>
+             <div className="text-xs font-medium text-[var(--text-primary)]">Go4Garage User</div>
+           </div>
         </div>
       </aside>
 
       {/* 2. Main Chat Area */}
       <main className="main-chat-area">
         {/* Top Bar / Model Selector */}
-        <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur p-4 flex justify-center border-b border-black/5">
+        <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/90 backdrop-blur p-4 flex justify-center border-b border-[var(--border-color)]">
            <div className="bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
               <button 
                 onClick={() => setIntelligenceMode('FAST')} 
-                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'FAST' ? 'bg-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'FAST' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                style={{ fontFamily: 'var(--font-headers)' }}
               >
                 Fast 2.0
               </button>
               <button 
                 onClick={() => setIntelligenceMode('THINKING')} 
-                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'THINKING' ? 'bg-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'THINKING' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                style={{ fontFamily: 'var(--font-headers)' }}
               >
-                Claude 3.5
+                Thinking
               </button>
            </div>
            <div className="ml-4 bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
               <button 
                 onClick={() => handleModeChange(0)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 0 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 0 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                style={{ fontFamily: 'var(--font-headers)' }}
               >
                 Ignition
               </button>
               <button 
                 onClick={() => handleModeChange(1)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 1 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 1 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                style={{ fontFamily: 'var(--font-headers)' }}
               >
                 Workshop
               </button>
               <button 
                 onClick={() => handleModeChange(2)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 2 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 2 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                style={{ fontFamily: 'var(--font-headers)' }}
               >
                 Fleet
               </button>
@@ -174,14 +186,14 @@ const App: React.FC = () => {
             ))}
             {isLoading && (
                <div className="flex gap-4 items-start animate-pulse">
-                  <div className="w-8 h-8 rounded bg-[#D97757] opacity-20"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-2"></div>
+                  <div className="w-2 h-2 rounded-sm bg-[var(--accent-primary)]"></div>
+                  <div className="h-4 w-24 bg-[var(--border-color)] rounded mt-1"></div>
                </div>
             )}
           </div>
         </div>
 
-        {/* Input Area (Fixed Bottom) */}
+        {/* Input Area (Fixed Bottom - Floating Pill Style) */}
         <div className="p-4 bg-[var(--bg-primary)]">
            <div className="chat-content-width">
               <ChatInput 
