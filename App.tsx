@@ -38,7 +38,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-Ai Online. Architecture Loaded. Awaiting Directive.",
+      content: "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -159,7 +159,7 @@ const App: React.FC = () => {
     const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'CONTRACT_VALIDATION' : 'IGNITION_TRIAGE';
     setStatus(entryStatus);
     
-    let promptContent = "EKA-Ai Online. Architecture Loaded. Awaiting Directive.";
+    let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
     if (mode === 1) promptContent = "Enter Vehicle Registration Number to proceed with Workshop Intake.";
     if (mode === 2) promptContent = "Enter Fleet ID or Billing Month to proceed with Contract Governance.";
 

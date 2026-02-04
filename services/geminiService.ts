@@ -174,7 +174,7 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
         config.thinkingConfig = { thinkingBudget: 32768 };
       }
 
-      const response = await ai.models.generateContent({
+      const response: GenerateContentResponse = await ai.models.generateContent({
         model: intelMode === 'THINKING' ? this.thinkingModel : this.fastModel,
         contents: history,
         config: config,
