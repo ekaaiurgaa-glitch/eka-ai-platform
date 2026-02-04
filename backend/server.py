@@ -330,12 +330,13 @@ AI Model: {intel_mode}
         
         # Log to audit trail
         user_query = history[-1]['parts'][0]['text'] if history else ""
+        diagnostic_data = normalized.get('diagnostic_data')
         log_intelligence(
             op_mode,
             normalized['job_status_update'],
             user_query,
             normalized['response_content']['visual_text'],
-            normalized.get('diagnostic_data', {}).get('confidence_score') if normalized.get('diagnostic_data') else None
+            diagnostic_data.get('confidence_score') if diagnostic_data else None
         )
         
         return jsonify(normalized)
