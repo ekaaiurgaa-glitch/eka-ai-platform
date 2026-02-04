@@ -100,6 +100,10 @@ const App: React.FC = () => {
       {/* 1. Sidebar (EKA-AI Dark Theme) */}
       <aside className="sidebar hidden md:flex flex-col">
         <div className="mb-6 px-2">
+           {/* EKA-AI Logo */}
+           <div className="mb-4 text-2xl font-bold font-headers" style={{ color: 'var(--accent-primary)' }}>
+             EKA-AI
+           </div>
            {/* New Chat Button */}
            <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--accent-primary)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-black transition-all mb-4 font-headers">
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>

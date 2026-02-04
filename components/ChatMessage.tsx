@@ -35,20 +35,23 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <div className={`flex gap-4 ${isAi ? 'flex-row' : 'flex-row-reverse'}`}>
       
-      {/* AI Indicator - Orange Square for AI, no avatar for User (right-aligned bubble) */}
+      {/* AI Indicator - Orange Square Avatar with "EKA" text for AI, no avatar for User (right-aligned bubble) */}
       {isAi ? (
         <div 
-          className="shrink-0 w-2 h-2 mt-2 rounded-sm bg-[var(--accent-primary)]"
+          className="shrink-0 w-8 h-8 mt-1 rounded-sm flex items-center justify-center text-xs font-bold font-headers"
+          style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--accent-primary)', border: '1px solid var(--border-color)' }}
           aria-label="AI message indicator"
           role="img"
-        ></div>
+        >
+          EKA
+        </div>
       ) : null}
 
       {/* Content */}
       <div className={`flex-1 max-w-[85%] text-[15px] leading-7 
         ${isAi 
           ? 'text-[var(--text-primary)]' 
-          : 'bg-[var(--msg-user-bg)] p-4 rounded-2xl rounded-tr-sm text-[var(--text-primary)] ml-auto'
+          : 'bg-[var(--bg-tertiary)] p-4 rounded-2xl rounded-tr-sm text-[var(--text-primary)] ml-auto'
         }`}>
         
         {/* Name Label for AI */}

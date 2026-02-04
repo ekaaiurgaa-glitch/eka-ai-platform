@@ -27,7 +27,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
   }, [input]);
 
   return (
-    <div className="relative bg-[var(--input-bg)] border border-[var(--accent-primary)] rounded-2xl shadow-lg focus-within:shadow-[0_0_0_2px_var(--accent-primary)] transition-all">
+    <div className="relative bg-[var(--input-bg)] border border-[#333] rounded-2xl shadow-lg focus-within:border-[var(--accent-primary)] focus-within:shadow-[0_0_0_1px_var(--accent-primary)] transition-all">
       <textarea
         ref={textareaRef}
         value={input}
@@ -49,11 +49,11 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
         </button>
 
-        {/* Send Button - Orange Arrow */}
+        {/* Send Button - Orange Arrow Icon inside a circle */}
         <button 
           onClick={handleSend}
           disabled={!input.trim() || isLoading}
-          className={`p-2 rounded-lg transition-all ${
+          className={`p-2 rounded-full transition-all ${
             input.trim() 
               ? 'bg-[var(--accent-primary)] text-black hover:brightness-110' 
               : 'bg-[var(--border-color)] text-[var(--text-secondary)]'
