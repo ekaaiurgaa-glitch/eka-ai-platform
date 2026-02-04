@@ -13,19 +13,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (input.trim() && !isLoading) {
-      onSend(input.trim());
-      setInput('');
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+  const handleSend = () => {
+    if (!input.trim()) return;
+    onSend(input);
+    setInput('');
   };
 
   useEffect(() => {
@@ -36,42 +27,40 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
   }, [input]);
 
   return (
-    <div className="p-6 bg-[#000000] border-t border-[#262626]">
-      <div className="max-w-4xl mx-auto flex gap-4 items-end">
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter symptom, DTC or part name..."
-            className="w-full bg-[#050505] text-white border-2 border-[#f18a22] rounded-xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-800 text-base font-inter"
-            disabled={isLoading}
-          />
-        </div>
-        
-        <button
-          onClick={handleSubmit}
-          disabled={!input.trim() || isLoading}
-          className="h-[62px] px-10 bg-[#f18a22] text-black font-black uppercase tracking-widest rounded-xl hover:bg-white transition-all disabled:bg-zinc-800 disabled:text-zinc-600 shadow-[0_0_25px_rgba(241,138,34,0.3)] active:scale-95 flex items-center gap-3 font-outfit"
+    <div className="relative bg-white border border-[var(--input-border)] rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-[var(--accent-primary)] transition-all">
+      <textarea
+        ref={textareaRef}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+        placeholder="How can EKA-AI help with your fleet today?"
+        className="w-full bg-transparent border-none focus:ring-0 focus:outline-none resize-none py-3 px-4 min-h-[50px] max-h-[200px] text-base"
+        rows={1}
+        disabled={isLoading}
+      />
+      
+      <div className="flex justify-between items-center px-2 pb-2">
+        {/* Attachment Icon (Visual only) */}
+        <button 
+          className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+          aria-label="Attach file"
+          title="Attach file"
         >
-          {isLoading ? (
-            <div className="w-6 h-6 border-4 border-black/30 border-t-black rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <span>SEND</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </>
-          )}
+           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
         </button>
-      </div>
-      <div className="mt-4 text-center">
-        <p className="text-[10px] text-zinc-700 font-black uppercase tracking-[0.5em] font-mono">
-          EKA-AI GOVERNANCE ENGINE ACTIVE • GO4GARAGE PRIVATE LIMITED
-        </p>
+
+        {/* Send Button */}
+        <button 
+          onClick={handleSend}
+          disabled={!input.trim() || isLoading}
+          className={`p-2 rounded-lg transition-colors ${
+            input.trim() ? 'bg-[#D97757] text-white' : 'bg-gray-200 text-gray-400'
+          }`}
+          aria-label="Send message"
+          title="Send message"
+        >
+           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </button>
       </div>
     </div>
   );

@@ -1,10 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import Header from './components/Header';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
 import VehicleContextPanel from './components/VehicleContextPanel';
-import TelemetryDashboard from './components/TelemetryDashboard';
 import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData } from './types';
 import { geminiService } from './services/geminiService';
 
@@ -98,61 +96,106 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#000000] text-white overflow-hidden selection:bg-[#f18a22]/30">
-      <Header status={status} vehicle={vehicleContext} isLoading={isLoading} operatingMode={operatingMode} />
-      
-      <div className="bg-zinc-950 border-b border-white/5 px-8 py-3 flex items-center justify-between z-10">
-        <div className="flex gap-5">
-          <div className="flex bg-black rounded-xl p-1 border border-white/10 shadow-lg">
-            <button onClick={() => setIntelligenceMode('FAST')} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>FAST</button>
-            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${intelligenceMode === 'THINKING' ? 'bg-purple-600/50 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>EXPERT</button>
-          </div>
-          <div className="flex bg-black rounded-xl p-1 border border-white/10 shadow-lg">
-            <button onClick={() => handleModeChange(0)} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${operatingMode === 0 ? 'bg-[#f18a22] text-black' : 'text-zinc-600 hover:text-zinc-400'}`}>IGNITION</button>
-            <button onClick={() => handleModeChange(1)} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${operatingMode === 1 ? 'bg-[#f18a22] text-black' : 'text-zinc-600 hover:text-zinc-400'}`}>WORKSHOP</button>
-            <button onClick={() => handleModeChange(2)} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${operatingMode === 2 ? 'bg-[#f18a22] text-black' : 'text-zinc-600 hover:text-zinc-400'}`}>FLEET</button>
-          </div>
+    <div className="app-layout">
+      {/* 1. Sidebar (New Component for Navigation) */}
+      <aside className="sidebar hidden md:flex flex-col">
+        <div className="mb-6 px-2">
+           <div className="w-8 h-8 bg-[#D97757] rounded-lg mb-2"></div>
+           <h2 className="font-semibold text-sm text-[var(--text-secondary)]">EKA-AI History</h2>
         </div>
-        <div className="hidden md:flex items-center gap-2">
-           <span className="text-[9px] font-black text-zinc-700 uppercase tracking-widest font-mono">Dossier ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+        {/* Placeholder for history items */}
+        <div className="flex-1 overflow-y-auto space-y-2">
+           <div className="p-2 text-sm bg-white/50 rounded cursor-pointer">Previous Chat...</div>
         </div>
-      </div>
+        {/* User Profile / Settings at bottom */}
+        <div className="mt-auto border-t border-black/5 pt-4">
+           <div className="text-xs font-medium">Go4Garage User</div>
+        </div>
+      </aside>
 
-      <main className="flex-1 overflow-y-auto px-8 py-10" ref={scrollRef}>
-        <div className="max-w-4xl mx-auto flex flex-col gap-10">
-          <TelemetryDashboard status={status} complianceScore={94} systemHealth={99} />
-          
-          {(operatingMode === 1 || !isContextComplete(vehicleContext)) && (
-            <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+      {/* 2. Main Chat Area */}
+      <main className="main-chat-area">
+        {/* Top Bar / Model Selector */}
+        <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur p-4 flex justify-center border-b border-black/5">
+           <div className="bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
+              <button 
+                onClick={() => setIntelligenceMode('FAST')} 
+                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'FAST' ? 'bg-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+              >
+                Fast 2.0
+              </button>
+              <button 
+                onClick={() => setIntelligenceMode('THINKING')} 
+                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'THINKING' ? 'bg-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+              >
+                Claude 3.5
+              </button>
+           </div>
+           <div className="ml-4 bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
+              <button 
+                onClick={() => handleModeChange(0)} 
+                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 0 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+              >
+                Ignition
+              </button>
+              <button 
+                onClick={() => handleModeChange(1)} 
+                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 1 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+              >
+                Workshop
+              </button>
+              <button 
+                onClick={() => handleModeChange(2)} 
+                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 2 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+              >
+                Fleet
+              </button>
+           </div>
+        </header>
+
+        {/* Chat Stream */}
+        <div className="chat-scroll-container" ref={scrollRef}>
+          <div className="chat-content-width flex flex-col gap-6">
+            {(operatingMode === 1 || !isContextComplete(vehicleContext)) && (
               <VehicleContextPanel 
                 context={vehicleContext} 
                 onUpdate={setVehicleContext} 
                 operatingMode={operatingMode}
               />
-            </div>
-          )}
-
-          <div className="flex flex-col">
+            )}
+            
             {messages.map((msg) => (
               <ChatMessage 
                 key={msg.id} 
                 message={msg} 
-                vehicleContext={vehicleContext} 
+                vehicleContext={vehicleContext}
                 onEstimateAuthorize={(data) => console.log('Audit Auth Logged:', data)}
               />
             ))}
             {isLoading && (
-              <div className="flex justify-start mb-12 animate-in fade-in duration-300">
-                <div className="px-8 py-4 bg-[#0b0b0b] border-2 border-[#f18a22]/40 rounded-full animate-pulse text-[11px] font-black uppercase tracking-[0.3em] text-[#f18a22] font-mono shadow-[0_0_20px_rgba(241,138,34,0.1)]">
-                  Architectural Sync In Progress...
-                </div>
-              </div>
+               <div className="flex gap-4 items-start animate-pulse">
+                  <div className="w-8 h-8 rounded bg-[#D97757] opacity-20"></div>
+                  <div className="h-4 w-24 bg-gray-200 rounded mt-2"></div>
+               </div>
             )}
           </div>
         </div>
-      </main>
 
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} status={status} />
+        {/* Input Area (Fixed Bottom) */}
+        <div className="p-4 bg-[var(--bg-primary)]">
+           <div className="chat-content-width">
+              <ChatInput 
+                onSend={handleSendMessage} 
+                isLoading={isLoading} 
+                operatingMode={operatingMode} 
+                status={status} 
+              />
+              <div className="text-center mt-2 text-[10px] text-[var(--text-secondary)]">
+                 AI can make mistakes. Please verify important information.
+              </div>
+           </div>
+        </div>
+      </main>
     </div>
   );
 };
