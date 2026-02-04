@@ -91,7 +91,12 @@ def call_gemini(history, system_prompt):
 
 def call_claude(history, system_prompt):
     # Convert Gemini history to Claude messages
-    messages = [{"role": "user" if msg.get("role")=="user" else "assistant", "content": msg["parts"][0]["text"]} for msg in history]
+    messages = []
+    for msg in history:
+        role = "user" if msg.get("role") == "user" else "assistant"
+        parts = msg.get("parts", [])
+        content = parts[0].get("text", "") if parts else ""
+        messages.append({"role": role, "content": content})
     msg = anthropic_client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=4096,
@@ -132,9 +137,9 @@ def chat():
     try:
         if mode == 'THINKING' and anthropic_client:
             result = call_claude(history, system_prompt)
-        elif mode == 'DEEP_CONTEXT' and moonshot_client:
-            # Fallback implementation for Moonshot or call logic here
-            pass 
+        elif mode == 'DEEP_CONTEXT':
+            # DEEP_CONTEXT falls back to Gemini (Moonshot not fully implemented)
+            result = call_gemini(history, system_prompt)
         else:
             result = call_gemini(history, system_prompt)
             
@@ -144,7 +149,8 @@ def chat():
         try:
             result = call_gemini(history, system_prompt)
         except Exception as e2:
-            return jsonify({"response_content": {"visual_text": f"System Failure: {str(e2)}"}}), 500
+            error_result = {"response_content": {"visual_text": f"System Failure: {str(e2)}", "audio_text": "System error."}}
+            return jsonify(normalize_response(error_result, status)), 500
 
     return jsonify(normalize_response(result, status))
 
@@ -152,7 +158,7 @@ def chat():
 @flask_app.route('/', defaults={'path': ''})
 @flask_app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(flask_app.static_folder + '/' + path):
+    if path != "" and os.path.exists(os.path.join(flask_app.static_folder, path)):
         return send_from_directory(flask_app.static_folder, path)
     return send_from_directory(flask_app.static_folder, 'index.html')
 
