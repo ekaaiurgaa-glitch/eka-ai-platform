@@ -19,7 +19,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         {isAi ? 'EKA' : 'U'}
       </div>
       <div className={`flex-1 max-w-[85%] text-[15px] leading-7 ${
-        isAi ? 'text-white' : 'bg-[#111] p-3 rounded-2xl rounded-tr-sm text-white'
+        isAi ? 'text-white' : 'bg-[var(--msg-user-bg)] p-3 rounded-2xl rounded-tr-sm text-white'
       }`}>
         <div className="whitespace-pre-wrap">{message.content}</div>
         {isAi && (
