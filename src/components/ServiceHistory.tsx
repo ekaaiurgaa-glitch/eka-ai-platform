@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ServiceHistoryItem } from '../types';
+import { ServiceHistoryItem } from '../types/types';
 
 interface ServiceHistoryProps {
   history?: ServiceHistoryItem[];

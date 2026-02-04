@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DiagnosticData } from '../types';
+import { DiagnosticData } from '../types/types';
 
 interface DiagnosticResultProps {
   data: DiagnosticData;

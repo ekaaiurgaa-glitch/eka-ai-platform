@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Message, VehicleContext, EstimateData } from '../types';
+import { Message, VehicleContext, EstimateData } from '../types/types';
 import DigitalJobCard from './DigitalJobCard';
 import ServiceHistory from './ServiceHistory';
 import EstimateGovernance from './EstimateGovernance';

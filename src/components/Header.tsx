@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { JobStatus, VehicleContext, isContextComplete, OperatingMode } from '../types';
+import { JobStatus, VehicleContext, isContextComplete, OperatingMode } from '../types/types';
 
 interface HeaderProps {
   status: JobStatus;

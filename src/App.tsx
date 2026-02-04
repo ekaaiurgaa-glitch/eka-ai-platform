@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
-import { Message, JobStatus, VehicleContext, IntelligenceMode, OperatingMode } from './types';
+import { Message, JobStatus, VehicleContext, IntelligenceMode, OperatingMode } from './types/types';
 import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {

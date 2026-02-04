@@ -1,4 +1,4 @@
-import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types";
+import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types/types";
 
 export class GeminiService {
 
