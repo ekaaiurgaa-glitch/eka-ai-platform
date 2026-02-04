@@ -223,7 +223,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           border-radius: 12px;
           max-width: 92%;
           width: fit-content;
-          min-width: 340px;
+          min-width: 320px;
           position: relative;
           box-sizing: border-box;
           overflow: hidden;
@@ -232,9 +232,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         .ai-style {
           background: #080808;
-          border: 1px solid #f18a22;
-          border-left: 10px solid #f18a22;
-          padding: 28px 28px 24px 36px; /* Corrected padding for border-left alignment */
+          border: 2px solid #f18a22; /* Bold orange border */
+          border-left: 10px solid #f18a22; /* Prominent left bar */
+          padding: 24px 28px 24px 24px; /* Consistent internal padding */
           box-shadow: inset -5px 0 30px rgba(241, 138, 34, 0.03), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
         }
 
@@ -246,6 +246,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.6);
         }
 
+        .content-box {
+          position: relative;
+          width: 100%;
+          z-index: 10;
+        }
+
         .report-frame {
           border: 1px solid #262626;
           border-radius: 16px;
@@ -253,12 +259,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           background: #000;
           margin-top: 1.5rem;
           box-shadow: 0 15px 40px -10px rgba(0,0,0,0.4);
-        }
-
-        .content-box {
-          position: relative;
-          width: 100%;
-          z-index: 10;
         }
 
         /* HUD scanline effect for AI messages */
