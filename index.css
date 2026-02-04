@@ -1,44 +1,39 @@
-/* index.css - Claude Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+/* index.css - EKA-AI Dark Industrial Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  /* Core Colors */
-  --bg-primary: #F5F4F0; /* The signature Claude beige/white */
-  --bg-secondary: #EBEAE5;
-  --text-primary: #383732;
-  --text-secondary: #6B6A66;
-  --accent-primary: #D97757; /* The warm orange/brown accent */
-  --accent-secondary: #EAD0C7;
+  /* EKA-AI Core Colors - Ultra-Dark Industrial */
+  --bg-primary: #000000;       /* Pure Black */
+  --bg-secondary: #0b0b0b;     /* Sidebar/Panels */
+  --text-primary: #ffffff;     /* White text */
+  --text-secondary: #a1a1aa;   /* Muted text */
+  --accent-primary: #f18a22;   /* Go4Garage Orange */
+  --border-color: #222222;     /* Subtle borders */
+  --input-bg: #050505;         /* Input background */
   
   /* Message Bubbles */
-  --msg-user-bg: #EBEAE5;
+  --msg-user-bg: #111111;
   --msg-ai-bg: transparent;
   
   /* Input Area */
-  --input-bg: #FFFFFF;
-  --input-border: #D1D0CC;
-  --input-focus-ring: #D97757;
+  --input-border: #f18a22;
+  --input-focus-ring: #f18a22;
+  
+  /* Text on accent backgrounds */
+  --text-on-accent: #000000;
 
   /* Typography */
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-headers: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   
   /* Layout */
   --sidebar-width: 280px;
-  --max-content-width: 48rem; /* approx 768px for readability */
-}
-
-/* Dark Mode Support (Optional - matches your current dark theme preference if needed) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary: #1F1F1F;
-    --bg-secondary: #2A2A2A;
-    --text-primary: #ECECEC;
-    --text-secondary: #A1A1A1;
-    --msg-user-bg: #2A2A2A;
-    --input-bg: #2A2A2A;
-    --input-border: #3F3F3F;
-  }
+  --max-content-width: 48rem;
+  
+  /* Radius */
+  --radius-default: 1rem;
+  --radius-pill: 2rem;
 }
 
 * { box-sizing: border-box; }
@@ -61,7 +56,7 @@ body {
 .sidebar {
   width: var(--sidebar-width);
   background-color: var(--bg-secondary);
-  border-right: 1px solid rgba(0,0,0,0.05);
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   padding: 1rem;
@@ -89,5 +84,24 @@ body {
 }
 
 /* Typography Overrides */
-h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; }
+h1, h2, h3 { 
+  font-family: var(--font-headers);
+  font-weight: 600; 
+  letter-spacing: -0.02em; 
+}
 p { line-height: 1.6; margin-bottom: 0.75em; }
+
+/* Custom Scrollbar for Dark Theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}

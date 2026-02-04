@@ -97,56 +97,110 @@ const App: React.FC = () => {
 
   return (
     <div className="app-layout">
-      {/* 1. Sidebar (New Component for Navigation) */}
-      <aside className="sidebar hidden md:flex flex-col">
-        <div className="mb-6 px-2">
-           <div className="w-8 h-8 bg-[#D97757] rounded-lg mb-2"></div>
-           <h2 className="font-semibold text-sm text-[var(--text-secondary)]">EKA-AI History</h2>
+      {/* 1. Sidebar - EKA-AI Dark Theme */}
+      <aside className={`sidebar hidden md:flex flex-col`} style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+        {/* New Chat Button */}
+        <button 
+          className="w-full mb-6 py-3 px-4 rounded-xl font-semibold text-sm transition-all flex items-center gap-2"
+          style={{ 
+            backgroundColor: 'transparent', 
+            border: '1px solid var(--accent-primary)',
+            color: 'var(--accent-primary)',
+            fontFamily: 'var(--font-headers)'
+          }}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+          New Chat
+        </button>
+
+        {/* History Header */}
+        <div className="mb-4 px-2">
+          <h2 className="font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-headers)' }}>History</h2>
         </div>
-        {/* Placeholder for history items */}
-        <div className="flex-1 overflow-y-auto space-y-2">
-           <div className="p-2 text-sm bg-white/50 rounded cursor-pointer">Previous Chat...</div>
+
+        {/* Placeholder history items */}
+        <div className="flex-1 overflow-y-auto space-y-1">
+          <div className="p-3 text-sm rounded-lg cursor-pointer transition-all hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>
+            Previous Chat Session...
+          </div>
+          <div className="p-3 text-sm rounded-lg cursor-pointer transition-all hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>
+            Fleet Diagnostic Report
+          </div>
+          <div className="p-3 text-sm rounded-lg cursor-pointer transition-all hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>
+            Workshop Job Card #1234
+          </div>
         </div>
-        {/* User Profile / Settings at bottom */}
-        <div className="mt-auto border-t border-black/5 pt-4">
-           <div className="text-xs font-medium">Go4Garage User</div>
+
+        {/* User Profile at bottom */}
+        <div className="mt-auto pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+          <div className="flex items-center gap-3 p-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)' }}>
+              G4G
+            </div>
+            <div>
+              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Go4Garage User</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Fleet Manager</div>
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* 2. Main Chat Area */}
       <main className="main-chat-area">
-        {/* Top Bar / Model Selector */}
-        <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur p-4 flex justify-center border-b border-black/5">
-           <div className="bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
+        {/* Top Bar / Model Selector - Dark Theme */}
+        <header className="sticky top-0 z-10 p-4 flex justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-color)' }}>
+           <div className="p-1 rounded-xl flex text-xs font-medium" style={{ backgroundColor: 'var(--bg-secondary)', fontFamily: 'var(--font-headers)' }}>
               <button 
                 onClick={() => setIntelligenceMode('FAST')} 
-                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'FAST' ? 'bg-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className="px-4 py-2 rounded-lg transition-all"
+                style={{ 
+                  backgroundColor: intelligenceMode === 'FAST' ? 'var(--accent-primary)' : 'transparent',
+                  color: intelligenceMode === 'FAST' ? 'var(--text-on-accent)' : 'var(--text-secondary)'
+                }}
               >
                 Fast 2.0
               </button>
               <button 
                 onClick={() => setIntelligenceMode('THINKING')} 
-                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'THINKING' ? 'bg-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className="px-4 py-2 rounded-lg transition-all"
+                style={{ 
+                  backgroundColor: intelligenceMode === 'THINKING' ? 'var(--accent-primary)' : 'transparent',
+                  color: intelligenceMode === 'THINKING' ? 'var(--text-on-accent)' : 'var(--text-secondary)'
+                }}
               >
-                Claude 3.5
+                Deep Think
               </button>
            </div>
-           <div className="ml-4 bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
+           <div className="ml-4 p-1 rounded-xl flex text-xs font-medium" style={{ backgroundColor: 'var(--bg-secondary)', fontFamily: 'var(--font-headers)' }}>
               <button 
                 onClick={() => handleModeChange(0)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 0 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className="px-4 py-2 rounded-lg transition-all"
+                style={{ 
+                  backgroundColor: operatingMode === 0 ? 'var(--accent-primary)' : 'transparent',
+                  color: operatingMode === 0 ? 'var(--text-on-accent)' : 'var(--text-secondary)'
+                }}
               >
                 Ignition
               </button>
               <button 
                 onClick={() => handleModeChange(1)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 1 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className="px-4 py-2 rounded-lg transition-all"
+                style={{ 
+                  backgroundColor: operatingMode === 1 ? 'var(--accent-primary)' : 'transparent',
+                  color: operatingMode === 1 ? 'var(--text-on-accent)' : 'var(--text-secondary)'
+                }}
               >
                 Workshop
               </button>
               <button 
                 onClick={() => handleModeChange(2)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 2 ? 'bg-[#D97757] text-white shadow-sm' : 'text-[var(--text-secondary)]'}`}
+                className="px-4 py-2 rounded-lg transition-all"
+                style={{ 
+                  backgroundColor: operatingMode === 2 ? 'var(--accent-primary)' : 'transparent',
+                  color: operatingMode === 2 ? 'var(--text-on-accent)' : 'var(--text-secondary)'
+                }}
               >
                 Fleet
               </button>
@@ -174,15 +228,15 @@ const App: React.FC = () => {
             ))}
             {isLoading && (
                <div className="flex gap-4 items-start animate-pulse">
-                  <div className="w-8 h-8 rounded bg-[#D97757] opacity-20"></div>
-                  <div className="h-4 w-24 bg-gray-200 rounded mt-2"></div>
+                  <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: 'var(--accent-primary)' }}></div>
+                  <div className="h-4 w-24 rounded mt-1" style={{ backgroundColor: 'var(--border-color)' }}></div>
                </div>
             )}
           </div>
         </div>
 
-        {/* Input Area (Fixed Bottom) */}
-        <div className="p-4 bg-[var(--bg-primary)]">
+        {/* Input Area (Floating Pill at Bottom) */}
+        <div className="p-4" style={{ backgroundColor: 'transparent' }}>
            <div className="chat-content-width">
               <ChatInput 
                 onSend={handleSendMessage} 
@@ -190,8 +244,8 @@ const App: React.FC = () => {
                 operatingMode={operatingMode} 
                 status={status} 
               />
-              <div className="text-center mt-2 text-[10px] text-[var(--text-secondary)]">
-                 AI can make mistakes. Please verify important information.
+              <div className="text-center mt-3 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                 EKA-AI can make mistakes. Please verify important information.
               </div>
            </div>
         </div>
