@@ -232,8 +232,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         .ai-style {
           background: #0b0b0b;
-          border: 2px solid #f18a22;
-          border-left: 10px solid #f18a22;
+          border: 1px solid #f18a22;
           padding: 24px;
           box-shadow: inset -5px 0 30px rgba(241, 138, 34, 0.05), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
         }
@@ -259,19 +258,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           background: #000;
           margin-top: 1.5rem;
           box-shadow: 0 15px 40px -10px rgba(0,0,0,0.4);
-        }
-
-        .ai-style::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, transparent, rgba(241, 138, 34, 0.2), transparent);
-          z-index: 1;
-          pointer-events: none;
-          animation: scanline 8s linear infinite;
         }
       `}</style>
     </div>

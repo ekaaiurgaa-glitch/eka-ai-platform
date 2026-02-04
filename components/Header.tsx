@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
         </div>
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
-            <h1 className="text-white font-black tracking-tighter text-2xl leading-tight uppercase font-outfit">EKA-AI</h1>
+            <h1 className="text-white font-black tracking-tighter text-3xl leading-tight uppercase font-outfit">EKA-AI</h1>
             <span className="px-1.5 py-0.5 bg-zinc-800 rounded text-[7px] font-black text-zinc-400 tracking-widest uppercase font-mono">G4G ORIGINAL</span>
           </div>
           <span className="text-[#f18a22] text-[10px] font-black uppercase tracking-[0.1em] font-outfit">Governed Automobile Intelligence · Go4Garage Private Limited</span>
