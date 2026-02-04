@@ -84,7 +84,7 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED', 'AUTH_INTAKE'];
+    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED', 'AUTH_INTAKE', 'DIAGNOSED', 'ESTIMATED', 'CUSTOMER_APPROVED', 'PDI_COMPLETED'];
     const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED', 'MG_CREATED', 'MG_CONSUMING', 'MG_THRESHOLD_ALERT', 'MG_EXHAUSTED'];
 
     if (workshopStates.includes(status)) return 1;
@@ -241,17 +241,17 @@ const App: React.FC = () => {
 
   const activeTab = getActiveTab();
   
-  // Refined Conditional Visibility Logic
+  // Specific Conditional Rendering Logic
   const isWorkshopMode = activeTab === 1;
   const isFleetMode = activeTab === 2;
   const isIgnitionMode = activeTab === 0;
 
-  // Specific Requirement: Workshop panel only in AUTH_INTAKE or PDI
+  // Rule: Workshop Panel only visible when status is 'AUTH_INTAKE' or 'PDI'
   const showVehiclePanel = isWorkshopMode 
     ? (status === 'AUTH_INTAKE' || status === 'PDI') 
     : (panelTriggered || isContextComplete(vehicleContext) || isFleetMode);
 
-  // Specific Requirement: Telemetry only in Ignition (0) or Fleet (2)
+  // Rule: Telemetry Dashboard visible when operatingMode is 0 or 2
   const showTelemetry = isIgnitionMode || isFleetMode;
 
   return (

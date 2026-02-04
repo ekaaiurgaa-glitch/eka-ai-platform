@@ -1,7 +1,7 @@
 
 export type MessageRole = 'user' | 'assistant';
 
-export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 2: MG Fleet
+export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/Workshop, 2: MG Fleet
 
 export type JobStatus = 
   | 'CREATED' 
@@ -15,7 +15,14 @@ export type JobStatus =
   | 'BILLING_CYCLE_CLOSED'
   | 'SETTLED'
   | 'TERMINATED'
-  // Job Card Flow (Section B)
+  // Strict Job Card Flow
+  | 'DIAGNOSED' 
+  | 'ESTIMATED' 
+  | 'CUSTOMER_APPROVED' 
+  | 'PDI_COMPLETED' 
+  | 'INVOICED' 
+  | 'CLOSED'
+  // Transitionary / Internal Gates
   | 'INTAKE'
   | 'DIAGNOSIS'
   | 'ESTIMATION'
@@ -24,7 +31,6 @@ export type JobStatus =
   | 'PDI'
   | 'COMPLETION'
   | 'INVOICING'
-  | 'CLOSED'
   // Diagnostic Gates
   | 'AWAITING_ROOT_CAUSE'
   | 'INVOICE_ELIGIBLE'
@@ -67,43 +73,41 @@ export interface EstimateData {
 
 export interface MGAnalysis {
   contract_status: 'MG_CREATED' | 'MG_ACTIVE' | 'MG_CONSUMING' | 'MG_THRESHOLD_ALERT' | 'MG_EXHAUSTED' | 'MG_CLOSED';
-  mg_type: 'COST_BASED' | 'USAGE_BASED'; 
-  risk_profile: {
-    base_risk_score: number;
-    safety_buffer_percent: number;
-  };
+  mg_type: 'KM_BASED'; 
   parameters: {
-    guaranteed_threshold: number;
-    actual_usage: number;
-    rate_per_unit: number;
+    assured_kilometers: number;
+    rate_per_km: number;
+    billing_cycle: string;
+    monthly_assured_km: number;
+    monthly_assured_revenue: number;
   };
-  financial_summary: {
-    mg_monthly_limit: number;
-    actual_utilization: number;
+  cycle_data: {
+    actual_km_run: number;
+    shortfall_km: number;
+    excess_km: number;
+  };
+  financials: {
+    base_fee: number;
+    excess_fee: number;
+    total_invoice: number;
     utilization_status: 'SAFE' | 'WARNING' | 'BREACHED';
     invoice_split: {
       billed_to_mg_pool: number;
       billed_to_customer: number;
       unused_buffer_value: number;
-      excess_amount: number;
     };
   };
-  audit_trail: {
-    logic_applied: string;
-    risk_weights_used: string;
-    formula_used: string;
-  };
+  audit_log: string;
 }
 
 export interface DiagnosticData {
   code: string;
   description: string;
   severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY';
-  confidence_score: number; // 0-100, requires >90 for diagnosis
+  confidence_score: number;
   possible_causes: string[];
   recommended_actions: string[];
   systems_affected: string[];
-  missing_info?: string[];
   root_cause_identified?: boolean;
 }
 
