@@ -27,38 +27,11 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     return { label: 'STATUS: VERIFYING...', dotClass: 'bg-[#FFEA00] animate-flicker shadow-[0_0_8px_#FFEA00]' };
   }
 
-  const isIdentified = !!vehicle.registrationNumber;
-  const isComplete = isContextComplete(vehicle);
-
-  // Workshop Mode Logic (Mode 1)
-  if (mode === 1) {
-    if (!isIdentified) {
-      return { 
-        label: 'STATUS: AWAITING_ID', 
-        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.6)]' 
-      };
-    }
-    return { 
-      label: 'PROTOCOL: ACTIVE', 
-      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
-    };
+  // 1. Global / Priority Statuses
+  if (status === 'CLOSED' || status === 'MG_CLOSED') {
+    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]' };
   }
 
-  // Fleet Mode Logic (Mode 2)
-  if (mode === 2) {
-    if (!isIdentified) {
-      return { 
-        label: 'FLEET: AWAITING_ID', 
-        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.6)]' 
-      };
-    }
-    return { 
-      label: 'FLEET: SYNC_ACTIVE', 
-      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
-    };
-  }
-
-  // Ignition Mode (Mode 0) Logic
   if (status === 'RSA_ACTIVE') {
     return { 
       label: 'STATUS: RSA_ACTIVE', 
@@ -73,10 +46,38 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     };
   }
 
-  if (status === 'CLOSED' || status === 'MG_CLOSED') {
-    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]' };
+  const isIdentified = !!vehicle.registrationNumber;
+
+  // 2. Workshop Mode Logic (Mode 1)
+  if (mode === 1) {
+    if (!isIdentified) {
+      return { 
+        label: 'STATUS: AWAITING_ID', 
+        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.6)]' 
+      };
+    }
+    return { 
+      label: 'PROTOCOL: ACTIVE', 
+      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
+    };
   }
 
+  // 3. Fleet Mode Logic (Mode 2)
+  if (mode === 2) {
+    if (!isIdentified) {
+      return { 
+        label: 'FLEET: AWAITING_ID', 
+        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.6)]' 
+      };
+    }
+    return { 
+      label: 'FLEET: SYNC_ACTIVE', 
+      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
+    };
+  }
+
+  // 4. Default / Ignition (Mode 0)
+  const isComplete = isContextComplete(vehicle);
   return { 
     label: isComplete ? 'SYSTEM: READY' : 'SYSTEM: AWAITING_AUTH', 
     dotClass: isComplete ? 'bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-zinc-700' 
