@@ -4,9 +4,8 @@ import Sidebar from './components/layout/Sidebar';
 import ChatPage from './pages/ChatPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ArtifactsPage from './pages/ArtifactsPage';
-
-// Placeholder for Settings (We will implement this next)
-const Settings = () => <div className="p-10 font-serif text-2xl">Settings (Coming Soon)</div>;
+import SettingsPage from './pages/SettingsPage';
+import ChatsPage from './pages/ChatsPage';
 
 const App = () => {
   return (
@@ -16,9 +15,11 @@ const App = () => {
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <Routes>
             <Route path="/" element={<ChatPage />} />
+            <Route path="/chats" element={<ChatsPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/artifacts" element={<ArtifactsPage />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            {/* Catch-all */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
