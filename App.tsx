@@ -17,9 +17,6 @@ const App: React.FC = () => {
     year: '',
     fuelType: '',
     registrationNumber: '',
-    batteryCapacity: '',
-    motorPower: '',
-    hvSafetyConfirmed: false
   });
 
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
@@ -27,10 +24,10 @@ const App: React.FC = () => {
   const [panelTriggered, setPanelTriggered] = useState(false);
   const [activeMetric, setActiveMetric] = useState<VisualMetric | null>(null);
 
-  const STANDARD_PROTOCOL = ["Boundary Auth", "URGAA Query", "Symptom Triage", "RSA Gating", "Audit Finalization"];
-  const JOBCARD_PROTOCOL = ["Workshop Auth", "Service Normalization", "Inventory Gating", "Compliance Audit", "PDI Verification"];
-  const MG_PROTOCOL = ["Contract Validation", "Utilization Analytics", "SLA Breach Logic", "Settlement Logic", "Cycle Closure"];
-  const THINKING_PROTOCOL = ["Logic Node Branching", "Ecosystem Integration", "Pattern Synthesis", "EKA Governance Audit"];
+  const STANDARD_PROTOCOL = ["Logic Node Boot", "Governed Auth", "Audit Finalization"];
+  const JOBCARD_PROTOCOL = ["Intake Logic", "Diagnosis Gate", "Estimate Audit", "PDI Checklist", "Completion"];
+  const MG_PROTOCOL = ["Contract Sync", "Utilization Logic", "Stability Index", "Settlement Logic"];
+  const THINKING_PROTOCOL = ["Logic Node Branching", "Pattern Synthesis", "EKA Governance Audit"];
 
   const [activeProtocol, setActiveProtocol] = useState(STANDARD_PROTOCOL);
 
@@ -86,8 +83,8 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['AUTH_INTAKE', 'SYMPTOM_RECORDING', 'DIAGNOSTICS_WISDOM', 'INVENTORY_GATING', 'ESTIMATE_GOVERNANCE', 'APPROVAL_GATE', 'EXECUTION_QUALITY', 'PDI_CHECKLIST'];
-    const fleetStates: JobStatus[] = ['CONTRACT_VALIDATION', 'UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK', 'MG_COMPLETE'];
+    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED'];
+    const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED'];
 
     if (workshopStates.includes(status)) return 1;
     if (fleetStates.includes(status)) return 2;
@@ -143,6 +140,7 @@ const App: React.FC = () => {
       estimate_data: responseData.estimate_data,
       visual_metrics: responseData.visual_metrics,
       mg_analysis: responseData.mg_analysis,
+      diagnostic_data: responseData.diagnostic_data,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode
@@ -156,12 +154,12 @@ const App: React.FC = () => {
     setOperatingMode(mode);
     if (mode !== 0) setPanelTriggered(true);
     
-    const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'CONTRACT_VALIDATION' : 'IGNITION_TRIAGE';
+    const entryStatus: JobStatus = mode === 1 ? 'INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
     setStatus(entryStatus);
     
     let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
-    if (mode === 1) promptContent = "Enter Vehicle Registration Number to proceed with Workshop Intake.";
-    if (mode === 2) promptContent = "Enter Fleet ID or Billing Month to proceed with Contract Governance.";
+    if (mode === 1) promptContent = "Automobile Intake protocol active. Provide vehicle context or Registration Number.";
+    if (mode === 2) promptContent = "Fleet Governance Engine active. Enter Fleet ID or Billing Cycle reference.";
 
     setMessages(prev => [...prev, {
       id: `mode-pivot-${Date.now()}`,
@@ -174,13 +172,13 @@ const App: React.FC = () => {
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
-    setStatus('APPROVAL_GATE');
+    setStatus('APPROVAL');
     setMessages(prev => [...prev, {
       id: `auth-success-${Date.now()}`,
       role: 'assistant',
-      content: `ESTIMATE AUTHORIZED: Compliance checks for HSN 8708/9987 passed. Dossier ${finalData.estimate_id} has been moved to APPROVAL_GATE. Awaiting customer signature.`,
+      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been moved to APPROVAL gate. Awaiting explicit customer authorization.`,
       timestamp: new Date(),
-      job_status_update: 'APPROVAL_GATE',
+      job_status_update: 'APPROVAL',
       operatingMode: 1
     }]);
     
@@ -251,7 +249,7 @@ const App: React.FC = () => {
             <div className="px-4">
                <TelemetryDashboard 
                  status={status} 
-                 complianceScore={status === 'APPROVAL_GATE' ? 100 : status === 'ESTIMATE_GOVERNANCE' ? 75 : 40} 
+                 complianceScore={status === 'APPROVAL' ? 100 : status === 'ESTIMATION' ? 75 : 40} 
                  systemHealth={98} 
                />
             </div>
@@ -298,7 +296,7 @@ const App: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col items-end">
                     <span className="text-[8px] font-black text-green-500 font-mono">SYNC_ACTIVE</span>
-                    <span className="text-[10px] font-black text-white font-mono uppercase">Node_v1.4</span>
+                    <span className="text-[10px] font-black text-white font-mono uppercase">Node_v1.5</span>
                   </div>
                   <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_15px_#22c55e]"></div>
                 </div>

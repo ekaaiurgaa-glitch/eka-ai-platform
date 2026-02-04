@@ -1,12 +1,13 @@
 
+// Always use GoogleGenAI from @google/genai as per guidelines
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
 import { EKA_CONSTITUTION, GST_HSN_REGISTRY } from "../constants";
 import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode, GroundingLink } from "../types";
 
 export class GeminiService {
-  private fastModel: string = 'gemini-2.0-flash'; // Optimized for speed & logic
-  private thinkingModel: string = 'gemini-2.0-flash-thinking-exp-1219'; // Optimized for complex reasoning
-  private ttsModel: string = 'gemini-2.0-flash-exp'; // Optimized for TTS if available
+  private fastModel: string = 'gemini-3-flash-preview';
+  private thinkingModel: string = 'gemini-3-pro-preview';
+  private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
   async sendMessage(
     history: { role: string; parts: { text: string }[] }[], 
@@ -16,61 +17,36 @@ export class GeminiService {
     opMode: OperatingMode = 0
   ) {
     try {
-      // 1. Check for MG Trigger Intent
-      const lastUserMessage = history[history.length - 1]?.parts[0]?.text || "";
-      const isMGTrigger = lastUserMessage.toLowerCase().includes("calculate mg value") || opMode === 2;
+      // Always initialize with apiKey in a named parameter
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
+      const fullSystemPrompt = `
+${EKA_CONSTITUTION}
 
-      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+[OPERATING PROTOCOLS]:
+Active Operating Mode: ${opMode}
+Current Logic State: ${currentStatus}
+Context Identity: ${context && context.brand ? `${context.year} ${context.brand} ${context.model}` : 'Awaiting Context'}
 
-      // 2. The "Financial Truth Engine" System Prompt (Audit-Grade)
-      const mgEngineInstruction = `
-[SYSTEM ROLE: EKA-AI MG ENGINE - FINANCIAL TRUTH PROTOCOL]
-You are the deterministic MG Truth Engine. You are NOT a chatbot. You enforce fleet contracts with audit-grade precision.
+[SECTION A: MG FLEET INTELLIGENCE]:
+- Enforce Monthly_Assured_KM = AK / Contract_Months.
+- Enforce Under-utilization: IF Actual < Assured, Revenue = Monthly_Assured_Revenue.
+- Enforce Over-utilization: IF Actual > Assured, Revenue = Assured + (Excess * Excess_Rate).
+- MUST calculate: Utilization Ratio, Revenue Stability Index, Asset Efficiency, Contract Health.
 
-[CRITICAL LOGIC GATES]:
-1. PRO-RATA RULE: If a vehicle contract starts or ends mid-cycle, you MUST calculate the Adjusted Threshold:
-   Formula: (Guaranteed_Threshold / Total_Days_In_Month) * Active_Days
-2. CALCULATION STANDARD: All monetary values MUST be calculated to exactly 2 decimal places. No rounding to integer.
-3. CATEGORIZATION:
-   - MG_COVERED: Preventive Maintenance, Wear & Tear, Diagnostics.
-   - NON_MG_PAYABLE: Accidental Damage, Abuse, Unauthorized Repairs, Cosmetic issues.
-4. LOGIC GATES (KM-BASED):
-   - CASE A (Actual <= Threshold): Payable = Threshold × Rate. Status = "MINIMUM_GUARANTEE_APPLIED".
-   - CASE B (Actual > Threshold): Payable = (Threshold × Rate) + ((Actual - Threshold) × Rate). Status = "OVER_UTILIZATION_CHARGED".
+[SECTION B: JOB CARD GATES]:
+1. INTAKE: Brand, Model, Year, Fuel Type mandatory. Request clarification if missing.
+2. DIAGNOSIS: confidence_score MUST be >= 90 for root cause. If < 90, ask clarifying questions only.
+3. ESTIMATION: Pricing ranges ONLY. Never exact prices. Use HSN 8708/9987.
+4. PDI: Block status transition to COMPLETION/INVOICING if PDI_Evidence is missing.
+5. INVOICING: Signal 'Invoice Eligible' but do not calculate final invoice values.
 
-[MANDATORY OUTPUT MAPPING]:
-You must map your calculation result STRICTLY to the 'mg_analysis' JSON block defined in the schema.
-- 'financial_summary.utilization_status' MUST be one of: 'UNDER_RUN', 'OVER_RUN', 'EXACT'.
-- 'financial_summary.invoice_split.billed_to_mg_pool' = The amount covered by the guarantee.
-- 'financial_summary.invoice_split.excess_amount' = The amount charged for over-utilization (if any).
-- 'audit_trail.formula_used' = The exact math string (e.g., "(1500 * 12.5) + (200 * 12.5)").
-`;
-
-      const modeInstruction = `
-[GOVERNANCE CONTEXT]:
-Active Operating Mode: ${isMGTrigger ? 2 : opMode}
-Current Logical State: ${currentStatus}
-Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.registrationNumber})` : 'Awaiting Context'}
-
-[HSN/GST SOURCE OF TRUTH]:
-Reference the following registry for all estimate generation:
-${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
-
-[VISUALIZATION MANDATE]:
-You MUST leverage data visualizations (visual_metrics) to explain complex automotive data:
-- 'PIE': Use for symptom/complaint distribution.
-- 'PROGRESS': Use for repair workflow or PDI completion.
-- 'BAR': Use for comparing part costs or labor.
-- 'RADAR': Use for 'System Equilibrium'.
-- 'AREA' or 'LINE': Use for sensor trends over time.
-- 'RADIAL': Use for specific gauges.
-
-[RESPOND ONLY in valid JSON.]
+[RESPOND IN VALID JSON ONLY]
 `;
 
       const config: any = {
-        systemInstruction: EKA_CONSTITUTION + (isMGTrigger ? mgEngineInstruction : "") + modeInstruction,
-        temperature: isMGTrigger ? 0.0 : 0.4, // Zero temperature for MG Math
+        systemInstruction: fullSystemPrompt,
+        temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -98,51 +74,71 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
               properties: {
                 vehicle_display_query: { type: Type.STRING },
                 part_display_query: { type: Type.STRING }
-              },
-              required: ["vehicle_display_query", "part_display_query"]
+              }
+            },
+            diagnostic_data: {
+              type: Type.OBJECT,
+              properties: {
+                code: { type: Type.STRING },
+                description: { type: Type.STRING },
+                severity: { type: Type.STRING },
+                confidence_score: { type: Type.NUMBER },
+                possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
+                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } },
+                missing_info: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
             },
             mg_analysis: {
               type: Type.OBJECT,
               properties: {
-                contract_status: { type: Type.STRING },
-                mg_type: { type: Type.STRING },
-                is_prorata_applied: { type: Type.BOOLEAN },
-                parameters: {
+                fleet_id: { type: Type.STRING },
+                vehicle_id: { type: Type.STRING },
+                contract_period: {
+                  type: Type.OBJECT,
+                  properties: { start: { type: Type.STRING }, end: { type: Type.STRING } }
+                },
+                assured_metrics: {
                   type: Type.OBJECT,
                   properties: {
-                    guaranteed_threshold: { type: Type.NUMBER },
-                    actual_usage: { type: Type.NUMBER },
-                    rate_per_unit: { type: Type.NUMBER },
-                    active_days: { type: Type.NUMBER },
-                    total_days_in_month: { type: Type.NUMBER }
+                    total_assured_km: { type: Type.NUMBER },
+                    monthly_assured_km: { type: Type.NUMBER },
+                    rate_per_km: { type: Type.NUMBER },
+                    monthly_assured_revenue: { type: Type.NUMBER }
                   }
                 },
-                financial_summary: {
+                cycle_data: {
                   type: Type.OBJECT,
                   properties: {
-                    mg_monthly_limit: { type: Type.NUMBER },
-                    actual_utilization: { type: Type.NUMBER },
-                    utilization_status: { type: Type.STRING },
-                    invoice_split: {
-                      type: Type.OBJECT,
-                      properties: {
-                        billed_to_mg_pool: { type: Type.NUMBER },
-                        billed_to_customer: { type: Type.NUMBER },
-                        unused_buffer_value: { type: Type.NUMBER },
-                        excess_amount: { type: Type.NUMBER }
-                      }
-                    }
+                    billing_cycle: { type: Type.STRING },
+                    actual_km_run: { type: Type.NUMBER },
+                    shortfall_km: { type: Type.NUMBER },
+                    excess_km: { type: Type.NUMBER }
+                  }
+                },
+                financials: {
+                  type: Type.OBJECT,
+                  properties: {
+                    revenue_payable: { type: Type.NUMBER },
+                    status: { type: Type.STRING }
+                  }
+                },
+                intelligence: {
+                  type: Type.OBJECT,
+                  properties: {
+                    utilization_ratio: { type: Type.NUMBER },
+                    revenue_stability_index: { type: Type.NUMBER },
+                    asset_efficiency_score: { type: Type.NUMBER },
+                    contract_health: { type: Type.STRING }
                   }
                 },
                 audit_trail: {
                   type: Type.OBJECT,
                   properties: {
                     logic_applied: { type: Type.STRING },
-                    formula_used: { type: Type.STRING },
-                    adjustments_made: { type: Type.ARRAY, items: { type: Type.STRING } }
+                    formula_used: { type: Type.STRING }
                   }
-                },
-                audit_log: { type: Type.STRING }
+                }
               }
             },
             visual_metrics: {
@@ -163,41 +159,62 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
                   }
                 }
               }
+            },
+            estimate_data: {
+              type: Type.OBJECT,
+              properties: {
+                estimate_id: { type: Type.STRING },
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      hsn_code: { type: Type.STRING },
+                      price_range: { type: Type.STRING },
+                      unit_price: { type: Type.NUMBER }, // Added to match updated EstimateItem type
+                      quantity: { type: Type.NUMBER },
+                      gst_rate: { type: Type.NUMBER },
+                      type: { type: Type.STRING }
+                    }
+                  }
+                }
+              }
             }
           },
-          required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
+          required: ["response_content", "job_status_update", "ui_triggers"]
         }
       };
 
       if (intelMode === 'THINKING') {
-        config.maxOutputTokens = 40000;
         config.thinkingConfig = { thinkingBudget: 32768 };
       }
 
+      // Generate content using the configured model and prompt
       const response: GenerateContentResponse = await ai.models.generateContent({
         model: intelMode === 'THINKING' ? this.thinkingModel : this.fastModel,
         contents: history,
         config: config,
       });
 
+      // Directly access .text property as per extracting guidelines
       const rawText = response.text || '{}';
-      const result = JSON.parse(rawText);
-      return result;
+      return JSON.parse(rawText);
     } catch (error: any) {
       console.error("EKA Central OS Fatal Error:", error);
       return {
-        response_content: { visual_text: "CRITICAL: Logic gate failure. " + (error.message || "XHR Failure"), audio_text: "Logic failure." },
+        response_content: { visual_text: "CRITICAL GATE FAILURE: " + (error.message || "Logic Breach"), audio_text: "Logic breach." },
         job_status_update: currentStatus,
-        ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Error", part_display_query: "" }
+        ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true }
       };
     }
   }
 
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
-      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response: GenerateContentResponse = await ai.models.generateContent({
         model: this.ttsModel,
         contents: [{ parts: [{ text }] }],
         config: {
@@ -205,6 +222,7 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
         },
       });
+      // Extract audio data from the candidates
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (base64Audio) return this.decodeBase64(base64Audio);
       return null;

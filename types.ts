@@ -5,26 +5,33 @@ export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 
 
 export type JobStatus = 
   | 'CREATED' 
-  // Mode 0 Statuses
+  // MG State Machine (A6)
+  | 'MG_ACTIVE'
+  | 'BILLING_CYCLE_CLOSED'
+  | 'SETTLED'
+  | 'TERMINATED'
+  | 'CONTRACT_VALIDATION'
+  // Job Card Flow (Section B)
+  | 'INTAKE'
+  | 'DIAGNOSIS'
+  | 'ESTIMATION'
+  | 'APPROVAL'
+  | 'EXECUTION'
+  | 'PDI'
+  | 'COMPLETION'
+  | 'INVOICING'
+  | 'CLOSED'
+  // Diagnostic Gates
+  | 'AWAITING_ROOT_CAUSE'
+  | 'INVOICE_ELIGIBLE'
+  // Compatibility/Legacy status support
   | 'IGNITION_TRIAGE'
-  | 'RSA_ACTIVE'
-  | 'URGAA_QUERY'
-  // Mode 1 Statuses (Workshop)
   | 'AUTH_INTAKE'
   | 'SYMPTOM_RECORDING'
-  | 'DIAGNOSTICS_WISDOM'
-  | 'INVENTORY_GATING'
   | 'ESTIMATE_GOVERNANCE'
   | 'APPROVAL_GATE'
-  | 'EXECUTION_QUALITY'
-  | 'PDI_CHECKLIST'
-  | 'CLOSED'
-  // Mode 2 Statuses (Fleet)
-  | 'CONTRACT_VALIDATION'
-  | 'UTILIZATION_TRACKING'
-  | 'SETTLEMENT_LOGIC'
-  | 'SLA_BREACH_CHECK'
-  | 'MG_COMPLETE';
+  | 'MG_COMPLETE'
+  | 'RSA_ACTIVE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
 
@@ -44,7 +51,8 @@ export interface EstimateItem {
   id: string;
   description: string;
   hsn_code: string;
-  unit_price: number;
+  price_range: string; // Range only, never exact price
+  unit_price: number; // Added to support calculations in EstimateGovernance
   quantity: number;
   gst_rate: 18 | 28;
   type: 'PART' | 'LABOR';
@@ -57,51 +65,50 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
-export interface MGLineItem {
-  item: string;
-  category: 'PREVENTIVE' | 'ACCIDENTAL' | 'WEAR_TEAR' | 'ABUSE' | 'COSMETIC' | 'DIAGNOSTIC';
-  classification: 'MG_COVERED' | 'NON_MG_PAYABLE';
-  cost: number;
-}
-
 export interface MGAnalysis {
-  contract_status: 'ACTIVE' | 'INACTIVE';
-  mg_type: 'COST_BASED' | 'USAGE_BASED' | 'KM_BASED' | 'DAY_BASED';
-  is_prorata_applied: boolean;
-  line_item_analysis?: MGLineItem[];
-  parameters: {
-    guaranteed_threshold: number;
-    actual_usage: number;
-    rate_per_unit: number;
-    active_days?: number;
-    total_days_in_month?: number;
+  fleet_id: string;
+  vehicle_id: string;
+  contract_period: {
+    start: string;
+    end: string;
   };
-  financial_summary: {
-    mg_monthly_limit: number;
-    actual_utilization: number;
-    utilization_status: 'UNDER_RUN' | 'OVER_RUN' | 'EXACT' | 'MINIMUM_GUARANTEE_APPLIED' | 'OVER_UTILIZATION_CHARGED';
-    invoice_split: {
-      billed_to_mg_pool: number;
-      billed_to_customer: number;
-      unused_buffer_value: number;
-      excess_amount?: number;
-    };
+  assured_metrics: {
+    total_assured_km: number;
+    monthly_assured_km: number;
+    rate_per_km: number;
+    monthly_assured_revenue: number;
+  };
+  cycle_data: {
+    billing_cycle: string;
+    actual_km_run: number;
+    shortfall_km?: number;
+    excess_km?: number;
+  };
+  financials: {
+    revenue_payable: number;
+    status: 'MINIMUM_GUARANTEE_APPLIED' | 'OVER_UTILIZATION_CHARGED';
+  };
+  intelligence: {
+    utilization_ratio: number;
+    revenue_stability_index: number;
+    asset_efficiency_score: number;
+    contract_health: 'Healthy' | 'Risk' | 'Loss';
   };
   audit_trail: {
     logic_applied: string;
     formula_used: string;
-    adjustments_made: string[];
   };
-  audit_log: string;
 }
 
 export interface DiagnosticData {
   code: string;
   description: string;
   severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY';
+  confidence_score: number; // 0-100, requires >90 for diagnosis
   possible_causes: string[];
   recommended_actions: string[];
   systems_affected: string[];
+  missing_info?: string[];
 }
 
 export interface VisualMetric {
@@ -149,25 +156,8 @@ export interface VehicleContext {
   fuelType: string;
   registrationNumber?: string;
   vin?: string;
-  batteryCapacity?: string;
-  motorPower?: string;
-  hvSafetyConfirmed?: boolean;
 }
 
 export const isContextComplete = (ctx: VehicleContext): boolean => {
-  const baseComplete = !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
-  
-  if (ctx.vehicleType === '4W') {
-    if (!ctx.vin) return false;
-  }
-
-  if (ctx.fuelType === 'Electric') {
-    return baseComplete && !!ctx.batteryCapacity && !!ctx.motorPower && !!ctx.hvSafetyConfirmed;
-  }
-  
-  if (ctx.fuelType === 'Hybrid') {
-    return baseComplete && !!ctx.hvSafetyConfirmed;
-  }
-  
-  return baseComplete;
+  return !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
 };

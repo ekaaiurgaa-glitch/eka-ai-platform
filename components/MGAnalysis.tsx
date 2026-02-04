@@ -7,103 +7,110 @@ interface MGAnalysisProps {
 }
 
 const MGAnalysisView: React.FC<MGAnalysisProps> = ({ data }) => {
-  const { financial_summary, mg_type, audit_log, audit_trail, parameters, is_prorata_applied } = data;
-  const { invoice_split } = financial_summary;
+  const { assured_metrics, cycle_data, financials, intelligence, audit_trail, fleet_id, vehicle_id } = data;
+
+  const getHealthColor = (status: string) => {
+    switch (status) {
+      case 'Healthy': return 'text-green-500';
+      case 'Risk': return 'text-yellow-500';
+      case 'Loss': return 'text-red-500';
+      default: return 'text-zinc-500';
+    }
+  };
 
   return (
     <div className="bg-[#050505] border-4 border-[#f18a22] rounded-xl overflow-hidden mt-6 animate-in zoom-in-95 duration-500 shadow-2xl">
       <div className="p-4 bg-zinc-900/50 border-b-2 border-[#f18a22]/20 flex items-center justify-between">
         <div className="flex flex-col">
-          <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest font-mono">MG Settlement Engine</span>
-          <span className="text-[13px] font-black text-white font-mono uppercase tracking-tight">Protocol: {mg_type}</span>
+          <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest font-mono leading-none mb-1">Fleet Dossier</span>
+          <span className="text-[14px] font-black text-white font-mono uppercase tracking-tight">ID: {fleet_id} • {vehicle_id}</span>
         </div>
-        <div className="flex gap-2">
-          {is_prorata_applied && (
-            <div className="px-3 py-1 bg-blue-500/10 border border-blue-500 text-blue-500 rounded text-[9px] font-black uppercase font-mono">
-              PRO-RATA: ACTIVE
-            </div>
-          )}
-          <div className={`px-3 py-1 rounded text-[9px] font-black uppercase font-mono border ${data.contract_status === 'ACTIVE' ? 'bg-green-500/10 border-green-500 text-green-500' : 'bg-red-500/10 border-red-500 text-red-500'}`}>
-            CONTRACT: {data.contract_status}
-          </div>
+        <div className={`px-4 py-1.5 rounded-full border-2 text-[10px] font-black uppercase font-mono ${getHealthColor(intelligence.contract_health)} border-current bg-black/40`}>
+          HEALTH: {intelligence.contract_health}
         </div>
       </div>
 
       <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* FINANCIAL SUMMARY */}
+        {/* CONTRACT PARAMETERS */}
         <div className="space-y-6">
-          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono border-b border-zinc-900 pb-2">Settlement Calculations</h4>
-          <div className="space-y-4">
-            <div className="p-4 bg-green-500/5 border-2 border-green-500/30 rounded-lg flex justify-between items-center group">
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-green-600 uppercase font-mono">Billed to MG Pool</span>
-                <span className="text-2xl font-black text-white font-mono tracking-tighter">₹{invoice_split.billed_to_mg_pool.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="w-8 h-8 rounded bg-green-500 flex items-center justify-center text-black font-black">✓</div>
+          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono border-b border-zinc-900 pb-2">Assured Contract Parameters</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 bg-zinc-900/40 rounded border border-zinc-800">
+              <span className="text-[8px] font-black text-zinc-600 uppercase font-mono block mb-1">Monthly Assured KM</span>
+              <span className="text-xl font-black text-white font-mono">{assured_metrics.monthly_assured_km.toLocaleString()} KM</span>
             </div>
-            
-            <div className="p-4 bg-red-500/5 border-2 border-red-500/30 rounded-lg flex justify-between items-center group">
-              <div className="flex flex-col">
-                <span className="text-[8px] font-black text-red-600 uppercase font-mono">Customer Overage</span>
-                <span className="text-2xl font-black text-white font-mono tracking-tighter">₹{invoice_split.billed_to_customer.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="w-8 h-8 rounded bg-red-500 flex items-center justify-center text-black font-black">!</div>
+            <div className="p-3 bg-zinc-900/40 rounded border border-zinc-800">
+              <span className="text-[8px] font-black text-zinc-600 uppercase font-mono block mb-1">Assured Revenue (MG)</span>
+              <span className="text-xl font-black text-[#f18a22] font-mono">₹{assured_metrics.monthly_assured_revenue.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div className="p-4 bg-zinc-900/10 border-2 border-zinc-900 rounded-xl space-y-4">
+            <div className="flex justify-between items-end">
+              <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Actual Run: {cycle_data.billing_cycle}</span>
+              <span className="text-2xl font-black text-white font-mono">{cycle_data.actual_km_run.toLocaleString()} KM</span>
+            </div>
+            <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden">
+               <div 
+                className="h-full bg-[#f18a22] shadow-[0_0_10px_#f18a22]" 
+                style={{ width: `${Math.min(100, (cycle_data.actual_km_run / assured_metrics.monthly_assured_km) * 100)}%` }}
+               ></div>
             </div>
           </div>
         </div>
 
-        {/* PARAMETERS & FORMULA */}
+        {/* FLEET INTELLIGENCE SCORES */}
         <div className="space-y-6">
-          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono border-b border-zinc-900 pb-2">Audit Traceability</h4>
-          <div className="p-5 bg-black border-2 border-zinc-900 rounded-xl space-y-4">
-             <div className="grid grid-cols-2 gap-4">
-                <div>
-                   <span className="text-[8px] font-black text-zinc-600 uppercase font-mono">Threshold</span>
-                   <p className="text-[12px] font-black text-white font-mono">{parameters.guaranteed_threshold} {mg_type.includes('KM') ? 'KM' : 'DAYS'}</p>
-                </div>
-                <div>
-                   <span className="text-[8px] font-black text-zinc-600 uppercase font-mono">Actual</span>
-                   <p className="text-[12px] font-black text-white font-mono">{parameters.actual_usage} {mg_type.includes('KM') ? 'KM' : 'DAYS'}</p>
-                </div>
+          <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono border-b border-zinc-900 pb-2">Fleet Intelligence Matrix</h4>
+          <div className="space-y-3">
+             <div className="flex justify-between items-center p-3 bg-[#080808] border border-zinc-900 rounded group hover:border-zinc-700">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Utilization Ratio</span>
+                <span className="text-[12px] font-black text-white font-mono">{(intelligence.utilization_ratio * 100).toFixed(1)}%</span>
              </div>
-             
-             <div className="pt-4 border-t border-zinc-900">
-                <span className="text-[8px] font-black text-[#f18a22] uppercase font-mono tracking-widest">Active Formula Node</span>
-                <div className="mt-2 p-3 bg-zinc-900/50 rounded font-mono text-[11px] text-[#f18a22] break-all border border-[#f18a22]/20">
-                   {audit_trail.formula_used}
-                </div>
+             <div className="flex justify-between items-center p-3 bg-[#080808] border border-zinc-900 rounded group hover:border-zinc-700">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Revenue Stability</span>
+                <span className="text-[12px] font-black text-blue-400 font-mono">{(intelligence.revenue_stability_index * 100).toFixed(1)}%</span>
+             </div>
+             <div className="flex justify-between items-center p-3 bg-[#080808] border border-zinc-900 rounded group hover:border-zinc-700">
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">Asset Efficiency</span>
+                <span className="text-[12px] font-black text-green-500 font-mono">{intelligence.asset_efficiency_score.toFixed(1)}/10</span>
              </div>
           </div>
         </div>
       </div>
 
-      {/* AUDIT TRAIL */}
-      <div className="px-6 pb-6">
-        <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] font-mono border-b border-zinc-900 pb-2 mb-4">Logic Flow Adjustments</h4>
-        <div className="space-y-3">
-          <div className="flex flex-col gap-1 p-3 bg-zinc-900/20 border border-zinc-800 rounded">
-            <span className="text-[8px] font-black text-zinc-500 uppercase font-mono">Applied Reasoning</span>
-            <p className="text-[11px] text-zinc-300 font-mono leading-relaxed">{audit_trail.logic_applied}</p>
-          </div>
-          {audit_trail.adjustments_made.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {audit_trail.adjustments_made.map((adj, i) => (
-                <span key={i} className="px-2 py-1 bg-[#f18a22]/5 border border-[#f18a22]/30 text-[#f18a22] text-[8px] font-black font-mono uppercase rounded">
-                  {adj}
-                </span>
-              ))}
-            </div>
-          )}
+      {/* SETTLEMENT BLOCK */}
+      <div className="px-6 pb-6 pt-2 border-t border-zinc-900">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+           <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-4 bg-[#f18a22]"></div>
+                 <span className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Governance Audit Trail</span>
+              </div>
+              <div className="p-4 bg-zinc-900/20 border border-zinc-900 rounded-lg">
+                 <span className="text-[8px] font-black text-zinc-600 uppercase font-mono block mb-1">Logic Node formula</span>
+                 <p className="text-[11px] text-[#f18a22] font-mono leading-relaxed bg-black/40 p-2 rounded border border-[#f18a22]/20 mb-3">{audit_trail.formula_used}</p>
+                 <p className="text-[10px] text-zinc-400 font-mono italic leading-relaxed">{audit_trail.logic_applied}</p>
+              </div>
+           </div>
+
+           <div className="w-full md:w-80 p-6 bg-[#f18a22] rounded-xl flex flex-col gap-1 shadow-[0_10px_40px_rgba(241,138,34,0.3)]">
+              <span className="text-[9px] font-black text-black/60 uppercase font-mono tracking-widest leading-none">Net Revenue Payable</span>
+              <span className="text-4xl font-black text-black font-mono tracking-tighter leading-none">₹{financials.revenue_payable.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <div className="mt-4 px-3 py-1 bg-black/20 rounded border border-black/10 text-[8px] font-black text-black uppercase font-mono text-center">
+                 STATUS: {financials.status.replace(/_/g, ' ')}
+              </div>
+           </div>
         </div>
       </div>
 
-      {/* FINAL ENGINE LOG */}
-      {audit_log && (
-        <div className="p-4 bg-black border-t-2 border-zinc-900 flex justify-between items-center">
-          <p className="text-[10px] text-zinc-500 font-mono italic">{audit_log}</p>
-          <span className="text-[8px] font-black text-zinc-800 font-mono uppercase tracking-[0.4em]">EKA_RECON_V1.4</span>
+      <div className="p-4 bg-black border-t border-zinc-900 flex justify-between items-center">
+        <span className="text-[8px] font-black text-zinc-700 uppercase tracking-[0.4em] font-mono">EKA_FLEET_RECON_V1.5</span>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-[8px] font-black text-zinc-500 uppercase font-mono tracking-widest">Audit Lock Engaged</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };
