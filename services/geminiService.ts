@@ -19,7 +19,7 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
-      // --- THE CORE SYSTEM IDENTITY (Strictly from User's Prompt) ---
+      // --- THE CORE SYSTEM IDENTITY (STRICT PRICING GOVERNANCE) ---
       const EKA_CORE_LOGIC = `
 SYSTEM IDENTITY
 You are EKA-AI, a single, governed, deterministic artificial intelligence agent built exclusively for the automobile ecosystem by Go4Garage Private Limited.
@@ -33,16 +33,11 @@ You are an audit-grade intelligence governor.
 -------------------------------------
 SECTION A: MG (MINIMUM GUARANTEE) MODEL
 -------------------------------------
-A1. DEFINITIONS: Assured_Kilometers (AK), Rate_Per_KM (RPK).
-A2. CORE MATH: 
-    Monthly_Assured_KM = Assured_Kilometers / Contract_Months
-    Monthly_Assured_Revenue = Monthly_Assured_KM * Rate_Per_KM
-A3. UNDER-UTILIZATION (Actual < Assured):
-    Shortfall_KM = Monthly_Assured_KM - Actual
-    Revenue_Payable = Monthly_Assured_Revenue (Shortfall absorbed by fleet)
-A4. OVER-UTILIZATION (Actual > Assured):
-    Excess_KM = Actual - Monthly_Assured_KM
-    Total_Revenue = Monthly_Assured_Revenue + (Excess_KM * Excess_Rate)
+A1. ROLE: You explain MG logic. You do NOT compute payouts in text.
+A2. SOURCE OF TRUTH: All MG values (Shortfall, Excess, Payable) must come from the 'mg_analysis' JSON block.
+A3. LOGIC EXPLANATION: 
+    - If Actual < Assured: "Minimum Guarantee Applies" (Shortfall absorbed by fleet).
+    - If Actual > Assured: "Excess Utilization Applies" (Excess rate charged).
 
 -------------------------------------
 SECTION B: JOB CARD GOVERNANCE
@@ -53,22 +48,25 @@ B5. PDI GATE: Job cannot be COMPLETED without PDI (Safety, Proof).
 B7. INVOICING: Only triggers if Job = COMPLETED and PDI = Verified.
 
 -------------------------------------
-SECTION C: COMMERCIAL IDENTITY (PRICING & MARGINS)
+SECTION C: PRICING GOVERNANCE RULES (STRICT)
 -------------------------------------
-C1. CORE PHILOSOPHY: 
-    - You are NOT a commission-based engine. You take 0% of repair value.
-    - You are a subscription-led Governance Platform.
-    - You NEVER charge for: App downloads, Customer approvals, Per-invoice taxes.
+C1. SINGLE SOURCE OF TRUTH:
+    - Money never lives in the LLM (You).
+    - Money lives in Billing & Pricing Services (The JSON Schema).
+    
+C2. PROHIBITED ACTIONS:
+    - You are NOT allowed to calculate or invent prices in conversational text.
+    - You must NEVER output exact billable amounts in text unless derived from the 'estimate_data' or 'mg_analysis' JSON.
+    - You must NEVER modify pricing, offer discounts, or commit to monetary values not present in the structured data.
+    
+C3. ALLOWED ACTIONS:
+    - Explain pricing plans defined in the context.
+    - Return pricing ranges provided by the backend (simulated in JSON).
+    - Describe what a user gets at each tier.
+    - Explain the "Why" behind a cost (e.g., "This is due to high wear on brake pads").
 
-C2. WORKSHOP PRICING (CORE INTELLIGENCE):
-    - Model: Fixed Monthly Subscription (Tiers: Starter, Growth, Enterprise).
-    - Value: Pays for Governed Diagnostics, Job Card Control, Audit-grade PDI.
-    - Rule: Workshops are never "charged per repair".
-
-C3. MG FLEET PRICING (PREMIUM MODULE):
-    - Model: Base Platform Fee + Per-Vehicle Intelligence Fee.
-    - Value: Pays for Risk forecasting, Penalty prevention, ROI optimization.
-    - Note: This is a separate, high-value commercial contract.
+C4. ONE-LINE RULE:
+    "AI explains money. Systems calculate money. Billing records money."
 
 -------------------------------------
 CONTEXTUAL DATA
@@ -79,9 +77,9 @@ Vehicle Context: ${JSON.stringify(context || {})}
 GST/HSN Database: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 1000)}...
 
 [OUTPUT INSTRUCTION]:
-Respond ONLY in the structured JSON format defined in the schema. 
-For MG queries, fill the 'mg_analysis' block strictly.
-For Diagnostics, fill 'diagnostic_data'.
+1. Generate the structured JSON data FIRST (this acts as the Billing Engine).
+2. Then, write your 'visual_text' response based ONLY on that data.
+3. If the data is missing, state: "Pricing will be confirmed by the Billing System."
 `;
 
       const config: any = {
@@ -117,7 +115,7 @@ For Diagnostics, fill 'diagnostic_data'.
               },
               required: ["vehicle_display_query", "part_display_query"]
             },
-            // Updated MG Schema to match Section A logic
+            // MG Analysis (The Billing Engine Output)
             mg_analysis: {
               type: Type.OBJECT,
               properties: {
@@ -161,17 +159,40 @@ For Diagnostics, fill 'diagnostic_data'.
                 audit_log: { type: Type.STRING }
               }
             },
-            // Diagnostic Data for Section B2
+            // Diagnostic/Estimate Data (The Pricing Engine Output)
             diagnostic_data: {
               type: Type.OBJECT,
               properties: {
                 code: { type: Type.STRING },
                 description: { type: Type.STRING },
                 severity: { type: Type.STRING },
-                root_cause_confidence: { type: Type.NUMBER }, // < 90% logic
+                root_cause_confidence: { type: Type.NUMBER },
                 possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
                 recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
                 systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            estimate_data: {
+              type: Type.OBJECT,
+              properties: {
+                estimate_id: { type: Type.STRING },
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      hsn_code: { type: Type.STRING },
+                      unit_price: { type: Type.NUMBER },
+                      quantity: { type: Type.NUMBER },
+                      gst_rate: { type: Type.NUMBER },
+                      type: { type: Type.STRING }
+                    }
+                  }
+                },
+                currency: { type: Type.STRING },
+                tax_type: { type: Type.STRING }
               }
             },
             visual_metrics: {
@@ -223,6 +244,7 @@ For Diagnostics, fill 'diagnostic_data'.
     }
   }
 
+  // Audio generation remains standard
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
       const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
