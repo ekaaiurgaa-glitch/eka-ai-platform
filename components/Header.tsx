@@ -56,21 +56,14 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
   }
 
   // Ignition Mode (0) Logic
-  if (status === 'RSA_ACTIVE') {
+  if (status === 'CREATED') {
     return { 
-      label: 'STATUS: RSA_ACTIVE', 
-      dotClass: 'bg-red-500 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.6)]' 
-    };
-  }
-  
-  if (status === 'IGNITION_TRIAGE') {
-    return { 
-      label: 'IGNITION: TRIAGE', 
+      label: 'IGNITION: READY', 
       dotClass: 'bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(96,165,250,0.5)]' 
     };
   }
 
-  if (status === 'CLOSED' || status === 'MG_COMPLETE') {
+  if (status === 'CLOSED' || status === 'COMPLETED') {
     return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
   }
 

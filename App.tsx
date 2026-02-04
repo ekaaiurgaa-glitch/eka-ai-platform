@@ -83,7 +83,7 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED'];
+    const workshopStates: JobStatus[] = ['INTAKE_PENDING', 'ESTIMATION_PHASE', 'CUSTOMER_APPROVAL_PENDING', 'WORK_IN_PROGRESS', 'PDI_VERIFICATION', 'COMPLETED', 'CLOSED'];
     const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED'];
 
     if (workshopStates.includes(status)) return 1;
@@ -154,7 +154,7 @@ const App: React.FC = () => {
     setOperatingMode(mode);
     if (mode !== 0) setPanelTriggered(true);
     
-    const entryStatus: JobStatus = mode === 1 ? 'INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
+    const entryStatus: JobStatus = mode === 1 ? 'INTAKE_PENDING' : mode === 2 ? 'MG_ACTIVE' : 'CREATED';
     setStatus(entryStatus);
     
     let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
@@ -172,13 +172,13 @@ const App: React.FC = () => {
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
-    setStatus('APPROVAL');
+    setStatus('CUSTOMER_APPROVAL_PENDING');
     setMessages(prev => [...prev, {
       id: `auth-success-${Date.now()}`,
       role: 'assistant',
-      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been moved to APPROVAL gate. Awaiting explicit customer authorization.`,
+      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been moved to CUSTOMER_APPROVAL_PENDING gate. Awaiting explicit customer authorization.`,
       timestamp: new Date(),
-      job_status_update: 'APPROVAL',
+      job_status_update: 'CUSTOMER_APPROVAL_PENDING',
       operatingMode: 1
     }]);
     
@@ -249,7 +249,7 @@ const App: React.FC = () => {
             <div className="px-4">
                <TelemetryDashboard 
                  status={status} 
-                 complianceScore={status === 'APPROVAL' ? 100 : status === 'ESTIMATION' ? 75 : 40} 
+                 complianceScore={status === 'CUSTOMER_APPROVAL_PENDING' ? 100 : status === 'ESTIMATION_PHASE' ? 75 : 40} 
                  systemHealth={98} 
                />
             </div>

@@ -1,43 +1,25 @@
+// src/types.ts
 
 export type MessageRole = 'user' | 'assistant';
 
-export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 2: MG Fleet
+export type OperatingMode = 0 | 1 | 2; // 0: Default, 1: Job Card, 2: MG Fleet
 
 export type JobStatus = 
   | 'CREATED' 
-  // MG State Machine (Risk-Weighted Model)
-  | 'MG_CREATED'
-  | 'MG_ACTIVE'
-  | 'MG_CONSUMING'
-  | 'MG_THRESHOLD_ALERT'
-  | 'MG_EXHAUSTED'
-  | 'MG_CLOSED'
-  // Legacy MG States
-  | 'BILLING_CYCLE_CLOSED'
-  | 'SETTLED'
+  // MG States (Section A6)
+  | 'MG_CREATED' 
+  | 'MG_ACTIVE' 
+  | 'BILLING_CYCLE_CLOSED' 
+  | 'SETTLED' 
   | 'TERMINATED'
-  | 'CONTRACT_VALIDATION'
-  // Job Card Flow (Section B)
-  | 'INTAKE'
-  | 'DIAGNOSIS'
-  | 'ESTIMATION'
-  | 'APPROVAL'
-  | 'EXECUTION'
-  | 'PDI'
-  | 'COMPLETION'
-  | 'INVOICING'
-  | 'CLOSED'
-  // Diagnostic Gates
-  | 'AWAITING_ROOT_CAUSE'
-  | 'INVOICE_ELIGIBLE'
-  // Compatibility/Legacy status support
-  | 'IGNITION_TRIAGE'
-  | 'AUTH_INTAKE'
-  | 'SYMPTOM_RECORDING'
-  | 'ESTIMATE_GOVERNANCE'
-  | 'APPROVAL_GATE'
-  | 'MG_COMPLETE'
-  | 'RSA_ACTIVE';
+  // Job Card States (Section B)
+  | 'INTAKE_PENDING'
+  | 'ESTIMATION_PHASE'
+  | 'CUSTOMER_APPROVAL_PENDING'
+  | 'WORK_IN_PROGRESS'
+  | 'PDI_VERIFICATION'
+  | 'COMPLETED'  // Work done, PDI done, Evidence Locked (B6)
+  | 'CLOSED';    // Payment settled, Learning enabled (B8)
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
 
@@ -57,8 +39,7 @@ export interface EstimateItem {
   id: string;
   description: string;
   hsn_code: string;
-  price_range: string; // Range only, never exact price
-  unit_price: number; // Added to support calculations in EstimateGovernance
+  unit_price: number;
   quantity: number;
   gst_rate: 18 | 28;
   type: 'PART' | 'LABOR';
@@ -71,79 +52,44 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
-// MG Contract Status (Risk-Weighted State Machine)
-export type MGContractStatus = 'MG_CREATED' | 'MG_ACTIVE' | 'MG_CONSUMING' | 'MG_THRESHOLD_ALERT' | 'MG_EXHAUSTED' | 'MG_CLOSED';
-
-// MG Type Classification
-export type MGType = 'COST_BASED' | 'USAGE_BASED';
-
-// Utilization Status for Financial Summary
-export type UtilizationStatus = 'SAFE' | 'WARNING' | 'BREACHED';
-
+// Updated to match Section A2 - A5
 export interface MGAnalysis {
-  fleet_id: string;
-  vehicle_id: string;
-  // Risk-Weighted Contract Status
-  contract_status: MGContractStatus;
-  mg_type: MGType;
-  contract_period: {
-    start: string;
-    end: string;
-  };
-  // Risk Profile (New for Risk-Weighted Model)
-  risk_profile: {
-    base_risk_score: number;
-    safety_buffer_percent: number; // e.g., 15%
-  };
-  assured_metrics: {
-    total_assured_km: number;
+  contract_status: 'CREATED' | 'ACTIVE' | 'BILLING_CYCLE_CLOSED' | 'SETTLED' | 'TERMINATED';
+  mg_type: 'KM_BASED'; 
+  parameters: {
+    assured_kilometers: number;
+    contract_months: number;
     monthly_assured_km: number;
     rate_per_km: number;
     monthly_assured_revenue: number;
   };
   cycle_data: {
-    billing_cycle: string;
     actual_km_run: number;
-    shortfall_km?: number;
-    excess_km?: number;
+    shortfall_km: number; // Section A3
+    excess_km: number;    // Section A4
   };
   financials: {
-    revenue_payable: number;
-    status: 'MINIMUM_GUARANTEE_APPLIED' | 'OVER_UTILIZATION_CHARGED';
+    revenue_payable: number; // Section A3
+    excess_revenue: number;  // Section A4
+    total_revenue: number;
   };
-  // Financial Summary with Invoice Split (Risk-Weighted Model)
-  financial_summary: {
-    mg_monthly_limit: number;
-    actual_utilization: number;
-    utilization_status: UtilizationStatus;
-    invoice_split: {
-      billed_to_mg_pool: number;
-      billed_to_customer: number;
-      unused_buffer_value: number;
-    };
-  };
-  intelligence: {
+  fleet_intelligence: { // Section A5
     utilization_ratio: number;
     revenue_stability_index: number;
     asset_efficiency_score: number;
-    contract_health: 'Healthy' | 'Risk' | 'Loss';
+    contract_health: 'HEALTHY' | 'RISK' | 'LOSS';
   };
-  audit_trail: {
-    logic_applied: string;
-    formula_used: string;
-    risk_weights_used: string; // e.g., "Brakes: 1.3x, Filters: 1.0x"
-  };
+  audit_log: string;
 }
 
 export interface DiagnosticData {
   code: string;
   description: string;
   severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY';
-  confidence_score: number; // 0-100, requires >90 for diagnosis
+  root_cause_confidence: number; // Section B2 (<90% triggers questions)
   possible_causes: string[];
   recommended_actions: string[];
   systems_affected: string[];
-  missing_info?: string[];
 }
 
 export interface VisualMetric {
@@ -191,8 +137,13 @@ export interface VehicleContext {
   fuelType: string;
   registrationNumber?: string;
   vin?: string;
+  batteryCapacity?: string;
+  motorPower?: string;
+  hvSafetyConfirmed?: boolean;
 }
 
 export const isContextComplete = (ctx: VehicleContext): boolean => {
-  return !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
+  const baseComplete = !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
+  if (ctx.vehicleType === '4W' && !ctx.vin) return false;
+  return baseComplete;
 };
