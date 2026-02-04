@@ -4,9 +4,9 @@ import { EKA_CONSTITUTION, GST_HSN_REGISTRY } from "../constants";
 import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode, GroundingLink } from "../types";
 
 export class GeminiService {
-  private fastModel: string = 'gemini-3-flash-preview';
-  private thinkingModel: string = 'gemini-3-pro-preview';
-  private ttsModel: string = 'gemini-2.5-flash-preview-tts';
+  private fastModel: string = 'gemini-2.0-flash'; // Optimized for speed & logic
+  private thinkingModel: string = 'gemini-2.0-flash-thinking-exp-1219'; // Optimized for complex reasoning
+  private ttsModel: string = 'gemini-2.0-flash-exp'; // Optimized for TTS if available
 
   async sendMessage(
     history: { role: string; parts: { text: string }[] }[], 
@@ -18,9 +18,9 @@ export class GeminiService {
     try {
       // 1. Check for MG Trigger Intent
       const lastUserMessage = history[history.length - 1]?.parts[0]?.text || "";
-      const isMGTrigger = lastUserMessage.includes("Calculate MG Value") || opMode === 2;
+      const isMGTrigger = lastUserMessage.toLowerCase().includes("calculate mg value") || opMode === 2;
 
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
       // 2. The "Financial Truth Engine" System Prompt (Audit-Grade)
       const mgEngineInstruction = `
@@ -29,7 +29,7 @@ You are the deterministic MG Truth Engine. You are NOT a chatbot. You enforce fl
 
 [CRITICAL LOGIC GATES]:
 1. PRO-RATA RULE: If a vehicle contract starts or ends mid-cycle, you MUST calculate the Adjusted Threshold:
-   Formula: Adjusted_Threshold = (Guaranteed_Threshold / Total_Days_In_Month) * Active_Days
+   Formula: (Guaranteed_Threshold / Total_Days_In_Month) * Active_Days
 2. CALCULATION STANDARD: All monetary values MUST be calculated to exactly 2 decimal places. No rounding to integer.
 3. CATEGORIZATION:
    - MG_COVERED: Preventive Maintenance, Wear & Tear, Diagnostics.
@@ -70,7 +70,7 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION + (isMGTrigger ? mgEngineInstruction : "") + modeInstruction,
-        temperature: isMGTrigger ? 0.0 : 0.4,
+        temperature: isMGTrigger ? 0.0 : 0.4, // Zero temperature for MG Math
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -196,8 +196,8 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
 
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response: GenerateContentResponse = await ai.models.generateContent({
+      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
         model: this.ttsModel,
         contents: [{ parts: [{ text }] }],
         config: {
