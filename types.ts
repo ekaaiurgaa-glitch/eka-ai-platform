@@ -5,12 +5,16 @@ export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 
 
 export type JobStatus = 
   | 'CREATED' 
-  // MG State Machine (A6)
-  | 'MG_ACTIVE'
+  // MG State Machine (Advanced)
+  | 'MG_CREATED' 
+  | 'MG_ACTIVE' 
+  | 'MG_CONSUMING' 
+  | 'MG_THRESHOLD_ALERT' 
+  | 'MG_EXHAUSTED' 
+  | 'MG_CLOSED'
   | 'BILLING_CYCLE_CLOSED'
   | 'SETTLED'
   | 'TERMINATED'
-  | 'CONTRACT_VALIDATION'
   // Job Card Flow (Section B)
   | 'INTAKE'
   | 'DIAGNOSIS'
@@ -24,13 +28,9 @@ export type JobStatus =
   // Diagnostic Gates
   | 'AWAITING_ROOT_CAUSE'
   | 'INVOICE_ELIGIBLE'
-  // Compatibility/Legacy status support
+  // Compatibility
   | 'IGNITION_TRIAGE'
   | 'AUTH_INTAKE'
-  | 'SYMPTOM_RECORDING'
-  | 'ESTIMATE_GOVERNANCE'
-  | 'APPROVAL_GATE'
-  | 'MG_COMPLETE'
   | 'RSA_ACTIVE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
@@ -51,8 +51,8 @@ export interface EstimateItem {
   id: string;
   description: string;
   hsn_code: string;
-  price_range: string; // Range only, never exact price
-  unit_price: number; // Added to support calculations in EstimateGovernance
+  price_range: string;
+  unit_price: number;
   quantity: number;
   gst_rate: 18 | 28;
   type: 'PART' | 'LABOR';
@@ -66,36 +66,31 @@ export interface EstimateData {
 }
 
 export interface MGAnalysis {
-  fleet_id: string;
-  vehicle_id: string;
-  contract_period: {
-    start: string;
-    end: string;
+  contract_status: 'MG_CREATED' | 'MG_ACTIVE' | 'MG_CONSUMING' | 'MG_THRESHOLD_ALERT' | 'MG_EXHAUSTED' | 'MG_CLOSED';
+  mg_type: 'COST_BASED' | 'USAGE_BASED'; 
+  risk_profile: {
+    base_risk_score: number;
+    safety_buffer_percent: number;
   };
-  assured_metrics: {
-    total_assured_km: number;
-    monthly_assured_km: number;
-    rate_per_km: number;
-    monthly_assured_revenue: number;
+  parameters: {
+    guaranteed_threshold: number;
+    actual_usage: number;
+    rate_per_unit: number;
   };
-  cycle_data: {
-    billing_cycle: string;
-    actual_km_run: number;
-    shortfall_km?: number;
-    excess_km?: number;
-  };
-  financials: {
-    revenue_payable: number;
-    status: 'MINIMUM_GUARANTEE_APPLIED' | 'OVER_UTILIZATION_CHARGED';
-  };
-  intelligence: {
-    utilization_ratio: number;
-    revenue_stability_index: number;
-    asset_efficiency_score: number;
-    contract_health: 'Healthy' | 'Risk' | 'Loss';
+  financial_summary: {
+    mg_monthly_limit: number;
+    actual_utilization: number;
+    utilization_status: 'SAFE' | 'WARNING' | 'BREACHED';
+    invoice_split: {
+      billed_to_mg_pool: number;
+      billed_to_customer: number;
+      unused_buffer_value: number;
+      excess_amount: number;
+    };
   };
   audit_trail: {
     logic_applied: string;
+    risk_weights_used: string;
     formula_used: string;
   };
 }
@@ -109,6 +104,7 @@ export interface DiagnosticData {
   recommended_actions: string[];
   systems_affected: string[];
   missing_info?: string[];
+  root_cause_identified?: boolean;
 }
 
 export interface VisualMetric {
@@ -141,6 +137,11 @@ export interface Message {
   estimate_data?: EstimateData;
   mg_analysis?: MGAnalysis;
   grounding_links?: GroundingLink[];
+  pdi_checklist?: {
+    items: { task: string; completed: boolean }[];
+    technician_declaration: boolean;
+    evidence_provided: boolean;
+  };
   timestamp: Date;
   isValidated?: boolean;
   validationError?: boolean;
@@ -156,6 +157,7 @@ export interface VehicleContext {
   fuelType: string;
   registrationNumber?: string;
   vin?: string;
+  pdiVerified?: boolean;
 }
 
 export const isContextComplete = (ctx: VehicleContext): boolean => {

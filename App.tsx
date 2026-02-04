@@ -17,6 +17,7 @@ const App: React.FC = () => {
     year: '',
     fuelType: '',
     registrationNumber: '',
+    pdiVerified: false
   });
 
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
@@ -141,6 +142,7 @@ const App: React.FC = () => {
       visual_metrics: responseData.visual_metrics,
       mg_analysis: responseData.mg_analysis,
       diagnostic_data: responseData.diagnostic_data,
+      pdi_checklist: responseData.pdi_checklist,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode
@@ -183,6 +185,19 @@ const App: React.FC = () => {
     }]);
     
     setTimeout(scrollToBottom, 100);
+  };
+
+  const handlePdiVerify = (data: { verified: boolean }) => {
+    setVehicleContext(prev => ({ ...prev, pdiVerified: data.verified }));
+    setStatus('COMPLETION');
+    setMessages(prev => [...prev, {
+      id: `pdi-verify-${Date.now()}`,
+      role: 'assistant',
+      content: "PDI VERIFIED. Safety checklist and evidence confirmed on central node. Transitioning to COMPLETION. Vehicle is now INVOICE ELIGIBLE.",
+      timestamp: new Date(),
+      job_status_update: 'COMPLETION',
+      operatingMode: 1
+    }]);
   };
 
   const handlePlayAudio = async (text: string) => {
@@ -273,6 +288,7 @@ const App: React.FC = () => {
                   vehicleContext={vehicleContext} 
                   onUpdateContext={setVehicleContext}
                   onEstimateAuthorize={handleEstimateAuthorize}
+                  onPdiVerify={handlePdiVerify}
                 />
               ))}
               {isLoading && (

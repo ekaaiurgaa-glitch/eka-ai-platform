@@ -7,6 +7,7 @@ import EstimateGovernance from './EstimateGovernance';
 import VehicleVisuals from './VehicleVisuals';
 import DiagnosticResult from './DiagnosticResult';
 import MGAnalysisView from './MGAnalysis';
+import PDIChecklist from './PDIChecklist';
 
 interface ChatMessageProps {
   message: Message;
@@ -16,6 +17,7 @@ interface ChatMessageProps {
   onUpdateContext?: (context: VehicleContext) => void;
   onEstimateAuthorize?: (data: EstimateData) => void;
   onJobCardComplete?: (data: any) => void;
+  onPdiVerify?: (data: { verified: boolean }) => void;
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ 
@@ -25,7 +27,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   vehicleContext,
   onUpdateContext,
   onEstimateAuthorize,
-  onJobCardComplete
+  onJobCardComplete,
+  onPdiVerify
 }) => {
   const isAi = message.role === 'assistant';
 
@@ -35,11 +38,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
     const priceRangeRegex = /(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)\s*(?:-|to|until)\s*(?:₹|Rs\.?|INR)?\s*(\d+[\d,kK]*)/gi;
     const hsnRegex = /(HSN:\s*\d+)/gi;
-    const gstRegex = /(GST:\s*\d+%\s*\([^)]+\))/gi;
 
     let parts: (string | React.ReactNode)[] = [cleanText];
 
-    const applyRegex = (regex: RegExp, type: 'RANGE' | 'HSN' | 'GST') => {
+    const applyRegex = (regex: RegExp, type: 'RANGE' | 'HSN') => {
       let nextParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
         if (typeof part !== 'string') {
@@ -58,9 +60,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             
             if (type === 'RANGE') {
               nextParts.push(
-                <span key={`range-${matchIdx}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-dashed border-[#f18a22]/50 bg-[#f18a22]/5 text-[#f18a22] font-mono text-[11px] font-black mx-1 animate-in fade-in zoom-in duration-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#f18a22] animate-pulse"></span>
-                  <span className="opacity-60 text-[8px] tracking-widest">EST:</span>
+                <span key={`range-${matchIdx}`} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border-2 border-dashed border-[#f18a22]/50 bg-[#f18a22]/5 text-[#f18a22] font-mono text-[11px] font-black mx-1">
                   {matchText}
                 </span>
               );
@@ -80,7 +80,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
     applyRegex(priceRangeRegex, 'RANGE');
     applyRegex(hsnRegex, 'HSN');
-    applyRegex(gstRegex, 'GST');
 
     return parts;
   };
@@ -88,12 +87,13 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const renderContent = () => {
     if (!isAi) return <p className="text-base leading-relaxed text-zinc-300 font-inter">{message.content}</p>;
 
-    const showJobCard = message.visual_assets?.vehicle_display_query === 'DIGITAL_JOB_CARD' || message.job_status_update === 'SYMPTOM_RECORDING' || message.job_status_update === 'AUTH_INTAKE';
+    const showJobCard = message.job_status_update === 'INTAKE' || message.job_status_update === 'AUTH_INTAKE';
     const showHistory = !!message.service_history && message.service_history.length > 0;
-    const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
+    const showEstimate = (message.job_status_update === 'ESTIMATION' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
     const showDiagnostics = !!message.diagnostic_data;
     const showMGAnalysis = !!message.mg_analysis;
+    const showPdi = !!message.pdi_checklist && onPdiVerify;
 
     return (
       <div className="space-y-6">
@@ -110,18 +110,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         </div>
 
         {showMetrics && message.visual_metrics && (
-          <div className="report-frame animate-in fade-in zoom-in-95 duration-500">
-            <div className="report-header">
-               <div className="flex items-center gap-2">
-                 <div className="w-1 h-3 bg-[#f18a22]"></div>
-                 <span className="text-[9px] font-black text-[#f18a22] uppercase tracking-[0.3em] font-mono">Telemetry Data Visualization</span>
-               </div>
-               <span className="text-[8px] font-bold text-zinc-700 font-mono">EKA_V1.4_VISUAL_NODE</span>
-            </div>
+          <div className="report-frame">
             <VehicleVisuals metric={message.visual_metrics} />
-            <div className="report-footer">
-               <span className="text-[7px] font-black text-zinc-800 font-mono uppercase tracking-widest italic">Encrypted Logic Stream Sync</span>
-            </div>
           </div>
         )}
 
@@ -146,7 +136,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             vehicleModel={`${vehicleContext?.brand} ${vehicleContext?.model}`}
             regNo={vehicleContext?.registrationNumber || 'MH-12-G4G'}
             odometer="12,450"
-            status={message.job_status_update === 'AUTH_INTAKE' ? 'AWAITING_SYNC' : 'IN_PROGRESS'}
+            status={message.job_status_update === 'INTAKE' ? 'IN_PROGRESS' : 'AWAITING_SYNC'}
             onComplete={onJobCardComplete}
           />
         )}
@@ -155,6 +145,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           <EstimateGovernance 
             data={message.estimate_data} 
             onAuthorize={onEstimateAuthorize} 
+          />
+        )}
+
+        {showPdi && message.pdi_checklist && (
+          <PDIChecklist 
+            items={message.pdi_checklist.items}
+            technician_declaration={message.pdi_checklist.technician_declaration}
+            evidence_provided={message.pdi_checklist.evidence_provided}
+            onVerify={onPdiVerify}
           />
         )}
 
@@ -241,22 +240,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           overflow: hidden;
           background: #000;
           margin-top: 1.5rem;
-        }
-
-        .report-header {
-          padding: 12px 16px;
-          background: #080808;
-          border-bottom: 1px solid #1a1a1a;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .report-footer {
-          padding: 8px 16px;
-          background: #050505;
-          border-top: 1px solid #1a1a1a;
-          text-align: right;
         }
 
         .content-box {
