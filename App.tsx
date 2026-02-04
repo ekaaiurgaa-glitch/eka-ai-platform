@@ -7,6 +7,13 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Message, JobStatus, VehicleContext, IntelligenceMode, OperatingMode, AuditEntry } from './types';
 import { geminiService } from './services/geminiService';
 
+// Model display names for UI
+const MODEL_NAMES: Record<IntelligenceMode, string> = {
+  'FAST': 'Gemini 2.0 Flash',
+  'THINKING': 'Claude 3.5 Sonnet',
+  'DEEP_CONTEXT': 'Kimi (200K context)'
+};
+
 // Environment validation - checks for required configuration
 const validateEnvironment = (): { valid: boolean; error?: string } => {
   // In Vite, environment variables are available via import.meta.env
@@ -296,20 +303,41 @@ const App: React.FC = () => {
           {/* Intelligence Mode */}
           <div className="mb-4">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2 block">Intelligence</span>
-            <div className="flex gap-1">
+            <div className="flex flex-col gap-1 bg-[#111] border border-[#222] p-1 rounded-lg">
               <button 
                 onClick={() => setIntelligenceMode('FAST')} 
-                className={`flex-1 px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all tracking-wide touch-target ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  intelligenceMode === 'FAST' 
+                    ? 'bg-[#f18a22] text-black shadow-lg' 
+                    : 'text-zinc-400 hover:text-white hover:bg-[#222]'
+                }`}
               >
-                FAST
+                <span>⚡</span> Fast
               </button>
               <button 
                 onClick={() => setIntelligenceMode('THINKING')} 
-                className={`flex-1 px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all tracking-wide touch-target ${intelligenceMode === 'THINKING' ? 'bg-purple-600/50 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  intelligenceMode === 'THINKING' 
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
+                    : 'text-zinc-400 hover:text-white hover:bg-[#222]'
+                }`}
               >
-                EXPERT
+                <span>🧠</span> Think
+              </button>
+              <button 
+                onClick={() => setIntelligenceMode('DEEP_CONTEXT')} 
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  intelligenceMode === 'DEEP_CONTEXT' 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                    : 'text-zinc-400 hover:text-white hover:bg-[#222]'
+                }`}
+              >
+                <span>📚</span> Deep
               </button>
             </div>
+            <p className="text-[8px] text-zinc-600 mt-1 text-center">
+              {MODEL_NAMES[intelligenceMode]}
+            </p>
           </div>
           
           {/* Status Panel */}

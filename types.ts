@@ -93,7 +93,7 @@ export interface JobCard {
   created_by?: string;
 }
 
-export type IntelligenceMode = 'FAST' | 'THINKING';
+export type IntelligenceMode = 'FAST' | 'THINKING' | 'DEEP_CONTEXT';
 
 export interface GroundingLink {
   uri: string;
