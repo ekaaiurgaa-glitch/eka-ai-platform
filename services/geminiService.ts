@@ -1,7 +1,6 @@
 import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types";
 
 export class GeminiService {
-  // Points to your Python Backend
   private apiUrl = '/api/chat'; 
 
   async sendMessage(
@@ -12,7 +11,6 @@ export class GeminiService {
     opMode: OperatingMode = 0
   ) {
     try {
-      // Send data to backend/app.py
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -25,15 +23,18 @@ export class GeminiService {
         })
       });
 
-      if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Server Error: ${response.status}`);
+      }
+      
       return await response.json();
 
-    } catch (error: unknown) {
-      console.error("Connection Error:", error instanceof Error ? error.message : error);
+    } catch (error: any) {
+      console.error("Backend Error:", error);
       return {
         response_content: { 
-          visual_text: "⚠️ EKA-AI Offline. Please check backend connection.", 
-          audio_text: "System offline." 
+          visual_text: "⚠️ EKA-AI Server Unreachable. Please check internet or backend logs.", 
+          audio_text: "Connection error." 
         },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "OFFLINE", show_orange_border: true }

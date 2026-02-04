@@ -1,11 +1,14 @@
 flask>=2.3.2
 flask-cors>=4.0.0
-flask-limiter>=3.5.0
+flask-limiter>=3.0.0
 python-dotenv>=1.0.0
 google-genai>=0.3.0
-anthropic>=0.34.0
-openai>=1.30.0
 supabase>=2.0.0
 PyJWT>=2.8.0
+gunicorn>=21.2.0
+werkzeug>=3.0.0
+# Optional AI Clients (Uncomment if using them)
+anthropic>=0.18.0
+openai>=1.12.0
+# Optional File Validation
 python-magic>=0.4.27
-gunicorn>=22.0.0
