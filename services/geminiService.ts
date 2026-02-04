@@ -32,6 +32,15 @@ You operate ONLY within the automobile, workshop, fleet, and vehicle-service dom
 If a query is outside this domain, you MUST refuse.
 
 ════════════════════════════════════
+VISUALIZATION PROTOCOL (MANDATORY)
+════════════════════════════════════
+You MUST provide structured 'visual_metrics' to enhance the UI in the following scenarios:
+1. REPAIR PROGRESS: Use 'PROGRESS' type when a job card moves through states (INTAKE -> DIAGNOSIS -> ESTIMATION -> PDI -> CLOSED).
+2. DIAGNOSTIC DISTRIBUTION: Use 'PIE' type when presenting multiple possible root causes for a symptom or common issues.
+3. TREND ANALYSIS: Use 'LINE' or 'AREA' types for service frequency or mileage trends.
+4. FLEET UTILIZATION: Use 'RADIAL' or 'COMPOSED' types when analyzing fleet MG (Minimum Guarantee) usage.
+
+════════════════════════════════════
 CORE CONSTITUTION (NON-NEGOTIABLE)
 ════════════════════════════════════
 
@@ -155,7 +164,7 @@ Vehicle Context: ${JSON.stringify(context || {})}
             visual_metrics: {
               type: Type.OBJECT,
               properties: {
-                type: { type: Type.STRING, description: "PROGRESS, PIE, BAR, RADAR, AREA, RADIAL, LINE" },
+                type: { type: Type.STRING, description: "PROGRESS, PIE, BAR, RADAR, AREA, RADIAL, LINE, COMPOSED" },
                 label: { type: Type.STRING },
                 data: {
                   type: Type.ARRAY,
@@ -275,7 +284,7 @@ Vehicle Context: ${JSON.stringify(context || {})}
         model: this.ttsModel,
         contents: [{ parts: [{ text }] }],
         config: {
-          responseModalities: [Modality.AUDIO],
+          responseModalalities: [Modality.AUDIO],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
         },
       });

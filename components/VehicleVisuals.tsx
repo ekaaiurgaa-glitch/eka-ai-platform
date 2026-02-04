@@ -137,61 +137,101 @@ const VehicleVisuals: React.FC<VehicleVisualsProps> = ({ metric }) => {
 
       case 'LINE':
         return (
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={metric.data} margin={{ left: -15 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'monospace' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'monospace' }} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke={BRAND_ORANGE} 
-                strokeWidth={4} 
-                dot={{ r: 4, fill: '#000', stroke: BRAND_ORANGE, strokeWidth: 3 }}
-                activeDot={{ r: 8, stroke: '#fff', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-72 w-full flex flex-col animate-in slide-in-from-bottom-4 duration-700">
+            <div className="w-full mb-6 border-l-[6px] border-blue-500 pl-4 bg-[#080808] py-2 rounded-r-lg">
+              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono block">Telemetry Trend</span>
+              <span className="text-[16px] font-black text-white uppercase font-mono tracking-tighter">{metric.label}</span>
+            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={metric.data} margin={{ left: -15, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="4 4" stroke="#1a1a1a" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'monospace' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'monospace' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke={BRAND_ORANGE} 
+                  strokeWidth={4} 
+                  dot={{ r: 4, fill: '#000', stroke: BRAND_ORANGE, strokeWidth: 3 }}
+                  activeDot={{ r: 8, stroke: '#fff', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        );
+
+      case 'COMPOSED':
+        return (
+          <div className="h-80 w-full flex flex-col animate-in slide-in-from-bottom-4 duration-700">
+            <div className="w-full mb-6 border-l-[6px] border-purple-500 pl-4 bg-[#080808] py-2 rounded-r-lg">
+              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono block">Multi-Node Correlation</span>
+              <span className="text-[16px] font-black text-white uppercase font-mono tracking-tighter">{metric.label}</span>
+            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={metric.data} margin={{ left: -15, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'monospace' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#52525b', fontSize: 9, fontFamily: 'monospace' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend iconType="rect" wrapperStyle={{ fontSize: '9px', textTransform: 'uppercase', fontFamily: 'monospace', fontWeight: 'black' }} />
+                <Area type="monotone" dataKey="value" fill="#f18a2210" stroke="#f18a2230" />
+                <Bar dataKey="value" barSize={20} fill={BRAND_ORANGE} radius={[2, 2, 0, 0]} />
+                <Line type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={3} dot={{ r: 3 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         );
 
       case 'RADAR':
         return (
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metric.data}>
-              <PolarGrid stroke="#262626" />
-              <PolarAngleAxis dataKey="name" tick={{ fill: '#71717a', fontSize: 10, fontWeight: 'black', fontFamily: 'monospace', textTransform: 'uppercase' }} />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} hide />
-              <Radar
-                name={metric.label}
-                dataKey="value"
-                stroke={BRAND_ORANGE}
-                fill={BRAND_ORANGE}
-                fillOpacity={0.4}
-                strokeWidth={4}
-              />
-              <Tooltip content={<CustomTooltip />} />
-            </RadarChart>
-          </ResponsiveContainer>
+          <div className="h-80 w-full flex flex-col items-center animate-in zoom-in-95 duration-700">
+            <div className="w-full mb-4 border-l-[6px] border-zinc-500 pl-4 bg-[#080808] py-2 rounded-r-lg">
+              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono block">Logic Mapping Radar</span>
+              <span className="text-[16px] font-black text-white uppercase font-mono tracking-tighter">{metric.label}</span>
+            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metric.data}>
+                <PolarGrid stroke="#262626" />
+                <PolarAngleAxis dataKey="name" tick={{ fill: '#71717a', fontSize: 10, fontWeight: 'black', fontFamily: 'monospace', textTransform: 'uppercase' }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} hide />
+                <Radar
+                  name={metric.label}
+                  dataKey="value"
+                  stroke={BRAND_ORANGE}
+                  fill={BRAND_ORANGE}
+                  fillOpacity={0.4}
+                  strokeWidth={4}
+                />
+                <Tooltip content={<CustomTooltip />} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
         );
 
       case 'RADIAL':
         return (
-          <ResponsiveContainer width="100%" height={280}>
-            <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="80%" barSize={10} data={metric.data}>
-              <RadialBar
-                label={{ position: 'insideStart', fill: '#fff', fontSize: 8, fontFamily: 'monospace', fontWeight: 'bold' }}
-                background={{ fill: '#111' }}
-                dataKey="value"
-                cornerRadius={10}
-              >
-                {metric.data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
-                ))}
-              </RadialBar>
-              <Tooltip content={<CustomTooltip />} />
-            </RadialBarChart>
-          </ResponsiveContainer>
+          <div className="h-80 w-full flex flex-col items-center animate-in zoom-in-95 duration-700">
+             <div className="w-full mb-4 border-l-[6px] border-green-500 pl-4 bg-[#080808] py-2 rounded-r-lg">
+              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono block">Circular Utilization</span>
+              <span className="text-[16px] font-black text-white uppercase font-mono tracking-tighter">{metric.label}</span>
+            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="80%" barSize={10} data={metric.data}>
+                <RadialBar
+                  label={{ position: 'insideStart', fill: '#fff', fontSize: 8, fontFamily: 'monospace', fontWeight: 'bold' }}
+                  background={{ fill: '#111' }}
+                  dataKey="value"
+                  cornerRadius={10}
+                >
+                  {metric.data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                  ))}
+                </RadialBar>
+                <Tooltip content={<CustomTooltip />} />
+              </RadialBarChart>
+            </ResponsiveContainer>
+          </div>
         );
 
       default:
