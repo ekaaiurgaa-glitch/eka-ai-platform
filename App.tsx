@@ -1,210 +1,131 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import ChatMessage from './components/ChatMessage';
 import ChatInput from './components/ChatInput';
-import VehicleContextPanel from './components/VehicleContextPanel';
-import { Message, JobStatus, VehicleContext, isContextComplete, IntelligenceMode, OperatingMode, EstimateData } from './types';
+import { Message, JobStatus, VehicleContext, IntelligenceMode, OperatingMode } from './types';
 import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
+  // --- STATE ---
   const [vehicleContext, setVehicleContext] = useState<VehicleContext>({
     vehicleType: '',
     brand: '',
     model: '',
     year: '',
-    fuelType: '',
-    registrationNumber: '',
-    pdiVerified: false
+    fuelType: ''
   });
-
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-AI online. Governed automobile intelligence active. Awaiting vehicle context or fleet ID.",
+      content: "EKA-AI online. Governed automobile intelligence active.",
       timestamp: new Date(),
       operatingMode: 0
     }
   ]);
-  
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<JobStatus>('CREATED');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  // --- HANDLERS ---
+  const scrollToBottom = () => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  useEffect(() => scrollToBottom(), [messages, isLoading]);
+
+  const getOperatingModeLabel = (mode: OperatingMode): string => {
+    switch (mode) {
+      case 0: return 'IGNITION';
+      case 1: return 'WORKSHOP';
+      case 2: return 'FLEET';
+      default: return 'IGNITION';
     }
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
   const handleSendMessage = async (text: string) => {
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date(), intelligenceMode, operatingMode };
-    setMessages(prev => [...prev, userMessage]);
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date() };
+    setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
-    const history = [...messages, userMessage].map(m => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }]
-    }));
+    // Call Backend Proxy
+    const response = await geminiService.sendMessage(
+      [...messages, userMsg].map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
+      vehicleContext, status, intelligenceMode, operatingMode
+    );
 
-    const responseData = await geminiService.sendMessage(history, vehicleContext, status, intelligenceMode, operatingMode);
-    
-    if (responseData.job_status_update) {
-      setStatus(responseData.job_status_update as JobStatus);
-    }
+    if (response.job_status_update) setStatus(response.job_status_update);
 
-    const assistantMessage: Message = {
+    const aiMsg: Message = {
       id: (Date.now() + 1).toString(),
       role: 'assistant',
-      content: responseData.response_content.visual_text,
-      job_status_update: responseData.job_status_update as JobStatus,
-      visual_metrics: responseData.visual_metrics,
-      diagnostic_data: responseData.diagnostic_data,
-      service_history: responseData.service_history,
-      estimate_data: responseData.estimate_data,
-      mg_analysis: responseData.mg_analysis,
-      pdi_checklist: responseData.pdi_checklist,
-      recall_data: responseData.recall_data,
-      timestamp: new Date(),
-      intelligenceMode,
-      operatingMode
+      content: response.response_content.visual_text,
+      // Pass through all data blocks
+      visual_metrics: response.visual_metrics,
+      diagnostic_data: response.diagnostic_data,
+      mg_analysis: response.mg_analysis,
+      timestamp: new Date()
     };
-    
-    setMessages(prev => [...prev, assistantMessage]);
+    setMessages(prev => [...prev, aiMsg]);
     setIsLoading(false);
   };
 
-  const handleModeChange = (mode: OperatingMode) => {
-    setOperatingMode(mode);
-    const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
-    setStatus(entryStatus);
-    
-    setMessages(prev => [...prev, {
-      id: `mode-pivot-${Date.now()}`,
-      role: 'assistant',
-      content: mode === 1 ? "Workshop Protocol Active. Provide Registration Number." : mode === 2 ? "Fleet Governance Engine Active." : "Ignition Mode Active.",
-      timestamp: new Date(),
-      operatingMode: mode,
-      job_status_update: entryStatus
-    }]);
-  };
-
+  // --- RENDER ---
   return (
     <div className="app-layout">
-      {/* 1. Sidebar (EKA-AI Dark Theme) */}
-      <aside className="sidebar hidden md:flex flex-col">
-        <div className="mb-6 px-2">
-           {/* EKA-AI Logo */}
-           <div className="mb-4 text-2xl font-bold font-headers" style={{ color: 'var(--accent-primary)' }}>
-             EKA-AI
-           </div>
-           {/* New Chat Button */}
-           <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--accent-primary)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-black transition-all mb-4 font-headers">
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
-             New Chat
-           </button>
-           <h2 className="font-semibold text-sm text-[var(--text-secondary)] font-headers">History</h2>
+      {/* SIDEBAR (Navigation & History) */}
+      <aside className="sidebar hidden md:flex">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="w-8 h-8 bg-[var(--accent-primary)] rounded-lg flex items-center justify-center font-black text-black">G4</div>
+          <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">EKA-AI</h1>
         </div>
-        {/* Placeholder for history items */}
-        <div className="flex-1 overflow-y-auto space-y-2">
-           <div className="p-2 text-sm text-[var(--text-secondary)] bg-[var(--border-color)] rounded-lg cursor-pointer hover:bg-[var(--accent-primary)]/20 transition-all">Previous Chat...</div>
-        </div>
-        {/* User Profile / Settings at bottom */}
-        <div className="mt-auto border-t border-[var(--border-color)] pt-4">
-           <div className="flex items-center gap-2">
-             <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary)] flex items-center justify-center text-black font-bold text-sm">G</div>
-             <div className="text-xs font-medium text-[var(--text-primary)]">Go4Garage User</div>
-           </div>
+        
+        <button 
+          onClick={() => window.location.reload()}
+          className="w-full py-3 px-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] border border-[var(--border-color)] rounded-xl text-sm font-medium text-[var(--text-primary)] transition-all flex items-center gap-2 mb-6"
+        >
+          <span>+</span> New Diagnostic Session
+        </button>
+
+        <div className="flex-1 overflow-y-auto">
+          <h3 className="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-widest mb-4">Active Context</h3>
+          <div className="p-3 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)] text-xs space-y-2">
+            <div className="flex justify-between">
+              <span className="text-[var(--text-secondary)]">MODE</span>
+              <span className="text-[var(--text-primary)] font-mono">{getOperatingModeLabel(operatingMode)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--text-secondary)]">STATUS</span>
+              <span className="text-[var(--accent-primary)] font-mono">{status}</span>
+            </div>
+          </div>
         </div>
       </aside>
 
-      {/* 2. Main Chat Area */}
+      {/* MAIN CHAT AREA */}
       <main className="main-chat-area">
-        {/* Top Bar / Model Selector */}
-        <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/90 backdrop-blur p-4 flex justify-center border-b border-[var(--border-color)]">
-           <div className="bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
-              <button 
-                onClick={() => setIntelligenceMode('FAST')} 
-                className={`px-3 py-1 rounded-md transition-all font-headers ${intelligenceMode === 'FAST' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-              >
-                Fast 2.0
-              </button>
-              <button 
-                onClick={() => setIntelligenceMode('THINKING')} 
-                className={`px-3 py-1 rounded-md transition-all font-headers ${intelligenceMode === 'THINKING' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-              >
-                Thinking
-              </button>
-           </div>
-           <div className="ml-4 p-1 rounded-xl flex text-xs font-medium" style={{ backgroundColor: 'var(--bg-secondary)', fontFamily: 'var(--font-headers)' }}>
-              <button 
-                onClick={() => handleModeChange(0)} 
-                className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 0 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-              >
-                Ignition
-              </button>
-              <button 
-                onClick={() => handleModeChange(1)} 
-                className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 1 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-              >
-                Workshop
-              </button>
-              <button 
-                onClick={() => handleModeChange(2)} 
-                className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 2 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-              >
-                Fleet
-              </button>
-           </div>
-        </header>
-
         {/* Chat Stream */}
         <div className="chat-scroll-container" ref={scrollRef}>
-          <div className="chat-content-width flex flex-col gap-6">
-            {(operatingMode === 1 || !isContextComplete(vehicleContext)) && (
-              <VehicleContextPanel 
-                context={vehicleContext} 
-                onUpdate={setVehicleContext} 
-                operatingMode={operatingMode}
-              />
-            )}
-            
-            {messages.map((msg) => (
-              <ChatMessage 
-                key={msg.id} 
-                message={msg} 
-                vehicleContext={vehicleContext}
-                onEstimateAuthorize={(data) => console.log('Audit Auth Logged:', data)}
-              />
+          <div className="content-width flex flex-col gap-6 pb-32">
+            {messages.map(msg => (
+              <ChatMessage key={msg.id} message={msg} vehicleContext={vehicleContext} />
             ))}
             {isLoading && (
-               <div className="flex gap-4 items-start animate-pulse">
-                  <div className="w-2 h-2 rounded-sm bg-[var(--accent-primary)]"></div>
-                  <div className="h-4 w-24 bg-[var(--border-color)] rounded mt-1"></div>
-               </div>
+              <div className="flex gap-4 animate-pulse ml-2">
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full delay-75"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full delay-150"></div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Input Area (Fixed Bottom - Floating Pill Style) */}
-        <div className="p-4 bg-[var(--bg-primary)]">
-           <div className="chat-content-width">
-              <ChatInput 
-                onSend={handleSendMessage} 
-                isLoading={isLoading} 
-                operatingMode={operatingMode} 
-                status={status} 
-              />
-              <div className="text-center mt-3 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-                 EKA-AI can make mistakes. Please verify important information.
-              </div>
-           </div>
+        {/* Floating Input Pill */}
+        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black to-transparent">
+          <div className="content-width">
+            <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
+            <p className="text-center text-[10px] text-[var(--text-secondary)] mt-3 font-mono">
+              EKA-AI GOVERNANCE ENGINE • v4.5 • AUDIT GRADE
+            </p>
+          </div>
         </div>
       </main>
     </div>
