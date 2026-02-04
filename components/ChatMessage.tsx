@@ -107,12 +107,24 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           })}
         </div>
 
-        {showDiagnostics && message.diagnostic_data && (
-          <DiagnosticResult data={message.diagnostic_data} />
+        {showMetrics && message.visual_metrics && (
+          <div className="report-frame animate-in fade-in zoom-in-95 duration-500">
+            <div className="report-header">
+               <div className="flex items-center gap-2">
+                 <div className="w-1 h-3 bg-[#f18a22]"></div>
+                 <span className="text-[9px] font-black text-[#f18a22] uppercase tracking-[0.3em] font-mono">Telemetry Data Visualization</span>
+               </div>
+               <span className="text-[8px] font-bold text-zinc-700 font-mono">EKA_V1.4_VISUAL_NODE</span>
+            </div>
+            <VehicleVisuals metric={message.visual_metrics} />
+            <div className="report-footer">
+               <span className="text-[7px] font-black text-zinc-800 font-mono uppercase tracking-widest italic">Encrypted Logic Stream Sync</span>
+            </div>
+          </div>
         )}
 
-        {showMetrics && message.visual_metrics && (
-          <VehicleVisuals metric={message.visual_metrics} />
+        {showDiagnostics && message.diagnostic_data && (
+          <DiagnosticResult data={message.diagnostic_data} />
         )}
 
         {showHistory && (
@@ -194,7 +206,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
       <style>{`
         .message-card {
-          padding: 24px 24px 24px 32px; /* Increased left padding for alignment with thick border */
+          padding: 24px 24px 24px 32px;
           border-radius: 8px;
           max-width: 90%;
           width: fit-content;
@@ -205,16 +217,40 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         .ai-style {
           background: #050505;
-          border: 1px solid #f18a22; /* Bold orange border */
-          border-left: 8px solid #f18a22; /* Bold orange vertical bar */
+          border: 1px solid #f18a22;
+          border-left: 8px solid #f18a22;
           box-shadow: 0 10px 40px rgba(241, 138, 34, 0.15);
         }
 
         .user-style {
           background: #0A0A0A;
           border: 1px solid #333;
-          padding: 24px; /* Default padding for user messages */
+          padding: 24px;
           color: #eee;
+        }
+
+        .report-frame {
+          border: 1px solid #262626;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #000;
+          margin-top: 1.5rem;
+        }
+
+        .report-header {
+          padding: 12px 16px;
+          background: #080808;
+          border-bottom: 1px solid #1a1a1a;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .report-footer {
+          padding: 8px 16px;
+          background: #050505;
+          border-top: 1px solid #1a1a1a;
+          text-align: right;
         }
 
         .content-box {

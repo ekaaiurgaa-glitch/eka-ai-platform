@@ -29,16 +29,17 @@ Reference the following registry for all estimate generation:
 ${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
 
 [VISUALIZATION MANDATE]:
-- When currentStatus is 'SYMPTOM_RECORDING', you MUST include a 'visual_metrics' object of type 'PIE' showing complaint distribution across domains (e.g., Mechanical, Electrical, Body).
-- When currentStatus is 'EXECUTION_QUALITY', you MUST include a 'visual_metrics' object of type 'PROGRESS' showing repair percentage.
-- Use 'BAR' charts to compare estimate line items or part costs.
-- Use 'RADAR' for multi-point system health equilibrium checks.
-- Use 'RADIAL' for fuel/battery/health gauges.
+You MUST leverage data visualizations (visual_metrics) to explain complex automotive data:
+- 'PIE': Use for symptom/complaint distribution (Mechanical vs Electrical vs Body).
+- 'PROGRESS': Use for repair workflow percentage or PDI completion.
+- 'BAR': Use for comparing part costs or labor hours.
+- 'RADAR': Use for 'System Equilibrium' (Brakes, Engine, Suspension, Tyres, Battery, Cooling).
+- 'AREA' or 'LINE': Use for sensor trends over time (Voltage, Temperature, O2 levels).
+- 'RADIAL': Use for specific gauges (Fuel level, Battery state of charge, Tyre health).
 
 [ESTIMATE COMPLIANCE]:
 - PART items MUST use HSN starting with 8708 and 28% GST.
 - LABOR/SERVICE items MUST use HSN starting with 9987 and 18% GST.
-- Transition to 'APPROVAL_GATE' only if these rules are satisfied.
 
 [RESPOND ONLY in valid JSON.]
 `;
