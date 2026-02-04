@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 // Type declarations for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -21,6 +21,7 @@ interface SpeechRecognition extends EventTarget {
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
   onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
 }
 
 declare global {
@@ -33,14 +34,13 @@ declare global {
 interface ChatInputProps {
   onSend: (text: string) => void;
   isLoading: boolean;
-  operatingMode: OperatingMode;
-  status: JobStatus;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode, status }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Check if Speech Recognition is available
   const isSpeechRecognitionSupported = typeof window !== 'undefined' && 
@@ -55,6 +55,14 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
     };
   }, []);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 128)}px`;
+    }
+  }, [input]);
+
   const startListening = () => {
     if (!isSpeechRecognitionSupported || isLoading) return;
 
@@ -63,7 +71,10 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
     
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.lang = 'en-IN';
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
@@ -75,13 +86,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
       setIsListening(false);
     };
 
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
     recognitionRef.current = recognition;
     recognition.start();
-    setIsListening(true);
   };
 
   const stopListening = () => {
@@ -98,39 +104,30 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
+  const handleSend = () => {
+    if (input.trim() && !isLoading) {
+      onSend(input);
+      setInput('');
     }
   };
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-  }, [input]);
+  };
 
   return (
-    <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-2xl shadow-2xl flex items-center p-2 focus-within:border-[var(--accent-primary)] transition-colors">
-      <textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-        placeholder="Describe the vehicle issue or fleet query..."
-        className="flex-1 bg-transparent border-none focus:ring-0 text-[var(--text-primary)] placeholder-[var(--text-secondary)] px-4 py-3 resize-none max-h-32 text-sm"
-        rows={1}
-        disabled={isLoading}
-      />
+    <div className={`bg-[#050505] border ${isListening ? 'border-[#f18a22]' : 'border-[#222]'} rounded-2xl shadow-2xl flex items-center p-2 focus-within:border-[#f18a22] transition-colors`}>
       {isSpeechRecognitionSupported && (
-        <button
+        <button 
           onClick={toggleListening}
           disabled={isLoading}
-          className={`p-3 rounded-xl transition-all mr-1 ${
+          className={`p-3 rounded-xl transition-all mr-2 ${
             isListening 
-              ? 'bg-red-500 text-white animate-pulse' 
-              : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
+              ? 'bg-[#f18a22] text-black animate-pulse' 
+              : 'text-zinc-500 hover:text-white'
           }`}
           title={isListening ? 'Stop listening' : 'Start voice input'}
           aria-label={isListening ? 'Stop listening' : 'Start voice input'}
@@ -140,12 +137,23 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
           </svg>
         </button>
       )}
+      <textarea
+        ref={textareaRef}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={isListening ? "Listening..." : "Describe the vehicle issue..."}
+        className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-white px-2 py-3 resize-none max-h-32 text-sm"
+        rows={1}
+        disabled={isLoading}
+      />
       <button 
         onClick={handleSend}
         disabled={!input.trim() || isLoading}
         className={`p-3 rounded-xl transition-all ${
-          input.trim() ? 'bg-[var(--accent-primary)] text-black hover:bg-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+          input.trim() ? 'bg-[#f18a22] text-black' : 'bg-[#111] text-zinc-600'
         }`}
+        aria-label="Send message"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7" />
