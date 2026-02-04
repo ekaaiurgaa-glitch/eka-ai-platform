@@ -1,6 +1,34 @@
+import React, { useState, useEffect, useRef } from 'react';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { OperatingMode, JobStatus } from '../types';
+// Type declarations for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message?: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
 
 interface ChatInputProps {
   onSend: (text: string) => void;
@@ -11,13 +39,62 @@ interface ChatInputProps {
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode, status }) => {
   const [input, setInput] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (input.trim() && !isLoading) {
-      onSend(input.trim());
-      setInput('');
+  // Check if Speech Recognition is available
+  const isSpeechRecognitionSupported = typeof window !== 'undefined' && 
+    (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+  // Cleanup recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
+
+  const startListening = () => {
+    if (!isSpeechRecognitionSupported || isLoading) return;
+
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognitionAPI();
+    
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
   };
 
@@ -36,43 +113,44 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
   }, [input]);
 
   return (
-    <div className="p-6 bg-[#000000] border-t border-[#262626]">
-      <div className="max-w-4xl mx-auto flex gap-4 items-end">
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter symptom, DTC or part name..."
-            className="w-full bg-[#050505] text-white border-2 border-[#f18a22] rounded-xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-800 text-base font-inter"
-            disabled={isLoading}
-          />
-        </div>
-        
+    <div className="bg-[var(--input-bg)] border border-[var(--border-color)] rounded-2xl shadow-2xl flex items-center p-2 focus-within:border-[var(--accent-primary)] transition-colors">
+      <textarea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+        placeholder="Describe the vehicle issue or fleet query..."
+        className="flex-1 bg-transparent border-none focus:ring-0 text-[var(--text-primary)] placeholder-[var(--text-secondary)] px-4 py-3 resize-none max-h-32 text-sm"
+        rows={1}
+        disabled={isLoading}
+      />
+      {isSpeechRecognitionSupported && (
         <button
-          onClick={handleSubmit}
-          disabled={!input.trim() || isLoading}
-          className="h-[62px] px-10 bg-[#f18a22] text-black font-black uppercase tracking-widest rounded-xl hover:bg-white transition-all disabled:bg-zinc-800 disabled:text-zinc-600 shadow-[0_0_25px_rgba(241,138,34,0.3)] active:scale-95 flex items-center gap-3 font-outfit"
+          onClick={toggleListening}
+          disabled={isLoading}
+          className={`p-3 rounded-xl transition-all mr-1 ${
+            isListening 
+              ? 'bg-red-500 text-white animate-pulse' 
+              : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
+          }`}
+          title={isListening ? 'Stop listening' : 'Start voice input'}
+          aria-label={isListening ? 'Stop listening' : 'Start voice input'}
         >
-          {isLoading ? (
-            <div className="w-6 h-6 border-4 border-black/30 border-t-black rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <span>SEND</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </>
-          )}
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
         </button>
-      </div>
-      <div className="mt-4 text-center">
-        <p className="text-[10px] text-zinc-700 font-black uppercase tracking-[0.5em] font-mono">
-          EKA-AI GOVERNANCE ENGINE ACTIVE • GO4GARAGE PRIVATE LIMITED
-        </p>
-      </div>
+      )}
+      <button 
+        onClick={handleSend}
+        disabled={!input.trim() || isLoading}
+        className={`p-3 rounded-xl transition-all ${
+          input.trim() ? 'bg-[var(--accent-primary)] text-black hover:bg-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
   );
 };
