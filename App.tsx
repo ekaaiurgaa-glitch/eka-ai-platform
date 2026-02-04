@@ -121,7 +121,6 @@ const App: React.FC = () => {
     
     if (responseData.job_status_update) {
       setStatus(responseData.job_status_update as JobStatus);
-      setPanelTriggered(true);
     }
 
     if (responseData.visual_metrics) {
@@ -155,9 +154,9 @@ const App: React.FC = () => {
 
   const handleModeChange = (mode: OperatingMode) => {
     setOperatingMode(mode);
-    if (mode !== 0) setPanelTriggered(true);
+    setPanelTriggered(mode !== 0);
     
-    const entryStatus: JobStatus = mode === 1 ? 'INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
+    const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
     setStatus(entryStatus);
     
     let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
@@ -242,15 +241,17 @@ const App: React.FC = () => {
 
   const activeTab = getActiveTab();
   
-  // Visibility Logic for UI Nodes
+  // Refined Conditional Visibility Logic
   const isWorkshopMode = activeTab === 1;
   const isFleetMode = activeTab === 2;
   const isIgnitionMode = activeTab === 0;
 
+  // Specific Requirement: Workshop panel only in AUTH_INTAKE or PDI
   const showVehiclePanel = isWorkshopMode 
-    ? (status === 'AUTH_INTAKE' || status === 'PDI' || status === 'INTAKE') 
+    ? (status === 'AUTH_INTAKE' || status === 'PDI') 
     : (panelTriggered || isContextComplete(vehicleContext) || isFleetMode);
 
+  // Specific Requirement: Telemetry only in Ignition (0) or Fleet (2)
   const showTelemetry = isIgnitionMode || isFleetMode;
 
   return (
@@ -275,7 +276,6 @@ const App: React.FC = () => {
       </div>
 
       <main className="flex-1 overflow-hidden flex z-0">
-        {/* CHAT AREA */}
         <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
             <div className="px-4">
@@ -320,7 +320,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* PERSISTENT DASHBOARD SIDEBAR (DESKTOP) */}
         <aside className="hidden xl:flex w-[450px] flex-col bg-[#050505] border-l border-zinc-900 p-8 overflow-y-auto animate-in slide-in-from-right duration-700 shadow-2xl relative">
              <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#f18a22 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}></div>
              

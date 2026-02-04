@@ -103,12 +103,9 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
     setIsSyncing(true);
     setSyncProgress(0);
     
-    // Animate sync progress and messages
     const interval = setInterval(() => {
       setSyncProgress(prev => {
-        const next = prev + 2;
-        
-        // Update messages based on progress
+        const next = prev + 4;
         const msgIndex = Math.floor((next / 100) * SYNC_MESSAGES.length);
         if (SYNC_MESSAGES[msgIndex]) setSyncMessage(SYNC_MESSAGES[msgIndex]);
 
@@ -176,7 +173,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
   if (isSyncing) {
     return (
       <div className="mb-8 p-12 bg-[#020202] border-4 border-[#f18a22] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden min-h-[400px] shadow-[0_0_80px_rgba(241,138,34,0.25)] animate-in zoom-in-95 duration-500">
-        {/* SECURE GRID BACKGROUND */}
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#f18a22 1px, transparent 1px), linear-gradient(90deg, #f18a22 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black pointer-events-none"></div>
 
@@ -203,7 +199,7 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
                  </div>
                  <span className="text-zinc-600 text-[9px] font-black font-mono tracking-widest uppercase mt-2">Gate ID: G4G-OS-HUD-SEC-LINK</span>
                </div>
-               <span className="text-white font-mono font-black text-6xl tracking-tighter shadow-orange-500/20 drop-shadow-lg">{syncProgress}%</span>
+               <span className="text-white font-mono font-black text-6xl tracking-tighter drop-shadow-lg">{syncProgress}%</span>
             </div>
             
             <div className="relative w-full h-8 bg-zinc-950 rounded-full border-2 border-zinc-800 overflow-hidden p-1.5 shadow-2xl">
@@ -235,7 +231,6 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
     return (
       <div className="mb-8 animate-in slide-in-from-top-8 duration-1000 group">
         <div className="bg-[#050505] border-[6px] border-[#f18a22] rounded-3xl p-10 shadow-[0_50px_100px_-20px_rgba(241,138,34,0.2)] relative overflow-hidden transition-all hover:scale-[1.01]">
-          {/* SECURE HUD OVERLAYS */}
           <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none select-none">
              <span className="text-[12rem] font-black text-white font-mono leading-none tracking-tighter">SECURE</span>
           </div>
