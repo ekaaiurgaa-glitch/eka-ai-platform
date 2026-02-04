@@ -25,7 +25,7 @@ const App = () => {
 
         {/* Protected Dashboard Routes */}
         <Route path="/app" element={<DashboardLayout />}>
-          <Route index element={<ChatPage />} /> {/* /app goes to Chat */}
+          <Route index element={<ChatPage />} /> {/* /app (default) renders ChatPage */}
           <Route path="chats" element={<ChatsPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="artifacts" element={<ArtifactsPage />} />
