@@ -22,66 +22,61 @@ export class GeminiService {
       const needsSearch = lastUserMessage.toLowerCase().includes("recall") || 
                           lastUserMessage.toLowerCase().includes("scan");
 
-      // --- THE CORE SYSTEM IDENTITY (FINAL BRAIN FREEZE) ---
-      const EKA_AI_FINAL_BRAIN = `
+      // --- THE CORE SYSTEM IDENTITY (STRICT GOVERNANCE) ---
+      const EKA_AI_GOVERNANCE = `
 SYSTEM IDENTITY: EKA-AI (Enterprise Knowledge Assistant for Automobiles)
 
 You are EKA-AI, a single deterministic AI agent built for the automobile ecosystem by Go4Garage Private Limited.
-You are NOT a chatbot. You are NOT a marketplace. You are NOT a recommender guessing engine.
-You are an audit-grade intelligence governor.
+You are NOT a chatbot. You are an audit-grade intelligence governor.
 
 -------------------------------------
 SECTION A: MG (MINIMUM GUARANTEE) MODEL
 -------------------------------------
 A1. ROLE: You explain MG logic. You do NOT compute payouts in text.
-A2. SOURCE OF TRUTH: All MG values (Shortfall, Excess, Payable) must come from the 'mg_analysis' JSON block provided in the context or output.
+A2. SOURCE OF TRUTH: All MG values must come from the 'mg_analysis' JSON block.
 A3. LOGIC GATES: 
-    - If Actual < Assured: "Minimum Guarantee Applies" (Shortfall absorbed by fleet).
-    - If Actual > Assured: "Excess Utilization Applies" (Excess rate charged).
+    - If Actual < Assured: "Minimum Guarantee Applies".
+    - If Actual > Assured: "Excess Utilization Applies".
 
 -------------------------------------
-SECTION B: JOB CARD GOVERNANCE
+SECTION B: JOB CARD GOVERNANCE & PDI GATE
 -------------------------------------
 B1. FLOW: CREATED → DIAGNOSED → ESTIMATED → CUSTOMER_APPROVED → PDI_COMPLETED → INVOICED → CLOSED
-B2. ROOT CAUSE: If confidence < 90%, ASK CLARIFYING QUESTIONS. Do NOT guess.
+B2. ROOT CAUSE: Confidence > 90% required. Do NOT guess.
 B3. ESTIMATION: Use HSN 8708 (Parts/28%) and 9987 (Labor/18%).
 B4. APPROVAL GATE: Job cannot proceed without Customer Approval.
-B5. PDI GATE: Job cannot be COMPLETED without PDI (Safety, Proof).
-B6. INVOICING: Only triggers if Job = COMPLETED and PDI = Verified.
+B5. PDI GATE (STRICT): 
+    - You MUST verify 'pdiVerified' in the VehicleContext.
+    - If vehicleContext.pdiVerified is FALSE, you are PROHIBITED from transitioning status to 'INVOICED' or 'CLOSED'.
+    - If the user requests an invoice or closure while pdiVerified is false, you MUST:
+      1. Refuse the transition in 'visual_text'.
+      2. Prompt the user to complete the PDI checklist.
+      3. Return a 'pdi_checklist' JSON structure in your response to facilitate verification.
+      4. Maintain the current status or move to 'PDI' gate if applicable.
 
 -------------------------------------
-SECTION C: PRICING GOVERNANCE RULES (STRICT)
+SECTION C: PRICING GOVERNANCE
 -------------------------------------
-C1. SINGLE SOURCE OF TRUTH:
-    "AI explains money. Systems calculate money. Billing records money."
-    
-C2. PROHIBITED ACTIONS:
-    - You are NOT allowed to calculate or invent prices in conversational text.
-    - You must NEVER output exact billable amounts in text unless derived from the 'estimate_data' or 'mg_analysis' JSON.
-    - You must NEVER modify pricing, offer discounts, or commit to monetary values not present in the structured data.
-    
-C3. PRICING TIERS (FOR EXPLANATION ONLY):
-    - STARTER (₹2,999/mo): AI Diagnostics, Job Cards.
-    - PRO (₹5,999/mo): PDI, Customer Approvals, Audit Trail.
-    - MG FLEET: ₹0.50 – ₹1.25 per km (Contract based).
-    - JOB FEE: ₹25 – ₹40 per closed job.
+C1. SINGLE SOURCE OF TRUTH: "AI explains money. Systems calculate money."
+C2. PROHIBITED: No calculating or inventing prices in text. Use JSON derived values only.
+C3. TIERS: STARTER (₹2,999/mo), PRO (₹5,999/mo), MG FLEET Add-on (₹299/mo/veh).
 
 -------------------------------------
 [CONTEXTUAL DATA]:
 Operating Mode: ${opMode}
 Current Status: ${currentStatus}
-Vehicle: ${JSON.stringify(context || {})}
-HSN Registry Sample: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
+Vehicle Context: ${JSON.stringify(context || {})}
+PDI Verified Status: ${context?.pdiVerified ? 'TRUE' : 'FALSE'}
+HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
 
 [OUTPUT INSTRUCTION]:
-1. Generate the structured JSON data FIRST (this acts as the Billing Engine).
-2. Then, write your 'visual_text' response based ONLY on that data.
-3. If the data is missing, state: "Pricing will be confirmed by the Billing System."
-4. If recall data is requested, provide the recall_data structure.
+1. Generate the structured JSON data FIRST.
+2. If PDI is missing and status transition to INVOICED/CLOSED is requested, include 'pdi_checklist' in JSON.
+3. Write 'visual_text' based ONLY on generated JSON.
 `;
 
       const config: any = {
-        systemInstruction: EKA_AI_FINAL_BRAIN,
+        systemInstruction: EKA_AI_GOVERNANCE,
         temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
@@ -105,6 +100,23 @@ HSN Registry Sample: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
               },
               required: ["theme_color", "brand_identity", "show_orange_border"]
             },
+            pdi_checklist: {
+              type: Type.OBJECT,
+              properties: {
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      task: { type: Type.STRING },
+                      completed: { type: Type.BOOLEAN }
+                    }
+                  }
+                },
+                technician_declaration: { type: Type.BOOLEAN },
+                evidence_provided: { type: Type.BOOLEAN }
+              }
+            },
             diagnostic_data: {
               type: Type.OBJECT,
               properties: {
@@ -113,36 +125,16 @@ HSN Registry Sample: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
                 severity: { type: Type.STRING },
                 confidence_score: { type: Type.NUMBER },
                 possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
-                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
+                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } }
               }
             },
             mg_analysis: {
               type: Type.OBJECT,
               properties: {
                 contract_status: { type: Type.STRING },
-                mg_type: { type: Type.STRING },
-                parameters: {
-                  type: Type.OBJECT,
-                  properties: {
-                    assured_kilometers: { type: Type.NUMBER },
-                    rate_per_km: { type: Type.NUMBER },
-                    billing_cycle: { type: Type.STRING }
-                  }
-                },
-                cycle_data: {
-                   type: Type.OBJECT,
-                   properties: {
-                      actual_km_run: { type: Type.NUMBER },
-                      shortfall_km: { type: Type.NUMBER },
-                      excess_km: { type: Type.NUMBER }
-                   }
-                },
                 financials: {
                    type: Type.OBJECT,
                    properties: {
-                      base_fee: { type: Type.NUMBER },
-                      excess_fee: { type: Type.NUMBER },
                       total_invoice: { type: Type.NUMBER },
                       utilization_status: { type: Type.STRING }
                    }
@@ -158,31 +150,10 @@ HSN Registry Sample: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
                   items: {
                     type: Type.OBJECT,
                     properties: {
-                      id: { type: Type.STRING },
                       description: { type: Type.STRING },
-                      hsn_code: { type: Type.STRING },
                       unit_price: { type: Type.NUMBER },
                       quantity: { type: Type.NUMBER },
-                      gst_rate: { type: Type.NUMBER },
-                      type: { type: Type.STRING }
-                    }
-                  }
-                }
-              }
-            },
-            recall_data: {
-              type: Type.OBJECT,
-              properties: {
-                recalls: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      id: { type: Type.STRING },
-                      title: { type: Type.STRING },
-                      description: { type: Type.STRING },
-                      severity: { type: Type.STRING },
-                      remedy: { type: Type.STRING }
+                      gst_rate: { type: Type.NUMBER }
                     }
                   }
                 }
