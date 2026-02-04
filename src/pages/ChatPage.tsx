@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, Bolt, Brain } from 'lucide-react';
+import { Send, Paperclip, Bolt, Brain, Plus, Camera, Globe, PenTool } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
 import { JobStatus, IntelligenceMode, OperatingMode } from '../types';
 
-// Get time-based greeting
 const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 };
 
 const ChatPage = () => {
@@ -18,41 +15,32 @@ const ChatPage = () => {
   const [mode, setMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
   const [status, setStatus] = useState<JobStatus>('CREATED');
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [history]);
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    const userMsg = { role: 'user', parts: [{ text: input }] };
+  const handleSend = async (textOverride?: string) => {
+    const textToSend = textOverride || input;
+    if (!textToSend.trim()) return;
+
+    const userMsg = { role: 'user', parts: [{ text: textToSend }] };
     setHistory(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+    setShowAttachMenu(false);
 
     try {
       const response = await geminiService.sendMessage([...history, userMsg], {}, status, mode, operatingMode);
-      
       const aiText = response.response_content?.visual_text || "System Error";
       setHistory(prev => [...prev, { role: 'model', parts: [{ text: aiText }] }]);
-      
       if (response.job_status_update) setStatus(response.job_status_update);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleOperatingModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setOperatingMode(parseInt(e.target.value) as OperatingMode);
   };
 
   return (
@@ -66,7 +54,7 @@ const ChatPage = () => {
              <span className="text-xs text-gray-500">Mode:</span>
              <select 
                value={operatingMode}
-               onChange={handleOperatingModeChange}
+               onChange={(e) => setOperatingMode(parseInt(e.target.value) as OperatingMode)}
                className="text-xs font-medium bg-transparent border-none outline-none cursor-pointer"
              >
                <option value={0}>🔥 Ignition</option>
@@ -77,14 +65,38 @@ const ChatPage = () => {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         {history.length === 0 && (
-          <div className="max-w-3xl mx-auto pt-12 pb-8 text-center animate-fade-in">
-             <h1 className="font-serif text-4xl md:text-5xl text-gray-900 mb-4">
-               <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-purple to-brand-green italic">{getGreeting()}, Go4Garage</span>
-             </h1>
-             <p className="text-gray-500">How can I assist with your workshop today?</p>
+          <div className="max-w-3xl mx-auto pt-12 pb-8 animate-fade-in">
+             <div className="text-center mb-12">
+               <h1 className="font-serif text-4xl md:text-5xl text-gray-900 mb-4">
+                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-purple to-brand-green italic">{getGreeting()}, Go4Garage</span>
+               </h1>
+               <p className="text-gray-500">How can I assist with your workshop today?</p>
+             </div>
+
+             {/* Welcome Grid Suggestions */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                <SuggestionCard 
+                  icon={<Bolt className="text-orange-500"/>} 
+                  title="Diagnose Symptoms" 
+                  desc="Brake vibration at 60km/h" 
+                  onClick={() => handleSend("Diagnose brake vibration at 60km/h")}
+                />
+                <SuggestionCard 
+                  icon={<PenTool className="text-blue-500"/>} 
+                  title="Create Job Card" 
+                  desc="Service estimate for Fortuner" 
+                  onClick={() => handleSend("Create job card for Toyota Fortuner service")}
+                />
+                <SuggestionCard 
+                  icon={<Camera className="text-purple-500"/>} 
+                  title="PDI Checklist" 
+                  desc="New vehicle delivery inspection" 
+                  onClick={() => handleSend("Generate PDI checklist for new delivery")}
+                />
+             </div>
           </div>
         )}
         
@@ -117,31 +129,66 @@ const ChatPage = () => {
              </button>
            </div>
 
-           {/* Input Box */}
-           <div className="bg-white border border-gray-200 rounded-2xl flex items-end gap-2 p-2 shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.05)] focus-within:shadow-[0_0_0_2px_rgba(91,44,111,0.2)] transition-shadow">
+           {/* Input Box Container */}
+           <div className="relative bg-white border border-gray-200 rounded-2xl flex items-end gap-2 p-2 shadow-sm focus-within:shadow-md transition-shadow">
+             
+             {/* Attachment Menu Popup */}
+             {showAttachMenu && (
+               <div className="absolute bottom-full left-0 mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-20">
+                 <MenuItem icon={<Paperclip size={16}/>} label="Upload Files" onClick={() => setShowAttachMenu(false)} />
+                 <MenuItem icon={<Camera size={16}/>} label="Take Photo" onClick={() => setShowAttachMenu(false)} />
+                 <MenuItem icon={<Globe size={16}/>} label="Web Search" onClick={() => setShowAttachMenu(false)} />
+               </div>
+             )}
+
+             <button 
+                onClick={() => setShowAttachMenu(!showAttachMenu)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+             >
+               <Plus size={20}/>
+             </button>
+
              <textarea 
                value={input}
                onChange={(e) => setInput(e.target.value)}
-               onKeyDown={handleKeyDown}
+               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                placeholder="Message EKA-AI..."
-               className="flex-1 resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 py-3 px-3 max-h-32 bg-transparent text-sm outline-none"
+               className="flex-1 resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 py-3 px-2 max-h-32 bg-transparent text-sm outline-none"
                rows={1}
              />
-             <div className="flex gap-2 pb-1">
-                <button className="text-gray-400 hover:text-gray-600 p-2"><Paperclip size={18}/></button>
-                <button 
-                  onClick={handleSend}
-                  disabled={!input.trim()}
-                  className="p-2 bg-brand-purple text-white rounded-xl hover:bg-[#4a2360] disabled:opacity-40 transition-all"
-                >
-                  <Send size={16} />
-                </button>
-             </div>
+             
+             <button 
+               onClick={() => handleSend()}
+               disabled={!input.trim()}
+               className="p-2 bg-brand-purple text-white rounded-xl hover:bg-[#4a2360] disabled:opacity-40 transition-all mb-1"
+             >
+               <Send size={16} />
+             </button>
+           </div>
+           
+           <div className="text-center mt-2">
+             <p className="text-[10px] text-gray-400">EKA-AI can make mistakes. Verify critical repairs.</p>
            </div>
         </div>
       </div>
     </main>
   );
 };
+
+const SuggestionCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode; title: string; desc: string; onClick: () => void }) => (
+  <button onClick={onClick} className="bg-white p-4 rounded-xl border border-gray-200 hover:border-brand-purple hover:shadow-sm transition-all text-left flex items-start gap-3 group">
+    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-white transition-colors">{icon}</div>
+    <div>
+      <div className="font-medium text-sm text-gray-900 mb-0.5">{title}</div>
+      <div className="text-xs text-gray-500">{desc}</div>
+    </div>
+  </button>
+);
+
+const MenuItem = ({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) => (
+  <button onClick={onClick} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3">
+    {icon} {label}
+  </button>
+);
 
 export default ChatPage;
