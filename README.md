@@ -38,9 +38,47 @@ View your app in AI Studio: https://ai.studio/apps/drive/1aF2sK92GDy8nDzLt1A4puN
    pip install -r requirements.txt
    ```
 
-2. Create `backend/.env` file with your configuration (see `.env.example`)
+2. Create `backend/.env` file with your configuration:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
 
-3. Start the production server:
+3. Edit `backend/.env` and configure the required values:
+
+   **Required Configuration:**
+   - `GEMINI_API_KEY`: Get from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - `SUPABASE_URL`: Your Supabase project URL (e.g., `https://yourproject.supabase.co`)
+   - `SUPABASE_SERVICE_KEY`: From Supabase Dashboard > Settings > API > service_role key
+
+   **Generate JWT_SECRET:**
+   ```bash
+   openssl rand -base64 32
+   ```
+
+   **Example Configuration:**
+   ```env
+   # AI Services
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ANTHROPIC_API_KEY=your_claude_key_optional
+
+   # Database
+   SUPABASE_URL=https://yourproject.supabase.co
+   SUPABASE_SERVICE_KEY=your_service_role_key_here
+
+   # Security
+   JWT_SECRET=your_generated_secret_here
+
+   # CORS (no spaces after commas)
+   CORS_ORIGINS=http://localhost:3000,http://localhost:5173,https://yourdomain.com
+
+   # App Config
+   FRONTEND_URL=http://localhost:5173
+   PORT=8001
+   ```
+
+   > ⚠️ **CRITICAL:** Never commit `.env` files to version control!
+
+4. Start the production server:
    ```bash
    gunicorn --bind 0.0.0.0:8001 --workers 1 --threads 4 --timeout 60 wsgi:flask_app
    ```
