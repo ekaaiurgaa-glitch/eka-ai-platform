@@ -27,22 +27,14 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
   }, [input]);
 
   return (
-    <div 
-      className="relative rounded-3xl transition-all"
-      style={{ 
-        backgroundColor: 'var(--input-bg)', 
-        border: '1px solid var(--accent-primary)',
-        boxShadow: '0 0 20px rgba(241, 138, 34, 0.1)'
-      }}
-    >
+    <div className="relative bg-[var(--input-bg)] border border-[var(--accent-primary)] rounded-2xl shadow-lg focus-within:shadow-[0_0_0_2px_var(--accent-primary)] transition-all">
       <textarea
         ref={textareaRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
         placeholder="How can EKA-AI help with your fleet today?"
-        className="w-full bg-transparent border-none focus:ring-0 focus:outline-none resize-none py-4 px-5 min-h-[56px] max-h-[200px] text-base"
-        style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-main)' }}
+        className="w-full bg-transparent border-none focus:ring-0 focus:outline-none resize-none py-3 px-4 min-h-[50px] max-h-[200px] text-base text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
         rows={1}
         disabled={isLoading}
       />
@@ -50,8 +42,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
       <div className="flex justify-between items-center px-3 pb-3">
         {/* Attachment Icon */}
         <button 
-          className="p-2 rounded-lg transition-all hover:bg-white/5"
-          style={{ color: 'var(--text-secondary)' }}
+          className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] rounded-lg hover:bg-[var(--border-color)] transition-colors"
           aria-label="Attach file"
           title="Attach file"
         >
@@ -62,11 +53,11 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
         <button 
           onClick={handleSend}
           disabled={!input.trim() || isLoading}
-          className="p-3 rounded-xl transition-all"
-          style={{ 
-            backgroundColor: input.trim() ? 'var(--accent-primary)' : 'var(--border-color)',
-            color: input.trim() ? 'var(--text-on-accent)' : 'var(--text-secondary)'
-          }}
+          className={`p-2 rounded-lg transition-all ${
+            input.trim() 
+              ? 'bg-[var(--accent-primary)] text-black hover:brightness-110' 
+              : 'bg-[var(--border-color)] text-[var(--text-secondary)]'
+          }`}
           aria-label="Send message"
           title="Send message"
         >

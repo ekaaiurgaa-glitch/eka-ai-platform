@@ -1,39 +1,32 @@
-/* index.css - EKA-AI Dark Industrial Design System */
+/* index.css - EKA-AI Dark Design System */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  /* EKA-AI Core Colors - Ultra-Dark Industrial */
-  --bg-primary: #000000;       /* Pure Black */
-  --bg-secondary: #0b0b0b;     /* Sidebar/Panels */
-  --text-primary: #ffffff;     /* White text */
-  --text-secondary: #a1a1aa;   /* Muted text */
-  --accent-primary: #f18a22;   /* Go4Garage Orange */
-  --border-color: #222222;     /* Subtle borders */
-  --input-bg: #050505;         /* Input background */
+  /* Core Colors - EKA-AI Ultra-Dark Industrial */
+  --bg-primary: #000000; /* Pure Black */
+  --bg-secondary: #0b0b0b; /* Sidebar/Panels */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --accent-primary: #f18a22; /* Go4Garage Orange */
+  --border-color: #222222;
   
   /* Message Bubbles */
   --msg-user-bg: #111111;
   --msg-ai-bg: transparent;
   
   /* Input Area */
+  --input-bg: #050505;
   --input-border: #f18a22;
   --input-focus-ring: #f18a22;
-  
-  /* Text on accent backgrounds */
-  --text-on-accent: #000000;
 
   /* Typography */
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-headers: 'Outfit', sans-serif;
+  --font-headers: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   
   /* Layout */
   --sidebar-width: 280px;
   --max-content-width: 48rem;
-  
-  /* Radius */
-  --radius-default: 1rem;
-  --radius-pill: 2rem;
 }
 
 * { box-sizing: border-box; }
@@ -91,16 +84,21 @@ h1, h2, h3 {
 }
 p { line-height: 1.6; margin-bottom: 0.75em; }
 
-/* Custom Scrollbar for Dark Theme */
+/* Font utility classes */
+.font-headers {
+  font-family: var(--font-headers);
+}
+
+/* Scrollbar Styling for Dark Theme */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-primary);

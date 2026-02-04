@@ -35,30 +35,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <div className={`flex gap-4 ${isAi ? 'flex-row' : 'flex-row-reverse'}`}>
       
-      {/* AI Indicator - Orange Square for AI, subtle for User */}
+      {/* AI Indicator - Orange Square for AI, no avatar for User (right-aligned bubble) */}
       {isAi ? (
-        <div className="shrink-0 flex items-start gap-2">
-          <div 
-            className="w-2 h-2 rounded-sm mt-2" 
-            style={{ backgroundColor: 'var(--accent-primary)' }}
-          ></div>
-        </div>
-      ) : (
-        <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-          style={{ backgroundColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
-          U
-        </div>
-      )}
+        <div 
+          className="shrink-0 w-2 h-2 mt-2 rounded-sm bg-[var(--accent-primary)]"
+          aria-label="AI message indicator"
+          role="img"
+        ></div>
+      ) : null}
 
       {/* Content */}
       <div className={`flex-1 max-w-[85%] text-[15px] leading-7 
-        ${isAi ? '' : 'p-4 rounded-2xl rounded-tr-sm'}`}
-        style={isAi ? { color: 'var(--text-primary)' } : { backgroundColor: 'var(--msg-user-bg)', color: 'var(--text-primary)' }}
-      >
+        ${isAi 
+          ? 'text-[var(--text-primary)]' 
+          : 'bg-[var(--msg-user-bg)] p-4 rounded-2xl rounded-tr-sm text-[var(--text-primary)] ml-auto'
+        }`}>
         
-        {/* EKA Label for AI */}
+        {/* Name Label for AI */}
         {isAi && (
-          <div className="font-semibold text-xs mb-2 tracking-wide" style={{ color: 'var(--accent-primary)', fontFamily: 'var(--font-headers)' }}>
+          <div className="font-semibold text-xs mb-1 text-[var(--accent-primary)] flex items-center gap-2 font-headers">
             EKA
           </div>
         )}
@@ -70,7 +65,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         {/* Dynamic Content Containers (Keep existing logic) */}
         {isAi && (
-          <div className="mt-4 space-y-4 pl-4" style={{ borderLeft: '2px solid var(--border-color)' }}>
+          <div className="mt-4 space-y-4 border-l-2 border-[var(--accent-primary)]/30 pl-4">
             {message.diagnostic_data && <DiagnosticResult data={message.diagnostic_data} />}
             {message.visual_metrics && <VehicleVisuals metric={message.visual_metrics} />}
             {message.service_history && <ServiceHistory regNo={vehicleContext?.registrationNumber || ''} history={message.service_history} />}
