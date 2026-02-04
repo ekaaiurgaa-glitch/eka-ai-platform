@@ -140,6 +140,7 @@ const App: React.FC = () => {
       service_history: responseData.service_history,
       estimate_data: responseData.estimate_data,
       visual_metrics: responseData.visual_metrics,
+      recall_data: responseData.recall_data,
       mg_analysis: responseData.mg_analysis,
       diagnostic_data: responseData.diagnostic_data,
       pdi_checklist: responseData.pdi_checklist,
@@ -171,6 +172,12 @@ const App: React.FC = () => {
       operatingMode: mode,
       job_status_update: entryStatus
     }]);
+  };
+
+  const handleScanRecalls = () => {
+    if (isContextComplete(vehicleContext)) {
+      handleSendMessage(`Scan official safety recalls and common reported mechanical issues for ${vehicleContext.brand} ${vehicleContext.model} ${vehicleContext.year}.`);
+    }
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
@@ -273,6 +280,7 @@ const App: React.FC = () => {
                 <VehicleContextPanel 
                   context={vehicleContext} 
                   onUpdate={setVehicleContext} 
+                  onScanRecalls={handleScanRecalls}
                   operatingMode={activeTab}
                   status={status}
                 />

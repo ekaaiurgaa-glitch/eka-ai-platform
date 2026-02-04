@@ -57,12 +57,21 @@ You MUST generate visual_metrics for the following scenarios:
 5. Temporal Data: Type 'LINE' for "Telemetry History".
 `;
 
+      const searchInstruction = needsSearch ? `
+[SECTION C: SEARCH GROUNDING PROTOCOL]
+You are performing a real-time safety and mechanical scan for ${context?.brand} ${context?.model} (${context?.year}).
+1. Search for official safety recalls from regulatory bodies (e.g., NHSTA, SIAM, MoRTH).
+2. Identify common mechanical failures or trending technical issues reported by users or technicians for this specific model year.
+3. Return the results in the recall_data structure.
+4. Be precise. Cite specific sources via grounding chunks.
+` : "";
+
       const fullSystemPrompt = `
 ${EKA_CONSTITUTION}
 ${visualInstruction}
 ${opMode === 1 ? jobCardLogic : ""}
 ${isMGTrigger ? "[SECTION A: MG GOVERNANCE ENGINE] Apply formula and return MG_ANALYSIS object." : ""}
-${needsSearch ? "[SECTION C: SEARCH GROUNDING] Scan recalls and common faults." : ""}
+${searchInstruction}
 
 [OPERATING PARAMETERS]:
 Operating Mode: ${opMode}
@@ -109,6 +118,38 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                 possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
                 recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
                 missing_info: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            recall_data: {
+              type: Type.OBJECT,
+              properties: {
+                model_year: { type: Type.STRING },
+                recalls: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      title: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      severity: { type: Type.STRING },
+                      date: { type: Type.STRING },
+                      remedy: { type: Type.STRING }
+                    }
+                  }
+                },
+                common_issues: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      component: { type: Type.STRING },
+                      symptoms: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      description: { type: Type.STRING },
+                      prevalence: { type: Type.STRING }
+                    }
+                  }
+                }
               }
             },
             visual_metrics: {

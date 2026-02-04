@@ -107,6 +107,24 @@ export interface DiagnosticData {
   root_cause_identified?: boolean;
 }
 
+export interface RecallData {
+  model_year: string;
+  recalls: Array<{
+    id: string;
+    title: string;
+    description: string;
+    severity: 'HIGH' | 'MEDIUM' | 'LOW';
+    date: string;
+    remedy: string;
+  }>;
+  common_issues: Array<{
+    component: string;
+    symptoms: string[];
+    description: string;
+    prevalence: string;
+  }>;
+}
+
 export interface VisualMetric {
   type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL' | 'LINE' | 'COMPOSED';
   label: string;
@@ -133,6 +151,7 @@ export interface Message {
   };
   visual_metrics?: VisualMetric;
   diagnostic_data?: DiagnosticData;
+  recall_data?: RecallData;
   service_history?: ServiceHistoryItem[];
   estimate_data?: EstimateData;
   mg_analysis?: MGAnalysis;

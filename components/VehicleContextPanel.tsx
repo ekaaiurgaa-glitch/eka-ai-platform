@@ -26,6 +26,7 @@ const VEHICLE_TYPES = [
 const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({ 
   context, 
   onUpdate, 
+  onScanRecalls,
   operatingMode, 
   status 
 }) => {
@@ -185,12 +186,20 @@ const VehicleContextPanel: React.FC<VehicleContextPanelProps> = ({
               </div>
             </div>
             
-            <button 
-              onClick={() => setIsEditing(true)} 
-              className="px-5 py-2 bg-black border-2 border-red-500/40 text-red-500 text-[10px] font-black uppercase rounded hover:bg-red-500 hover:text-black transition-all font-mono tracking-widest"
-            >
-              Security Override
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={onScanRecalls}
+                className="px-5 py-2 bg-[#f18a22] text-black text-[10px] font-black uppercase rounded hover:bg-white transition-all font-mono tracking-widest shadow-lg"
+              >
+                Scan Safety Recalls
+              </button>
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="px-5 py-2 bg-black border-2 border-red-500/40 text-red-500 text-[10px] font-black uppercase rounded hover:bg-red-500 hover:text-black transition-all font-mono tracking-widest"
+              >
+                Security Override
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 relative z-10">

@@ -8,6 +8,7 @@ import VehicleVisuals from './VehicleVisuals';
 import DiagnosticResult from './DiagnosticResult';
 import MGAnalysisView from './MGAnalysis';
 import PDIChecklist from './PDIChecklist';
+import RecallReport from './RecallReport';
 
 interface ChatMessageProps {
   message: Message;
@@ -94,6 +95,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const showDiagnostics = !!message.diagnostic_data;
     const showMGAnalysis = !!message.mg_analysis;
     const showPdi = !!message.pdi_checklist && onPdiVerify;
+    const showRecalls = !!message.recall_data;
 
     return (
       <div className="space-y-6">
@@ -108,6 +110,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
             );
           })}
         </div>
+
+        {showRecalls && message.recall_data && (
+          <RecallReport data={message.recall_data} />
+        )}
 
         {showMetrics && message.visual_metrics && (
           <div className="report-frame">
