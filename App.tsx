@@ -84,8 +84,8 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED'];
-    const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED'];
+    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED', 'AUTH_INTAKE'];
+    const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED', 'MG_CREATED', 'MG_CONSUMING', 'MG_THRESHOLD_ALERT', 'MG_EXHAUSTED'];
 
     if (workshopStates.includes(status)) return 1;
     if (fleetStates.includes(status)) return 2;
@@ -241,7 +241,17 @@ const App: React.FC = () => {
   };
 
   const activeTab = getActiveTab();
-  const showPanel = panelTriggered || isContextComplete(vehicleContext) || activeTab !== 0;
+  
+  // Visibility Logic for UI Nodes
+  const isWorkshopMode = activeTab === 1;
+  const isFleetMode = activeTab === 2;
+  const isIgnitionMode = activeTab === 0;
+
+  const showVehiclePanel = isWorkshopMode 
+    ? (status === 'AUTH_INTAKE' || status === 'PDI' || status === 'INTAKE') 
+    : (panelTriggered || isContextComplete(vehicleContext) || isFleetMode);
+
+  const showTelemetry = isIgnitionMode || isFleetMode;
 
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
@@ -269,13 +279,15 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
             <div className="px-4">
-               <TelemetryDashboard 
-                 status={status} 
-                 complianceScore={status === 'APPROVAL' ? 100 : status === 'ESTIMATION' ? 75 : 40} 
-                 systemHealth={98} 
-               />
+               {showTelemetry && (
+                 <TelemetryDashboard 
+                   status={status} 
+                   complianceScore={status === 'APPROVAL' ? 100 : status === 'ESTIMATION' ? 75 : 40} 
+                   systemHealth={98} 
+                 />
+               )}
             </div>
-            {showPanel && (
+            {showVehiclePanel && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
                 <VehicleContextPanel 
                   context={vehicleContext} 

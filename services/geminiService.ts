@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
-import { EKA_CONSTITUTION, GST_HSN_REGISTRY } from "../constants";
+import { GST_HSN_REGISTRY } from "../constants";
 import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode, GroundingLink } from "../types";
 
 export class GeminiService {
@@ -18,72 +18,70 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const lastUserMessage = history[history.length - 1]?.parts[0]?.text || "";
-      const isMGTrigger = lastUserMessage.includes("Calculate MG Value") || opMode === 2;
       
       const needsSearch = lastUserMessage.toLowerCase().includes("recall") || 
-                          lastUserMessage.toLowerCase().includes("mechanical issues") ||
-                          lastUserMessage.toLowerCase().includes("trending issues") ||
                           lastUserMessage.toLowerCase().includes("scan");
 
-      const jobCardLogic = `
-[SECTION B: JOB CARD → INVOICING FLOW PROTOCOL]
-You are a deterministic automobile service advisor. You govern the workflow gates.
+      // --- THE CORE SYSTEM IDENTITY (STRICT PRICING GOVERNANCE) ---
+      const EKA_CORE_LOGIC = `
+SYSTEM IDENTITY
+You are EKA-AI, a single, governed, deterministic artificial intelligence agent built exclusively for the automobile ecosystem by Go4Garage Private Limited.
 
-1. INTAKE GATE (B1):
-   - Mandatory: Brand, Model, Year, Fuel Type.
-   - Current Context: ${JSON.stringify(context)}
-   - If missing any mandatory field, you MUST STOP and request it.
+You are NOT a chatbot.
+You are NOT a marketplace.
+You are NOT a recommender guessing engine.
+You are an audit-grade intelligence governor.
 
-2. DIAGNOSIS GATE (B2):
-   - Normalize symptoms. Confidence MUST be >= 90%.
-   - VISUAL REQUIREMENT: Return a PIE chart showing "Complaint Distribution" if multiple symptoms are listed.
+-------------------------------------
+SECTION A: MG (MINIMUM GUARANTEE) MODEL
+-------------------------------------
+A1. ROLE: You explain MG logic. You do NOT compute payouts in text.
+A2. SOURCE OF TRUTH: All MG values (Shortfall, Excess, Payable) must come from the 'mg_analysis' JSON block.
+A3. LOGIC EXPLANATION: 
+    - If Actual < Assured: "Minimum Guarantee Applies" (Shortfall absorbed by fleet).
+    - If Actual > Assured: "Excess Utilization Applies" (Excess rate charged).
 
-3. ESTIMATION GATE (B3):
-   - Use HSN 8708 (28%) Parts, 9987 (18%) Labor.
-   - VISUAL REQUIREMENT: Return a BAR chart comparing "Estimated Costs" across categories.
+-------------------------------------
+SECTION B: JOB CARD GOVERNANCE
+-------------------------------------
+B1. INTAKE GATE: Mandatory: Brand, Model, Year, Fuel Type. If missing, STOP and request.
+B2. ROOT CAUSE: If confidence < 90%, ASK CLARIFYING QUESTIONS. Do NOT guess.
+B4. APPROVAL GATE: Job cannot proceed without Customer Approval.
+B5. PDI GATE: Job cannot be COMPLETED without PDI (Safety, Proof).
+B7. INVOICING: Only triggers if Job = COMPLETED and PDI = Verified.
 
-4. PDI GATE (B5):
-   - HARD GATE: Prohibition of status transition to 'CLOSED' if pdiVerified is false.
-   - VISUAL REQUIREMENT: Return a PROGRESS chart showing "Overall Job Completion %".
-`;
+-------------------------------------
+SECTION C: PRICING GOVERNANCE RULES (STRICT)
+-------------------------------------
+C1. SINGLE SOURCE OF TRUTH: Money never lives in the LLM (You). Money lives in Billing & Pricing Services (The JSON Schema).
+C2. PROHIBITED ACTIONS:
+    - You are NOT allowed to calculate or invent prices in conversational text.
+    - You must NEVER output exact billable amounts in text unless derived from the 'estimate_data' or 'mg_analysis' JSON.
+    - You must NEVER modify pricing, offer discounts, or commit to monetary values not present in the structured data.
+C3. ALLOWED ACTIONS:
+    - Explain pricing plans defined in the context.
+    - Return pricing ranges provided by the backend (simulated in JSON).
+    - Describe what a user gets at each tier.
+    - Explain the "Why" behind a cost (e.g., "This is due to high wear on brake pads").
+C4. ONE-LINE RULE: "AI explains money. Systems calculate money. Billing records money."
 
-      const visualInstruction = `
-[VISUAL INTELLIGENCE PROTOCOL]
-You MUST generate visual_metrics for the following scenarios:
-1. Symptoms List: Type 'PIE' for "Symptom Cluster".
-2. Job Card Flow: Type 'PROGRESS' for "Protocol Fulfillment".
-3. Component Analysis: Type 'RADAR' for "Component Integrity Scores".
-4. Financials: Type 'BAR' for "Category Allocation".
-5. Temporal Data: Type 'LINE' for "Telemetry History".
-`;
+-------------------------------------
+CONTEXTUAL DATA
+-------------------------------------
+Current Operating Mode: ${opMode}
+Current Job Status: ${currentStatus}
+Vehicle Context: ${JSON.stringify(context || {})}
+GST/HSN Database: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 1000)}...
 
-      const searchInstruction = needsSearch ? `
-[SECTION C: SEARCH GROUNDING PROTOCOL]
-You are performing a real-time safety and mechanical scan for ${context?.brand} ${context?.model} (${context?.year}).
-1. Search for official safety recalls from regulatory bodies (e.g., NHSTA, SIAM, MoRTH).
-2. Identify common mechanical failures or trending technical issues reported by users or technicians for this specific model year.
-3. Return the results in the recall_data structure.
-4. Be precise. Cite specific sources via grounding chunks.
-` : "";
-
-      const fullSystemPrompt = `
-${EKA_CONSTITUTION}
-${visualInstruction}
-${opMode === 1 ? jobCardLogic : ""}
-${isMGTrigger ? "[SECTION A: MG GOVERNANCE ENGINE] Apply formula and return MG_ANALYSIS object." : ""}
-${searchInstruction}
-
-[OPERATING PARAMETERS]:
-Operating Mode: ${opMode}
-Current Status: ${currentStatus}
-Vehicle Identity Secured: ${context && context.brand ? "TRUE" : "FALSE"}
-PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
-
-[RESPOND IN VALID JSON ONLY]
+[OUTPUT INSTRUCTION]:
+1. Generate the structured JSON data FIRST (this acts as the Billing Engine).
+2. Then, write your 'visual_text' response based ONLY on that data.
+3. If the data is missing, state: "Pricing will be confirmed by the Billing System."
+4. If search for recalls is needed, return the recall_data structure.
 `;
 
       const config: any = {
-        systemInstruction: fullSystemPrompt,
+        systemInstruction: EKA_CORE_LOGIC,
         temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
@@ -117,7 +115,7 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                 root_cause_identified: { type: Type.BOOLEAN },
                 possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
                 recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                missing_info: { type: Type.ARRAY, items: { type: Type.STRING } }
+                systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
               }
             },
             recall_data: {
@@ -150,6 +148,70 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                     }
                   }
                 }
+              }
+            },
+            mg_analysis: {
+              type: Type.OBJECT,
+              properties: {
+                contract_status: { type: Type.STRING },
+                mg_type: { type: Type.STRING },
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    assured_kilometers: { type: Type.NUMBER },
+                    contract_months: { type: Type.NUMBER },
+                    monthly_assured_km: { type: Type.NUMBER },
+                    rate_per_km: { type: Type.NUMBER },
+                    monthly_assured_revenue: { type: Type.NUMBER }
+                  }
+                },
+                financial_summary: {
+                  type: Type.OBJECT,
+                  properties: {
+                    mg_monthly_limit: { type: Type.NUMBER },
+                    actual_utilization: { type: Type.NUMBER },
+                    utilization_status: { type: Type.STRING },
+                    invoice_split: {
+                      type: Type.OBJECT,
+                      properties: {
+                        billed_to_mg_pool: { type: Type.NUMBER },
+                        billed_to_customer: { type: Type.NUMBER },
+                        unused_buffer_value: { type: Type.NUMBER }
+                      }
+                    }
+                  }
+                },
+                audit_trail: {
+                  type: Type.OBJECT,
+                  properties: {
+                    logic_applied: { type: Type.STRING },
+                    risk_weights_used: { type: Type.STRING },
+                    formula_used: { type: Type.STRING }
+                  }
+                }
+              }
+            },
+            estimate_data: {
+              type: Type.OBJECT,
+              properties: {
+                estimate_id: { type: Type.STRING },
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      hsn_code: { type: Type.STRING },
+                      unit_price: { type: Type.NUMBER },
+                      quantity: { type: Type.NUMBER },
+                      gst_rate: { type: Type.NUMBER },
+                      type: { type: Type.STRING }
+                    }
+                  }
+                },
+                currency: { type: Type.STRING },
+                tax_type: { type: Type.STRING }
               }
             },
             visual_metrics: {
@@ -187,47 +249,6 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                 technician_declaration: { type: Type.BOOLEAN },
                 evidence_provided: { type: Type.BOOLEAN }
               }
-            },
-            mg_analysis: {
-              type: Type.OBJECT,
-              properties: {
-                contract_status: { type: Type.STRING },
-                financial_summary: {
-                  type: Type.OBJECT,
-                  properties: {
-                    mg_monthly_limit: { type: Type.NUMBER },
-                    actual_utilization: { type: Type.NUMBER },
-                    utilization_status: { type: Type.STRING },
-                    invoice_split: {
-                      type: Type.OBJECT,
-                      properties: {
-                        billed_to_mg_pool: { type: Type.NUMBER },
-                        billed_to_customer: { type: Type.NUMBER },
-                        unused_buffer_value: { type: Type.NUMBER }
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            estimate_data: {
-              type: Type.OBJECT,
-              properties: {
-                estimate_id: { type: Type.STRING },
-                items: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      description: { type: Type.STRING },
-                      hsn_code: { type: Type.STRING },
-                      price_range: { type: Type.STRING },
-                      gst_rate: { type: Type.NUMBER },
-                      type: { type: Type.STRING }
-                    }
-                  }
-                }
-              }
             }
           },
           required: ["response_content", "job_status_update", "ui_triggers"]
@@ -235,8 +256,8 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
       };
 
       if (needsSearch) config.tools = [{ googleSearch: {} }];
-
-      const modelToUse = (intelMode === 'THINKING' || isMGTrigger || needsSearch) ? this.thinkingModel : this.fastModel;
+      
+      const modelToUse = (intelMode === 'THINKING' || needsSearch) ? this.thinkingModel : this.fastModel;
       
       const response: GenerateContentResponse = await ai.models.generateContent({
         model: modelToUse,
