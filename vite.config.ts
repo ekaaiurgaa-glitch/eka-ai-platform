@@ -11,11 +11,14 @@ export default defineConfig(({ mode }) => {
         proxy: {
           // Proxy API calls to the Python backend during development
           '/api': {
-            target: env.BACKEND_URL || 'http://localhost:8001',
+            target: env.BACKEND_URL || 'http://127.0.0.1:8001',
             changeOrigin: true,
             secure: false,
           }
         }
+      },
+      build: {
+        outDir: 'dist',
       },
       plugins: [react()],
       resolve: {
