@@ -68,7 +68,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
       setInput(prev => prev + (prev ? ' ' : '') + transcript);
     };
 
-    recognition.onerror = () => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Speech recognition error:', event.error);
       setIsListening(false);
     };
 
