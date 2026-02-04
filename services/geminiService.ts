@@ -70,12 +70,7 @@ export class GeminiService {
       const data = await response.json();
       
       if (data.audio_data) {
-        const binaryString = atob(data.audio_data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes;
+        return Uint8Array.from(atob(data.audio_data), c => c.charCodeAt(0));
       }
       return null;
     } catch (error) {

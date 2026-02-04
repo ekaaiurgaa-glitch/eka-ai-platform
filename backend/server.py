@@ -171,7 +171,7 @@ def log_intelligence(mode, status, query, response, confidence=None):
             "user_query": query,
             "ai_response": response,
             "confidence_score": confidence,
-            "created_at": datetime.datetime.utcnow().isoformat()
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }).execute()
     except Exception as e:
         print(f"Logging Error: {e}")
@@ -336,9 +336,10 @@ def upload_pdi():
     if not supabase:
         return jsonify({'error': 'Storage not configured'}), 500
     
-    # Validate file type using file extension (fallback if python-magic not available)
+    # Validate file type using os.path.splitext for robustness
     allowed_extensions = {'jpg', 'jpeg', 'png', 'webp', 'mp4'}
-    file_ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    _, ext = os.path.splitext(file.filename)
+    file_ext = ext.lstrip('.').lower() if ext else ''
     
     if file_ext not in allowed_extensions:
         return jsonify({'error': 'Invalid file type. Allowed: jpg, jpeg, png, webp, mp4'}), 400
@@ -371,7 +372,7 @@ def upload_pdi():
     
     try:
         # Upload to Supabase Storage
-        timestamp = datetime.datetime.utcnow().timestamp()
+        timestamp = datetime.datetime.now(datetime.timezone.utc).timestamp()
         filename = f"{job_card_id}/{checklist_item}_{timestamp}.{file_ext}"
         file_bytes = file.read()
         
@@ -390,7 +391,7 @@ def upload_pdi():
             'checklist_item': checklist_item,
             'file_url': file_url,
             'file_type': 'image' if file_type.startswith('image') else 'video',
-            'uploaded_at': datetime.datetime.utcnow().isoformat()
+            'uploaded_at': datetime.datetime.now(datetime.timezone.utc).isoformat()
         }).execute()
         
         return jsonify({'file_url': file_url, 'success': True})
@@ -409,6 +410,11 @@ def approve_job():
     
     if not token or not action:
         return jsonify({'error': 'Missing token or action'}), 400
+    
+    # Validate action parameter
+    valid_actions = {'approve', 'reject', 'concern'}
+    if action not in valid_actions:
+        return jsonify({'error': f'Invalid action. Must be one of: {", ".join(valid_actions)}'}), 400
     
     jwt_secret = os.environ.get('JWT_SECRET')
     if not jwt_secret:
@@ -432,7 +438,7 @@ def approve_job():
         # Update job card
         supabase.table('job_cards').update({
             'status': new_status,
-            'customer_approved_at': datetime.datetime.utcnow().isoformat() if action == 'approve' else None
+            'customer_approved_at': datetime.datetime.now(datetime.timezone.utc).isoformat() if action == 'approve' else None
         }).eq('id', job_card_id).execute()
         
         return jsonify({'success': True, 'new_status': new_status})
@@ -465,7 +471,7 @@ def generate_approval_link():
     
     try:
         # Generate JWT with 24h expiry
-        expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        expiry = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)
         token = jwt.encode({
             'job_card_id': job_card_id,
             'exp': expiry
