@@ -59,11 +59,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         )}
         
         {/* Text Body */}
-        <div className="whitespace-pre-wrap">
+        <div className="whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>
           {message.content}
         </div>
 
-        {/* Dynamic Content Containers (Keep your existing logic here) */}
+        {/* Dynamic Content Containers (Keep existing logic) */}
         {isAi && (
           <div className="mt-4 space-y-4 border-l-2 border-[var(--accent-primary)]/30 pl-4">
             {message.diagnostic_data && <DiagnosticResult data={message.diagnostic_data} />}

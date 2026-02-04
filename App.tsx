@@ -138,7 +138,7 @@ const App: React.FC = () => {
                 Thinking
               </button>
            </div>
-           <div className="ml-4 bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
+           <div className="ml-4 p-1 rounded-xl flex text-xs font-medium" style={{ backgroundColor: 'var(--bg-secondary)', fontFamily: 'var(--font-headers)' }}>
               <button 
                 onClick={() => handleModeChange(0)} 
                 className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 0 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
@@ -197,8 +197,8 @@ const App: React.FC = () => {
                 operatingMode={operatingMode} 
                 status={status} 
               />
-              <div className="text-center mt-2 text-[10px] text-[var(--text-secondary)]">
-                 AI can make mistakes. Please verify important information.
+              <div className="text-center mt-3 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                 EKA-AI can make mistakes. Please verify important information.
               </div>
            </div>
         </div>

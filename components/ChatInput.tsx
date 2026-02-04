@@ -39,8 +39,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
         disabled={isLoading}
       />
       
-      <div className="flex justify-between items-center px-2 pb-2">
-        {/* Attachment Icon (Visual only) */}
+      <div className="flex justify-between items-center px-3 pb-3">
+        {/* Attachment Icon */}
         <button 
           className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] rounded-lg hover:bg-[var(--border-color)] transition-colors"
           aria-label="Attach file"
