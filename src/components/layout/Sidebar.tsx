@@ -1,8 +1,15 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { MessageSquare, FolderOpen, PenTool, Code, Plus, ChevronUp } from 'lucide-react';
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+
+  const handleNewChat = () => {
+    navigate('/');
+    // Optionally refresh state if needed in parent component
+  };
+
   return (
     <aside className="w-64 bg-[#fafaf9] border-r border-gray-200 flex flex-col h-screen flex-shrink-0">
       {/* Header */}
@@ -17,7 +24,7 @@ const Sidebar = () => {
           </div>
         </div>
         
-        <button onClick={() => window.location.href='/'} className="w-full bg-white border border-gray-300 hover:border-gray-400 text-gray-700 text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow">
+        <button onClick={handleNewChat} className="w-full bg-white border border-gray-300 hover:border-gray-400 text-gray-700 text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow">
           <Plus size={14} />
           New chat
         </button>

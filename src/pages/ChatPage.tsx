@@ -1,13 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Paperclip, Bolt, Brain } from 'lucide-react';
 import { geminiService } from '../services/geminiService';
-import { JobStatus, IntelligenceMode } from '../types';
+import { JobStatus, IntelligenceMode, OperatingMode } from '../types';
+
+// Get time-based greeting
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
 
 const ChatPage = () => {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<{role: string, parts: {text: string}[]}[]>([]);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<IntelligenceMode>('FAST');
+  const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
   const [status, setStatus] = useState<JobStatus>('CREATED');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -22,7 +31,7 @@ const ChatPage = () => {
     setLoading(true);
 
     try {
-      const response = await geminiService.sendMessage([...history, userMsg], {}, status, mode, 0);
+      const response = await geminiService.sendMessage([...history, userMsg], {}, status, mode, operatingMode);
       
       const aiText = response.response_content?.visual_text || "System Error";
       setHistory(prev => [...prev, { role: 'model', parts: [{ text: aiText }] }]);
@@ -35,6 +44,17 @@ const ChatPage = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  const handleOperatingModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setOperatingMode(parseInt(e.target.value) as OperatingMode);
+  };
+
   return (
     <main className="flex-1 flex flex-col h-screen relative bg-[#fafaf9]">
       {/* Top Bar */}
@@ -44,10 +64,14 @@ const ChatPage = () => {
           <span className="text-gray-300">|</span>
           <div className="flex items-center gap-2">
              <span className="text-xs text-gray-500">Mode:</span>
-             <select className="text-xs font-medium bg-transparent border-none outline-none cursor-pointer">
-               <option>🔥 Ignition</option>
-               <option>🔧 Workshop</option>
-               <option>🚛 Fleet</option>
+             <select 
+               value={operatingMode}
+               onChange={handleOperatingModeChange}
+               className="text-xs font-medium bg-transparent border-none outline-none cursor-pointer"
+             >
+               <option value={0}>🔥 Ignition</option>
+               <option value={1}>🔧 Workshop</option>
+               <option value={2}>🚛 Fleet</option>
              </select>
           </div>
         </div>
@@ -58,7 +82,7 @@ const ChatPage = () => {
         {history.length === 0 && (
           <div className="max-w-3xl mx-auto pt-12 pb-8 text-center animate-fade-in">
              <h1 className="font-serif text-4xl md:text-5xl text-gray-900 mb-4">
-               <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-purple to-brand-green italic">Good evening, Go4Garage</span>
+               <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-purple to-brand-green italic">{getGreeting()}, Go4Garage</span>
              </h1>
              <p className="text-gray-500">How can I assist with your workshop today?</p>
           </div>
@@ -98,7 +122,7 @@ const ChatPage = () => {
              <textarea 
                value={input}
                onChange={(e) => setInput(e.target.value)}
-               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+               onKeyDown={handleKeyDown}
                placeholder="Message EKA-AI..."
                className="flex-1 resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 py-3 px-3 max-h-32 bg-transparent text-sm outline-none"
                rows={1}
