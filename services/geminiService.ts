@@ -16,29 +16,41 @@ export class GeminiService {
     opMode: OperatingMode = 0
   ) {
     try {
+      // 1. Check for MG Trigger Intent
+      const lastUserMessage = history[history.length - 1]?.parts[0]?.text || "";
+      const isMGTrigger = lastUserMessage.includes("Calculate MG Value") || opMode === 2;
+
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+      // 2. The "Financial Truth Engine" System Prompt (Audit-Grade)
       const mgEngineInstruction = `
-[MG (MINIMUM GUARANTEE) ENGINE - FINANCIAL TRUTH PROTOCOL]:
-When Operating Mode is 2 (FLEET), you act as the deterministic MG Truth Engine. You enforce agreed contracts for fleet economics.
+[SYSTEM ROLE: EKA-AI MG ENGINE - FINANCIAL TRUTH PROTOCOL]
+You are the deterministic MG Truth Engine. You are NOT a chatbot. You enforce fleet contracts with audit-grade precision.
 
-1. PRO-RATA RULE: If a vehicle starts/ends mid-cycle, apply: Adjusted_Threshold = (MG_Threshold / Total_Days_In_Month) * Active_Days.
-2. CALCULATION STANDARD: All monetary values MUST be calculated to 2 decimal places. Show the formula string in 'formula_used'.
+[CRITICAL LOGIC GATES]:
+1. PRO-RATA RULE: If a vehicle contract starts or ends mid-cycle, you MUST calculate the Adjusted Threshold:
+   Formula: Adjusted_Threshold = (Guaranteed_Threshold / Total_Days_In_Month) * Active_Days
+2. CALCULATION STANDARD: All monetary values MUST be calculated to exactly 2 decimal places. No rounding to integer.
 3. CATEGORIZATION:
    - MG_COVERED: Preventive Maintenance, Wear & Tear, Diagnostics.
-   - NON_MG_PAYABLE: Accidental Damage, Abuse, Unauthorized Repairs, Cosmetics.
-4. LOGIC GATES:
-   - CASE 1 (Actual <= Threshold): Payable = Threshold × Rate. Status = "MINIMUM_GUARANTEE_APPLIED".
-   - CASE 2 (Actual > Threshold): Payable = (Threshold × Rate) + ((Actual - Threshold) × Rate). Status = "OVER_UTILIZATION_CHARGED".
-5. DOWNTIME RELIEF: Subtract downtime days from active days if provided.
-6. MANDATORY OUTPUT: You must provide exact audit reasoning and logic splitting in the 'mg_analysis' block.
+   - NON_MG_PAYABLE: Accidental Damage, Abuse, Unauthorized Repairs, Cosmetic issues.
+4. LOGIC GATES (KM-BASED):
+   - CASE A (Actual <= Threshold): Payable = Threshold × Rate. Status = "MINIMUM_GUARANTEE_APPLIED".
+   - CASE B (Actual > Threshold): Payable = (Threshold × Rate) + ((Actual - Threshold) × Rate). Status = "OVER_UTILIZATION_CHARGED".
+
+[MANDATORY OUTPUT MAPPING]:
+You must map your calculation result STRICTLY to the 'mg_analysis' JSON block defined in the schema.
+- 'financial_summary.utilization_status' MUST be one of: 'UNDER_RUN', 'OVER_RUN', 'EXACT'.
+- 'financial_summary.invoice_split.billed_to_mg_pool' = The amount covered by the guarantee.
+- 'financial_summary.invoice_split.excess_amount' = The amount charged for over-utilization (if any).
+- 'audit_trail.formula_used' = The exact math string (e.g., "(1500 * 12.5) + (200 * 12.5)").
 `;
 
       const modeInstruction = `
 [GOVERNANCE CONTEXT]:
-Active Operating Mode: ${opMode}
+Active Operating Mode: ${isMGTrigger ? 2 : opMode}
 Current Logical State: ${currentStatus}
-Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model}` : 'Awaiting Context'}
+Vehicle Context: ${context && context.brand ? `${context.year} ${context.brand} ${context.model} (${context.registrationNumber})` : 'Awaiting Context'}
 
 [HSN/GST SOURCE OF TRUTH]:
 Reference the following registry for all estimate generation:
@@ -57,10 +69,9 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
 `;
 
       const config: any = {
-        systemInstruction: EKA_CONSTITUTION + mgEngineInstruction + modeInstruction,
-        temperature: 0.1,
+        systemInstruction: EKA_CONSTITUTION + (isMGTrigger ? mgEngineInstruction : "") + modeInstruction,
+        temperature: isMGTrigger ? 0.0 : 0.4,
         responseMimeType: "application/json",
-        tools: [{ googleSearch: {} }],
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -163,7 +174,7 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
         config.thinkingConfig = { thinkingBudget: 32768 };
       }
 
-      const response = await ai.models.generateContent({
+      const response: GenerateContentResponse = await ai.models.generateContent({
         model: intelMode === 'THINKING' ? this.thinkingModel : this.fastModel,
         contents: history,
         config: config,
@@ -186,7 +197,7 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
+      const response: GenerateContentResponse = await ai.models.generateContent({
         model: this.ttsModel,
         contents: [{ parts: [{ text }] }],
         config: {
