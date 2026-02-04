@@ -190,7 +190,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <div className={`message-card transition-all duration-300 ${isAi ? 'ai-style' : 'user-style'}`}>
         <div className="flex items-center gap-2 mb-4 border-b border-[#f18a22]/20 pb-3">
            <span className={`text-[10px] font-black uppercase tracking-[2px] font-mono ${isAi ? 'text-[#f18a22]' : 'text-zinc-500'}`}>
-             {isAi ? 'EKA-Ai Architecture' : 'User Terminal'}
+             {isAi ? 'EKA-AI ONLINE' : 'USER TERMINAL'}
            </span>
            {isAi && onPlayAudio && message.response_content?.audio_text && (
              <button 
@@ -221,7 +221,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       <style>{`
         .message-card {
           border-radius: 12px;
-          max-width: 92%;
+          max-width: 90%;
           width: fit-content;
           min-width: 320px;
           position: relative;
@@ -231,16 +231,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         }
 
         .ai-style {
-          background: #080808;
-          border: 2px solid #f18a22; /* Bold orange border */
-          border-left: 10px solid #f18a22; /* Prominent left bar */
-          padding: 24px 28px 24px 24px; /* Consistent internal padding */
-          box-shadow: inset -5px 0 30px rgba(241, 138, 34, 0.03), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
+          background: #0b0b0b;
+          border: 2px solid #f18a22;
+          border-left: 10px solid #f18a22;
+          padding: 24px;
+          box-shadow: inset -5px 0 30px rgba(241, 138, 34, 0.05), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
         }
 
         .user-style {
-          background: #0F0F0F;
-          border: 1px solid #262626;
+          background: #111111;
+          border: 1px solid #222222;
           padding: 24px;
           color: #eee;
           box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.6);
@@ -261,7 +261,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           box-shadow: 0 15px 40px -10px rgba(0,0,0,0.4);
         }
 
-        /* HUD scanline effect for AI messages */
         .ai-style::before {
           content: "";
           position: absolute;
@@ -273,13 +272,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           z-index: 1;
           pointer-events: none;
           animation: scanline 8s linear infinite;
-        }
-
-        @keyframes scanline {
-          0% { transform: translateY(0); opacity: 0; }
-          5% { opacity: 1; }
-          95% { opacity: 1; }
-          100% { transform: translateY(100vh); opacity: 0; }
         }
       `}</style>
     </div>

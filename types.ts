@@ -1,25 +1,43 @@
-// src/types.ts
 
 export type MessageRole = 'user' | 'assistant';
 
-export type OperatingMode = 0 | 1 | 2; // 0: Default, 1: Workshop, 2: MG Fleet
+export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/Workshop, 2: MG Fleet
 
 export type JobStatus = 
   | 'CREATED' 
-  // New Job Card Flow (Strict)
+  // MG State Machine (Advanced)
+  | 'MG_CREATED' 
+  | 'MG_ACTIVE' 
+  | 'MG_CONSUMING' 
+  | 'MG_THRESHOLD_ALERT' 
+  | 'MG_EXHAUSTED' 
+  | 'MG_CLOSED'
+  | 'BILLING_CYCLE_CLOSED'
+  | 'SETTLED'
+  | 'TERMINATED'
+  // Strict Job Card Flow
   | 'DIAGNOSED' 
   | 'ESTIMATED' 
   | 'CUSTOMER_APPROVED' 
   | 'PDI_COMPLETED' 
   | 'INVOICED' 
   | 'CLOSED'
-  // Legacy/Other Statuses (Kept for safety)
-  | 'IGNITION_TRIAGE' | 'RSA_ACTIVE' | 'URGAA_QUERY'
-  | 'AUTH_INTAKE' | 'SYMPTOM_RECORDING' | 'DIAGNOSTICS_WISDOM'
-  | 'INVENTORY_GATING' | 'ESTIMATE_GOVERNANCE' | 'APPROVAL_GATE'
-  | 'EXECUTION_QUALITY' | 'PDI_CHECKLIST'
-  | 'CONTRACT_VALIDATION' | 'UTILIZATION_TRACKING' | 'SETTLEMENT_LOGIC'
-  | 'SLA_BREACH_CHECK' | 'MG_COMPLETE';
+  // Transitionary / Internal Gates
+  | 'INTAKE'
+  | 'DIAGNOSIS'
+  | 'ESTIMATION'
+  | 'APPROVAL'
+  | 'EXECUTION'
+  | 'PDI'
+  | 'COMPLETION'
+  | 'INVOICING'
+  // Diagnostic Gates
+  | 'AWAITING_ROOT_CAUSE'
+  | 'INVOICE_ELIGIBLE'
+  // Compatibility
+  | 'IGNITION_TRIAGE'
+  | 'AUTH_INTAKE'
+  | 'RSA_ACTIVE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
 
@@ -39,6 +57,7 @@ export interface EstimateItem {
   id: string;
   description: string;
   hsn_code: string;
+  price_range: string;
   unit_price: number;
   quantity: number;
   gst_rate: 18 | 28;
@@ -53,33 +72,62 @@ export interface EstimateData {
 }
 
 export interface MGAnalysis {
-  contract_status: 'ACTIVE' | 'INACTIVE' | 'BREACHED';
-  mg_type: 'KM_BASED'; 
-  parameters: {
+  contract_status: string;
+  mg_type: string;
+  risk_profile: {
+    base_risk_score: number;
+    safety_buffer_percent: number;
+  };
+  financial_summary: {
+    utilization_status: 'SAFE' | 'WARNING' | 'BREACHED';
+    actual_utilization: number;
+    mg_monthly_limit: number;
+    invoice_split: {
+      billed_to_mg_pool: number;
+      billed_to_customer: number;
+      unused_buffer_value: number;
+    };
+  };
+  audit_trail: {
+    risk_weights_used: string;
+    formula_used: string;
+  };
+  parameters?: {
     assured_kilometers: number;
     rate_per_km: number;
     billing_cycle: string;
+    monthly_assured_km: number;
+    monthly_assured_revenue: number;
   };
-  cycle_data: {
-    actual_km_run: number;
-    shortfall_km: number;
-    excess_km: number;
-  };
-  financials: {
-    base_fee: number;
-    excess_fee: number;
-    total_invoice: number;
-  };
-  audit_log: string;
 }
 
 export interface DiagnosticData {
   code: string;
   description: string;
   severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY';
+  confidence_score: number;
   possible_causes: string[];
   recommended_actions: string[];
   systems_affected: string[];
+  root_cause_identified?: boolean;
+}
+
+export interface RecallData {
+  model_year: string;
+  recalls: Array<{
+    id: string;
+    title: string;
+    description: string;
+    severity: 'HIGH' | 'MEDIUM' | 'LOW';
+    date: string;
+    remedy: string;
+  }>;
+  common_issues: Array<{
+    component: string;
+    symptoms: string[];
+    description: string;
+    prevalence: string;
+  }>;
 }
 
 export interface VisualMetric {
@@ -133,13 +181,9 @@ export interface VehicleContext {
   fuelType: string;
   registrationNumber?: string;
   vin?: string;
-  batteryCapacity?: string;
-  motorPower?: string;
-  hvSafetyConfirmed?: boolean;
+  pdiVerified?: boolean;
 }
 
 export const isContextComplete = (ctx: VehicleContext): boolean => {
-  const baseComplete = !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
-  if (ctx.vehicleType === '4W' && !ctx.vin) return false;
-  return baseComplete;
+  return !!(ctx.vehicleType && ctx.brand && ctx.model && ctx.year && ctx.fuelType);
 };

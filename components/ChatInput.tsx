@@ -120,8 +120,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={getPlaceholder()}
-            className={`w-full bg-[#0A0A0A] text-white border border-[#262626] rounded-xl py-4 pl-4 pr-48 focus:outline-none focus:border-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
-              isListening ? 'ring-2 ring-[#f18a22]/40 border-[#f18a22]/60' : ''
+            className={`w-full bg-[#050505] text-white border border-[#f18a22] rounded-xl py-4 pl-4 pr-48 focus:outline-none focus:ring-1 focus:ring-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-600 text-sm ${
+              isListening ? 'ring-2 ring-[#f18a22]/40 border-[#f18a22]/60 shadow-[0_0_15px_rgba(241,138,34,0.2)]' : ''
             }`}
             disabled={isLoading}
           />
@@ -131,7 +131,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
               type="button"
               onClick={insertDTCHelper}
               disabled={isLoading}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#f18a22] hover:border-[#f18a22] transition-all uppercase tracking-tighter"
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#f18a22] hover:border-[#f18a22] transition-all uppercase tracking-tighter font-mono"
               title="Add DTC Lookup Prefix"
             >
               DTC
@@ -141,20 +141,20 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
               type="button"
               onClick={insertTechHelper}
               disabled={isLoading}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-blue-400 hover:border-blue-400 transition-all uppercase tracking-tighter"
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-blue-400 hover:border-blue-400 transition-all uppercase tracking-tighter font-mono"
               title="Identify Component Tech Specs"
             >
-              Tech
+              TECH
             </button>
 
             <button
               type="button"
               onClick={insertRecallHelper}
               disabled={isLoading}
-              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#f18a22] hover:border-[#f18a22] transition-all uppercase tracking-tighter"
+              className="px-2 py-1.5 rounded-lg bg-zinc-900 border border-[#262626] text-[10px] font-black text-[#f18a22] hover:border-[#f18a22] transition-all uppercase tracking-tighter font-mono"
               title="Scan Safety Recalls"
             >
-              Scan
+              SCAN
             </button>
 
             <button
@@ -175,7 +175,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="p-2 rounded-lg bg-[#f18a22] text-black hover:bg-[#d97a1d] disabled:bg-zinc-800 disabled:text-zinc-600 transition-all shadow-lg active:scale-95"
+              className="p-2 px-4 rounded-lg bg-[#f18a22] text-black hover:bg-[#d97a1d] disabled:bg-zinc-800 disabled:text-zinc-600 transition-all shadow-lg active:scale-95 font-bold"
             >
               {isLoading ? (
                 <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -183,21 +183,24 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
               ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-black uppercase font-outfit">SEND</span>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
               )}
             </button>
           </div>
         </form>
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">
-            {status === 'AUTH_INTAKE' ? 'STATUS: AWAITING_REGISTRATION • EXIT to Cancel' : 'STATUS: OPERATIONAL • Safety Recall & DTC Engine Active'}
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black font-mono">
+            {status === 'AUTH_INTAKE' ? 'STATUS: AWAITING_REGISTRATION • EXIT TO CANCEL' : 'STATUS: OPERATIONAL • EKA-AI GOVERNANCE ENGINE ACTIVE'}
           </p>
           {isListening && (
             <div className="flex items-center gap-1.5 animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              <span className="text-[10px] text-red-500 font-black uppercase tracking-tighter">Audio Diagnostic Capture</span>
+              <span className="text-[10px] text-red-500 font-black uppercase tracking-tighter font-mono">AUDIO DIAGNOSTIC CAPTURE</span>
             </div>
           )}
         </div>

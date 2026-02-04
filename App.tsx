@@ -36,7 +36,7 @@ const App: React.FC = () => {
     {
       id: 'welcome',
       role: 'assistant',
-      content: "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.",
+      content: "EKA-AI online. Governed automobile intelligence active. Awaiting vehicle context or fleet ID.",
       timestamp: new Date(),
       isValidated: true,
       operatingMode: 0
@@ -84,8 +84,8 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['DIAGNOSED', 'ESTIMATED', 'CUSTOMER_APPROVED', 'PDI_COMPLETED', 'INVOICED', 'CLOSED'];
-    const fleetStates: JobStatus[] = ['CONTRACT_VALIDATION', 'UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK', 'MG_COMPLETE'];
+    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED', 'AUTH_INTAKE', 'DIAGNOSED', 'ESTIMATED', 'CUSTOMER_APPROVED', 'PDI_COMPLETED'];
+    const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED', 'MG_CREATED', 'MG_CONSUMING', 'MG_THRESHOLD_ALERT', 'MG_EXHAUSTED'];
 
     if (workshopStates.includes(status)) return 1;
     if (fleetStates.includes(status)) return 2;
@@ -156,10 +156,10 @@ const App: React.FC = () => {
     setOperatingMode(mode);
     setPanelTriggered(mode !== 0);
     
-    const entryStatus: JobStatus = mode === 1 ? 'DIAGNOSED' : mode === 2 ? 'CONTRACT_VALIDATION' : 'CREATED';
+    const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
     setStatus(entryStatus);
     
-    let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
+    let promptContent = "EKA-AI online. Governed automobile intelligence active. Awaiting vehicle context or fleet instruction.";
     if (mode === 1) promptContent = "Automobile Intake protocol active. Provide vehicle context or Registration Number.";
     if (mode === 2) promptContent = "Fleet Governance Engine active. Enter Fleet ID or Billing Cycle reference.";
 
@@ -180,13 +180,13 @@ const App: React.FC = () => {
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
-    setStatus('CUSTOMER_APPROVED');
+    setStatus('APPROVAL');
     setMessages(prev => [...prev, {
       id: `auth-success-${Date.now()}`,
       role: 'assistant',
-      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been approved. Customer authorization complete.`,
+      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been moved to APPROVAL gate. Awaiting explicit customer authorization.`,
       timestamp: new Date(),
-      job_status_update: 'CUSTOMER_APPROVED',
+      job_status_update: 'APPROVAL',
       operatingMode: 1
     }]);
     
@@ -240,17 +240,13 @@ const App: React.FC = () => {
   };
 
   const activeTab = getActiveTab();
-  
-  // Specific Conditional Rendering Logic based on operatingMode state
   const showVehiclePanel = operatingMode === 1 
     ? (status === 'AUTH_INTAKE' || status === 'PDI' || status === 'INTAKE') 
     : (panelTriggered || isContextComplete(vehicleContext) || operatingMode === 2);
-
-  // Telemetry Dashboard visible when operatingMode is 0 (Ignition) or 2 (Fleet)
   const showTelemetry = operatingMode === 0 || operatingMode === 2;
 
   return (
-    <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
+    <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative font-inter">
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#f18a22]/5 blur-[120px] rounded-full pointer-events-none"></div>
 
       <Header status={status} vehicle={vehicleContext} isLoading={isLoading} operatingMode={activeTab} />
@@ -258,14 +254,14 @@ const App: React.FC = () => {
       <div className="backdrop-blur-xl bg-black/40 border-b border-white/5 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-4 z-10">
         <div className="flex items-center gap-4">
           <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
-            <button onClick={() => setIntelligenceMode('FAST')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Core AI</button>
-            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600/80 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Expert</button>
+            <button onClick={() => setIntelligenceMode('FAST')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all font-outfit ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>CORE AI</button>
+            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all font-outfit ${intelligenceMode === 'THINKING' ? 'bg-purple-600/80 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>EXPERT</button>
           </div>
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
           <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
-            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
-            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
-            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
+            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all font-outfit ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>IGNITION</button>
+            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all font-outfit ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>WORKSHOP</button>
+            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all font-outfit ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>FLEET</button>
           </div>
         </div>
       </div>
@@ -274,11 +270,13 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
             <div className="px-4">
-               <TelemetryDashboard 
-                 status={status} 
-                 complianceScore={status === 'CUSTOMER_APPROVED' ? 100 : status === 'ESTIMATED' ? 75 : 40} 
-                 systemHealth={98} 
-               />
+               {showTelemetry && (
+                 <TelemetryDashboard 
+                   status={status} 
+                   complianceScore={status === 'APPROVAL' ? 100 : status === 'ESTIMATION' ? 75 : 40} 
+                   systemHealth={98} 
+                 />
+               )}
             </div>
             {showVehiclePanel && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">
@@ -305,8 +303,8 @@ const App: React.FC = () => {
                 />
               ))}
               {isLoading && (
-                <div className="flex justify-start mb-12 animate-pulse text-[10px] font-black uppercase tracking-[0.3em] text-[#f18a22] px-10 border-l-4 border-[#f18a22] py-2 ml-4">
-                  {activeProtocol[loadingStep]}... [Logic Engine Sync]
+                <div className="flex justify-start mb-12 animate-pulse text-[10px] font-black uppercase tracking-[0.3em] text-[#f18a22] px-10 border-l-4 border-[#f18a22] py-2 ml-4 font-mono">
+                  {activeProtocol[loadingStep]}... [LOGIC ENGINE SYNC]
                 </div>
               )}
             </div>
@@ -318,13 +316,13 @@ const App: React.FC = () => {
              
              <div className="flex items-center justify-between mb-10 border-b border-zinc-800 pb-6 relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono">Real-time Telemetry</span>
-                  <span className="text-white font-black uppercase font-mono text-xl tracking-tighter mt-1">Architectural HUD</span>
+                  <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest font-mono">REAL-TIME TELEMETRY</span>
+                  <span className="text-white font-black uppercase font-outfit text-xl tracking-tighter mt-1">ARCHITECTURAL HUD</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col items-end">
                     <span className="text-[8px] font-black text-green-500 font-mono">SYNC_ACTIVE</span>
-                    <span className="text-[10px] font-black text-white font-mono uppercase">Node_v1.5</span>
+                    <span className="text-[10px] font-black text-white font-mono uppercase">NODE_v1.5</span>
                   </div>
                   <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_15px_#22c55e]"></div>
                 </div>
@@ -341,7 +339,7 @@ const App: React.FC = () => {
                       </svg>
                     </div>
                     <span className="text-[11px] font-black text-zinc-600 uppercase tracking-[0.4em] font-mono leading-relaxed">
-                      Telemetry Matrix <br/> Awaiting Core Signal
+                      TELEMETRY MATRIX <br/> AWAITING CORE SIGNAL
                     </span>
                  </div>
                )}
@@ -349,15 +347,15 @@ const App: React.FC = () => {
                <div className="p-8 bg-zinc-900/30 rounded-3xl border-2 border-zinc-800/50 backdrop-blur-md">
                   <div className="flex items-center gap-3 mb-6 border-b border-zinc-800 pb-4">
                      <div className="w-2 h-4 bg-[#f18a22]"></div>
-                     <span className="text-[10px] font-black text-white uppercase tracking-widest font-mono">Session Audit Summary</span>
+                     <span className="text-[10px] font-black text-white uppercase tracking-widest font-mono">SESSION AUDIT SUMMARY</span>
                   </div>
                   <div className="space-y-4">
                      <div className="flex justify-between items-center group">
-                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Logical State</span>
+                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">LOGICAL STATE</span>
                         <span className="text-[#f18a22] font-black font-mono text-[11px] uppercase tracking-tighter">{status}</span>
                      </div>
                      <div className="flex justify-between items-center group">
-                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">Identity Sync</span>
+                        <span className="text-[10px] font-mono text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase">IDENTITY SYNC</span>
                         <span className={`text-[11px] font-black font-mono uppercase ${isContextComplete(vehicleContext) ? 'text-green-500' : 'text-red-500'}`}>
                           {isContextComplete(vehicleContext) ? 'SECURED' : 'AWAITING_ID'}
                         </span>

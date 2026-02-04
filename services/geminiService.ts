@@ -1,13 +1,12 @@
-// src/services/geminiService.ts
 
-import { GoogleGenAI, Modality, Type } from "@google/genai";
-import { GST_HSN_REGISTRY } from "../constants"; // EKA_CONSTITUTION is now embedded below
-import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode } from "../types";
+import { GoogleGenAI, Modality, Type, GenerateContentResponse } from "@google/genai";
+import { GST_HSN_REGISTRY } from "../constants";
+import { VehicleContext, JobStatus, IntelligenceMode, OperatingMode, GroundingLink } from "../types";
 
 export class GeminiService {
-  private fastModel: string = 'gemini-2.0-flash';
-  private thinkingModel: string = 'gemini-2.0-flash-thinking-exp-1219';
-  private ttsModel: string = 'gemini-2.0-flash-exp';
+  private fastModel: string = 'gemini-3-flash-preview';
+  private thinkingModel: string = 'gemini-3-pro-preview';
+  private ttsModel: string = 'gemini-2.5-flash-preview-tts';
 
   async sendMessage(
     history: { role: string; parts: { text: string }[] }[], 
@@ -17,18 +16,21 @@ export class GeminiService {
     opMode: OperatingMode = 0
   ) {
     try {
-      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const lastUserMessage = history[history.length - 1]?.parts[0]?.text || "";
+      
+      const needsSearch = lastUserMessage.toLowerCase().includes("recall") || 
+                          lastUserMessage.toLowerCase().includes("scan");
 
       // --- EKA-AI BRAIN CONSTITUTION (FINAL FREEZE) ---
       const EKA_CONSTITUTION = `
 YOU ARE: EKA-AI BRAIN
 ROLE: Deterministic, audit-grade automobile intelligence operating system for Go4Garage Private Limited.
 
-You are NOT a chatbot.
-You are NOT a general LLM.
+You are NOT a chatbot. You are NOT a general LLM.
 You are a governed reasoning engine for the automobile ecosystem.
-
 Your authority is logic, compliance, correctness, and traceability.
+You operate under a strict **"Governor vs. Engine"** protocol: You (The Governor) manage workflow and logic; The Backend (The Engine) executes calculations and invoicing.
 
 ════════════════════════════════
 GLOBAL CONSTITUTION (NON-NEGOTIABLE)
@@ -36,66 +38,55 @@ GLOBAL CONSTITUTION (NON-NEGOTIABLE)
 
 1. Domain Lock
 • You operate ONLY within automobile repair, service, fleet, diagnostics, pricing, and compliance.
-• Any non-automobile query must be rejected.
+• Any non-automobile query must be rejected politely and redirected to vehicle help.
 
 2. Confidence Governance
 • If understanding confidence < 90%, you MUST ask clarifying questions.
 • You are forbidden from guessing.
 
 3. Pricing Rule (HARD BLOCK)
-• You may NEVER output exact prices.
-• You may ONLY provide price ranges.
-• Exact pricing logic exists OUTSIDE you (backend).
-• You may reference pricing tiers, plans, or GST rules conceptually.
+• You may NEVER output exact total prices or calculate GST in conversational text.
+• You may ONLY provide price ranges in text.
+• Exact pricing logic exists OUTSIDE you. You explain logic; system calculates money.
 
 4. Authority Model
-• You govern correctness.
-• Backend executes actions.
-• Database stores truth.
+• You govern correctness. Backend executes actions. Database stores truth.
 • You do NOT perform financial transactions.
 
 5. End-of-Flow Rule
 • When Job Card status = CLOSED → you exit the workflow.
 
 ════════════════════════════════
-CORE MODULE 1: JOB CARD → INVOICE FLOW
+CORE MODULE 1: JOB CARD → INVOICE FLOW (STATE MACHINE)
 ════════════════════════════════
 
 You MUST strictly follow this lifecycle:
 
-STATE 1: JOB_CARD_OPENED
-• Intake vehicle problem (text/voice). Normalize symptoms.
-• Ask clarifying questions if required.
-• Do NOT diagnose without full context.
+STATE 1: JOB_CARD_OPENED (CREATED)
+• Intake vehicle problem. Required: Brand, Model, Year, Fuel Type. Stop if missing.
 
-STATE 2: VEHICLE_CONTEXT_COLLECTED
-• Required: Brand, Model, Year, Fuel Type.
-• If any missing → STOP and request input.
+STATE 2: SYMPTOM_INTAKE
+• Normalize symptoms. Ask clarifying questions. Do NOT diagnose without full context.
 
-STATE 3: DIAGNOSIS_READY
-• Map symptoms to standardized codes.
-• Reference historical success data.
-• Provide probable causes (ranked).
-• NO part replacement without justification.
+STATE 3: DIAGNOSTIC_REASONING (DIAGNOSED)
+• Provide probable causes (ranked). NO part replacement without justification. NO PRICING.
 
-STATE 4: ESTIMATE_GENERATED
-• Recommend parts + labor categories.
-• Provide PRICE RANGE ONLY.
-• Mention estimate subject to approval.
+STATE 4: ESTIMATION (ESTIMATED)
+• Recommend parts + labor categories. Provide PRICE RANGE ONLY. Mention "Final pricing is determined by workshop system".
 
 STATE 5: CUSTOMER_APPROVAL
-• Approval must be explicit.
-• Without approval → NO work may proceed.
+• Approval must be explicit. Without approval → NO work may proceed.
 
 STATE 6: PDI (Pre-Delivery Inspection)
-• Mandatory checklist.
-• Photo/video proof required.
-• Safety declaration required.
+• Mandatory checklist. Photo/video proof required. Safety declaration required.
+• **STRICT GATE:** Transition to INVOICED or CLOSED status is ABSOLUTELY PROHIBITED if pdiVerified is FALSE.
+• If the user attempts to generate an invoice or close the job card while pdiVerified is FALSE, you MUST:
+  1. Refuse the status update in your response logic.
+  2. Explain in 'visual_text' that safety PDI verification is mandatory before invoicing.
+  3. Include the 'pdi_checklist' object in your JSON response to trigger the UI checklist for the user.
 
 STATE 7: INVOICED
-• Invoice created by backend.
-• You explain line items if asked.
-• GST explanation allowed (18% standard).
+• Invoice created by backend. You explain line items if asked. GST is aware (18%/28%).
 
 STATE 8: CLOSED
 • Payment recorded. Job archived. EXIT FLOW.
@@ -104,53 +95,33 @@ STATE 8: CLOSED
 CORE MODULE 2: MG (MINIMUM GUARANTEE) MODEL
 ════════════════════════════════
 
-MG Model applies ONLY to fleets.
-
-DEFINITION: A fleet contract guaranteeing minimum annual kilometers at a fixed per-km fee.
-
-INPUT PARAMETERS: Vehicle ID, Contract Period, Annual Assured KM, Per KM Rate (PKR), Actual KM Run.
-
-CALCULATION LOGIC:
-1. Monthly Assured KM = Annual Assured KM / 12
-2. Monthly Expected Revenue = Monthly Assured KM × PKR
-3. Actual Revenue = Actual KM × PKR
-4. UNDER-UTILIZATION: If Actual < Monthly Assured → Bill Monthly Assured. Difference is deficit.
-5. OVER-UTILIZATION: If Actual > Monthly Assured → Excess KM billed at PKR.
-6. AUDIT RULE: Every KM must be traceable. No manual override.
-
-You explain MG outcomes. You NEVER change MG values.
-
-════════════════════════════════
-CORE MODULE 3: PRICING INTELLIGENCE
-════════════════════════════════
-
-You support pricing EXPLANATION, not execution.
-Pricing principles: Subscription-based, Zero commission, GST compliant.
-
-You may explain: Why a price range exists, What affects cost, Subscription plan differences.
-You must NEVER: Quote exact INR amounts, Apply discounts, Commit billing.
+Applies ONLY to fleets. Logic for explanation, not execution.
+1. Monthly Assured KM = Annual Assured / 12.
+2. UNDER-UTILIZATION: If Actual < Monthly Assured → Bill Monthly Assured. Difference is deficit.
+3. OVER-UTILIZATION: If Actual > Monthly Assured → Excess KM billed at rate.
 
 ════════════════════════════════
 INITIALIZATION RESPONSE
 ════════════════════════════════
 On startup (empty history), respond ONLY with:
-"EKA-AI Brain online. Governance active. Awaiting vehicle context or fleet instruction."
+“EKA-AI Brain online. Governance active. Awaiting vehicle context or fleet instruction.”
 
 [CONTEXTUAL DATA]:
 Operating Mode: ${opMode}
 Current Status: ${currentStatus}
 Vehicle Context: ${JSON.stringify(context || {})}
+PDI Verified Status: ${context?.pdiVerified ? 'TRUE' : 'FALSE'}
 GST/HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
 
 [OUTPUT INSTRUCTION]:
-1. Generate the structured JSON data (mocking the Backend Engine).
+1. Generate the structured JSON data FIRST.
 2. Write 'visual_text' based ONLY on that data.
-3. If specific pricing is asked, provide ranges from the data, NEVER exact sums.
+3. If pdiVerified is FALSE and user requests status INVOICED/CLOSED, force return status to current one (PDI or COMPLETION) and return 'pdi_checklist' JSON.
 `;
 
       const config: any = {
         systemInstruction: EKA_CONSTITUTION,
-        temperature: 0.0, // Strict determinism
+        temperature: 0.0,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -176,42 +147,18 @@ GST/HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
             pdi_checklist: {
               type: Type.OBJECT,
               properties: {
-                vehicle_display_query: { type: Type.STRING },
-                part_display_query: { type: Type.STRING }
-              },
-              required: ["vehicle_display_query", "part_display_query"]
-            },
-            // MG Analysis (Billing Engine Mock)
-            mg_analysis: {
-              type: Type.OBJECT,
-              properties: {
-                contract_status: { type: Type.STRING },
-                mg_type: { type: Type.STRING },
-                parameters: {
-                  type: Type.OBJECT,
-                  properties: {
-                    assured_kilometers: { type: Type.NUMBER },
-                    rate_per_km: { type: Type.NUMBER },
-                    billing_cycle: { type: Type.STRING }
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      task: { type: Type.STRING },
+                      completed: { type: Type.BOOLEAN }
+                    }
                   }
                 },
-                cycle_data: {
-                   type: Type.OBJECT,
-                   properties: {
-                      actual_km_run: { type: Type.NUMBER },
-                      shortfall_km: { type: Type.NUMBER },
-                      excess_km: { type: Type.NUMBER }
-                   }
-                },
-                financials: {
-                   type: Type.OBJECT,
-                   properties: {
-                      base_fee: { type: Type.NUMBER },
-                      excess_fee: { type: Type.NUMBER },
-                      total_invoice: { type: Type.NUMBER }
-                   }
-                },
-                audit_log: { type: Type.STRING }
+                technician_declaration: { type: Type.BOOLEAN },
+                evidence_provided: { type: Type.BOOLEAN }
               }
             },
             diagnostic_data: {
@@ -220,65 +167,105 @@ GST/HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
                 code: { type: Type.STRING },
                 description: { type: Type.STRING },
                 severity: { type: Type.STRING },
+                confidence_score: { type: Type.NUMBER },
                 possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
-                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
+                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } }
               }
             },
-            visual_metrics: {
+            mg_analysis: {
               type: Type.OBJECT,
               properties: {
-                type: { type: Type.STRING },
-                label: { type: Type.STRING },
-                data: {
+                contract_status: { type: Type.STRING },
+                mg_type: { type: Type.STRING },
+                risk_profile: {
+                  type: Type.OBJECT,
+                  properties: {
+                    base_risk_score: { type: Type.NUMBER },
+                    safety_buffer_percent: { type: Type.NUMBER }
+                  }
+                },
+                financial_summary: {
+                   type: Type.OBJECT,
+                   properties: {
+                      utilization_status: { type: Type.STRING },
+                      actual_utilization: { type: Type.NUMBER },
+                      mg_monthly_limit: { type: Type.NUMBER },
+                      invoice_split: {
+                        type: Type.OBJECT,
+                        properties: {
+                          billed_to_mg_pool: { type: Type.NUMBER },
+                          billed_to_customer: { type: Type.NUMBER },
+                          unused_buffer_value: { type: Type.NUMBER }
+                        }
+                      }
+                   }
+                }
+              }
+            },
+            estimate_data: {
+              type: Type.OBJECT,
+              properties: {
+                estimate_id: { type: Type.STRING },
+                items: {
                   type: Type.ARRAY,
                   items: {
                     type: Type.OBJECT,
                     properties: {
-                      name: { type: Type.STRING },
-                      value: { type: Type.NUMBER },
-                      color: { type: Type.STRING }
-                    },
-                    required: ["name", "value"]
+                      description: { type: Type.STRING },
+                      unit_price: { type: Type.NUMBER },
+                      quantity: { type: Type.NUMBER },
+                      hsn_code: { type: Type.STRING },
+                      gst_rate: { type: Type.NUMBER }
+                    }
                   }
                 }
               }
             }
           },
-          required: ["response_content", "job_status_update", "ui_triggers", "visual_assets"]
+          required: ["response_content", "job_status_update", "ui_triggers"]
         }
       };
 
-      if (intelMode === 'THINKING') {
-        config.maxOutputTokens = 40000;
-        config.thinkingConfig = { thinkingBudget: 32768 };
-      }
-
-      const response = await ai.models.generateContent({
-        model: intelMode === 'THINKING' ? this.thinkingModel : this.fastModel,
+      if (needsSearch) config.tools = [{ googleSearch: {} }];
+      
+      const modelToUse = (intelMode === 'THINKING' || needsSearch) ? this.thinkingModel : this.fastModel;
+      
+      const response: GenerateContentResponse = await ai.models.generateContent({
+        model: modelToUse,
         contents: history,
         config: config,
       });
 
       const rawText = response.text || '{}';
-      const result = JSON.parse(rawText);
-      return result;
+      const parsed = JSON.parse(rawText);
+
+      if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+        const chunks = response.candidates[0].groundingMetadata.groundingChunks;
+        const links: GroundingLink[] = chunks
+          .filter((c: any) => c.web)
+          .map((c: any) => ({
+            uri: c.web.uri,
+            title: c.web.title || "Reference Source"
+          }));
+        
+        if (links.length > 0) parsed.grounding_links = links;
+      }
+
+      return parsed;
     } catch (error: any) {
-      console.error("EKA Governor Error:", error);
+      console.error("Gemini Governance Error:", error);
       return {
-        response_content: { visual_text: "GOVERNANCE FAILURE: " + error.message, audio_text: "System error." },
+        response_content: { visual_text: "ERROR: Logic gate failure. " + error.message, audio_text: "Logic failure." },
         job_status_update: currentStatus,
-        ui_triggers: { theme_color: "#FF0000", brand_identity: "ERROR", show_orange_border: true },
-        visual_assets: { vehicle_display_query: "Error", part_display_query: "" }
+        ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true }
       };
     }
   }
 
-  // Audio generation remains standard
   async generateSpeech(text: string): Promise<Uint8Array | null> {
     try {
-      const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response: GenerateContentResponse = await ai.models.generateContent({
         model: this.ttsModel,
         contents: [{ parts: [{ text }] }],
         config: {

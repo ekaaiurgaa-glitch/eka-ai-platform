@@ -27,7 +27,6 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     return { label: 'STATUS: VERIFYING...', dotClass: 'bg-[#FFEA00] animate-flicker shadow-[0_0_8px_#FFEA00]' };
   }
 
-  // 1. Global / Priority Statuses
   if (status === 'CLOSED' || status === 'MG_CLOSED') {
     return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]' };
   }
@@ -48,7 +47,6 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
 
   const isIdentified = !!vehicle.registrationNumber;
 
-  // 2. Workshop Mode Logic (Mode 1)
   if (mode === 1) {
     if (!isIdentified) {
       return { 
@@ -62,7 +60,6 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     };
   }
 
-  // 3. Fleet Mode Logic (Mode 2)
   if (mode === 2) {
     if (!isIdentified) {
       return { 
@@ -76,18 +73,7 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     };
   }
 
-  // Ignition Mode (0) Logic
-  if (status === 'CREATED') {
-    return { 
-      label: 'IGNITION: READY', 
-      dotClass: 'bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(96,165,250,0.5)]' 
-    };
-  }
-
-  if (status === 'CLOSED' || status === 'INVOICED' || status === 'PDI_COMPLETED') {
-    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
-  }
-
+  const isComplete = isContextComplete(vehicle);
   return { 
     label: isComplete ? 'SYSTEM: READY' : 'SYSTEM: AWAITING_AUTH', 
     dotClass: isComplete ? 'bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-zinc-700' 
@@ -108,17 +94,17 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
   };
 
   return (
-    <header className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-[#000000] border-b border-[#262626] sticky top-0 z-50 gap-4">
+    <header className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-[#000000] sticky top-0 z-50 gap-4" style={{ borderBottom: '1px solid rgba(241, 138, 34, 0.25)' }}>
       <div className="flex items-center gap-3 shrink-0">
-        <div className="w-10 h-10 bg-[#f18a22] rounded-lg flex items-center justify-center font-black text-black text-xl shadow-[0_0_20px_rgba(241,138,34,0.4)]">
+        <div className="w-10 h-10 bg-[#f18a22] rounded-lg flex items-center justify-center font-black text-black text-xl shadow-[0_0_20px_rgba(241,138,34,0.4)] font-outfit">
           G4
         </div>
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5">
-            <span className="text-white font-black tracking-tighter text-xl leading-tight uppercase">EKA-AI</span>
-            <span className="px-1.5 py-0.5 bg-zinc-800 rounded text-[7px] font-black text-zinc-400 tracking-widest uppercase">G4G Original</span>
+            <h1 className="text-white font-black tracking-tighter text-2xl leading-tight uppercase font-outfit">EKA-AI</h1>
+            <span className="px-1.5 py-0.5 bg-zinc-800 rounded text-[7px] font-black text-zinc-400 tracking-widest uppercase font-mono">G4G ORIGINAL</span>
           </div>
-          <span className="text-[#f18a22] text-[9px] font-black uppercase tracking-[0.2em]">Automobile Intelligence</span>
+          <span className="text-[#f18a22] text-[10px] font-black uppercase tracking-[0.1em] font-outfit">Governed Automobile Intelligence · Go4Garage Private Limited</span>
         </div>
       </div>
       
@@ -127,12 +113,12 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
           <div className="flex items-center gap-3 px-4 py-2 bg-[#f18a22]/5 border border-[#f18a22]/20 rounded-full animate-in fade-in zoom-in duration-500">
             <div className="flex items-center gap-1.5">
                {renderFuelIcon()}
-               <span className="text-[10px] text-white font-black uppercase tracking-widest">
+               <span className="text-[10px] text-white font-black uppercase tracking-widest font-outfit">
                 {vehicle.brand} {vehicle.model}
               </span>
             </div>
             <div className="w-[1px] h-3 bg-zinc-800"></div>
-            <span className="text-[9px] text-zinc-500 font-bold uppercase">{vehicle.year}</span>
+            <span className="text-[9px] text-zinc-500 font-bold uppercase font-mono">{vehicle.year}</span>
           </div>
         )}
 
@@ -146,19 +132,10 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
 
       <div className="hidden lg:flex items-center gap-4">
         <div className="flex flex-col items-end">
-          <span className="text-zinc-600 text-[9px] font-black uppercase tracking-widest">G4G Governance Engine</span>
+          <span className="text-zinc-600 text-[9px] font-black uppercase tracking-widest font-mono">G4G Governance Engine</span>
           <span className="text-zinc-800 text-[8px] font-mono">PHASE-1.AUDIT.G4G</span>
         </div>
       </div>
-      <style>{`
-        @keyframes flicker {
-          0%, 100% { opacity: 1; filter: brightness(1.2); }
-          50% { opacity: 0.3; filter: brightness(0.8); }
-        }
-        .animate-flicker {
-          animation: flicker 0.6s infinite linear;
-        }
-      `}</style>
     </header>
   );
 };

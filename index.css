@@ -1,0 +1,64 @@
+
+:root {
+  --bg: #000000;
+  --panel: #0d0d0d;
+  --border: #f18a22;
+  --user-bg: #111111;
+  --user-border: #222222;
+  --eka-bg: #0b0b0b;
+  --text-main: #ffffff;
+  --text-muted: #a1a1aa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}
+
+h1, h2, h3, h4, .font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+.font-mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d97a1d;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(0); opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; filter: brightness(1.2); }
+  50% { opacity: 0.3; filter: brightness(0.8); }
+}
+
+.animate-flicker {
+  animation: flicker 0.6s infinite linear;
+}
