@@ -6,7 +6,13 @@ import { geminiService } from './services/geminiService';
 
 const App: React.FC = () => {
   // --- STATE ---
-  const [vehicleContext, setVehicleContext] = useState<VehicleContext>({});
+  const [vehicleContext, setVehicleContext] = useState<VehicleContext>({
+    vehicleType: '',
+    brand: '',
+    model: '',
+    year: '',
+    fuelType: ''
+  });
   const [intelligenceMode, setIntelligenceMode] = useState<IntelligenceMode>('FAST');
   const [operatingMode, setOperatingMode] = useState<OperatingMode>(0);
   const [messages, setMessages] = useState<Message[]>([
@@ -25,6 +31,15 @@ const App: React.FC = () => {
   // --- HANDLERS ---
   const scrollToBottom = () => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   useEffect(() => scrollToBottom(), [messages, isLoading]);
+
+  const getOperatingModeLabel = (mode: OperatingMode): string => {
+    switch (mode) {
+      case 0: return 'IGNITION';
+      case 1: return 'WORKSHOP';
+      case 2: return 'FLEET';
+      default: return 'IGNITION';
+    }
+  };
 
   const handleSendMessage = async (text: string) => {
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: text, timestamp: new Date() };
@@ -59,27 +74,27 @@ const App: React.FC = () => {
       {/* SIDEBAR (Navigation & History) */}
       <aside className="sidebar hidden md:flex">
         <div className="mb-8 flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#f18a22] rounded-lg flex items-center justify-center font-black text-black">G4</div>
-          <h1 className="text-xl font-bold tracking-tight text-white">EKA-AI</h1>
+          <div className="w-8 h-8 bg-[var(--accent-primary)] rounded-lg flex items-center justify-center font-black text-black">G4</div>
+          <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">EKA-AI</h1>
         </div>
         
         <button 
           onClick={() => window.location.reload()}
-          className="w-full py-3 px-4 bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] rounded-xl text-sm font-medium text-white transition-all flex items-center gap-2 mb-6"
+          className="w-full py-3 px-4 bg-[var(--bg-tertiary)] hover:bg-[var(--border-color)] border border-[var(--border-color)] rounded-xl text-sm font-medium text-[var(--text-primary)] transition-all flex items-center gap-2 mb-6"
         >
           <span>+</span> New Diagnostic Session
         </button>
 
         <div className="flex-1 overflow-y-auto">
-          <h3 className="text-xs font-bold text-[#f18a22] uppercase tracking-widest mb-4">Active Context</h3>
-          <div className="p-3 bg-[#111] rounded-lg border border-[#222] text-xs space-y-2">
+          <h3 className="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-widest mb-4">Active Context</h3>
+          <div className="p-3 bg-[var(--bg-tertiary)] rounded-lg border border-[var(--border-color)] text-xs space-y-2">
             <div className="flex justify-between">
-              <span className="text-zinc-500">MODE</span>
-              <span className="text-white font-mono">{operatingMode === 0 ? 'IGNITION' : 'WORKSHOP'}</span>
+              <span className="text-[var(--text-secondary)]">MODE</span>
+              <span className="text-[var(--text-primary)] font-mono">{getOperatingModeLabel(operatingMode)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-zinc-500">STATUS</span>
-              <span className="text-[#f18a22] font-mono">{status}</span>
+              <span className="text-[var(--text-secondary)]">STATUS</span>
+              <span className="text-[var(--accent-primary)] font-mono">{status}</span>
             </div>
           </div>
         </div>
@@ -91,13 +106,13 @@ const App: React.FC = () => {
         <div className="chat-scroll-container" ref={scrollRef}>
           <div className="content-width flex flex-col gap-6 pb-32">
             {messages.map(msg => (
-              <ChatMessage key={msg.id} message={msg} />
+              <ChatMessage key={msg.id} message={msg} vehicleContext={vehicleContext} />
             ))}
             {isLoading && (
               <div className="flex gap-4 animate-pulse ml-2">
-                <div className="w-2 h-2 bg-[#f18a22] rounded-full"></div>
-                <div className="w-2 h-2 bg-[#f18a22] rounded-full delay-75"></div>
-                <div className="w-2 h-2 bg-[#f18a22] rounded-full delay-150"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full delay-75"></div>
+                <div className="w-2 h-2 bg-[var(--accent-primary)] rounded-full delay-150"></div>
               </div>
             )}
           </div>
@@ -107,7 +122,7 @@ const App: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black via-black to-transparent">
           <div className="content-width">
             <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
-            <p className="text-center text-[10px] text-zinc-600 mt-3 font-mono">
+            <p className="text-center text-[10px] text-[var(--text-secondary)] mt-3 font-mono">
               EKA-AI GOVERNANCE ENGINE • v4.5 • AUDIT GRADE
             </p>
           </div>
