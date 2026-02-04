@@ -66,17 +66,31 @@ export interface MGLineItem {
 
 export interface MGAnalysis {
   contract_status: 'ACTIVE' | 'INACTIVE';
-  mg_type: 'COST_BASED' | 'USAGE_BASED';
-  line_item_analysis: MGLineItem[];
+  mg_type: 'COST_BASED' | 'USAGE_BASED' | 'KM_BASED' | 'DAY_BASED';
+  is_prorata_applied: boolean;
+  line_item_analysis?: MGLineItem[];
+  parameters: {
+    guaranteed_threshold: number;
+    actual_usage: number;
+    rate_per_unit: number;
+    active_days?: number;
+    total_days_in_month?: number;
+  };
   financial_summary: {
     mg_monthly_limit: number;
     actual_utilization: number;
-    utilization_status: 'UNDER_RUN' | 'OVER_RUN' | 'EXACT';
+    utilization_status: 'UNDER_RUN' | 'OVER_RUN' | 'EXACT' | 'MINIMUM_GUARANTEE_APPLIED' | 'OVER_UTILIZATION_CHARGED';
     invoice_split: {
       billed_to_mg_pool: number;
       billed_to_customer: number;
       unused_buffer_value: number;
+      excess_amount?: number;
     };
+  };
+  audit_trail: {
+    logic_applied: string;
+    formula_used: string;
+    adjustments_made: string[];
   };
   audit_log: string;
 }

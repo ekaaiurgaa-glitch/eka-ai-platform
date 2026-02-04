@@ -19,16 +19,19 @@ export class GeminiService {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const mgEngineInstruction = `
-[MG (MINIMUM GUARANTEE) ENGINE PROTOCOL]:
-When Operating Mode is 2 (FLEET), you act as the MG Truth Engine:
-- CATEGORIZATION:
-  - MG_COVERED: Preventive Maintenance, Wear & Tear, Diagnostics.
-  - NON_MG_PAYABLE: Accidental Damage, Abuse, Unauthorized Repairs, Cosmetics.
-- SETTLEMENT LOGIC (COST-BASED):
-  - If Actual < MG_Limit: Fleet pays MG_Limit. Unused buffer is recorded.
-  - If Actual > MG_Limit: Fleet pays MG_Limit + Overage.
-- SETTLEMENT LOGIC (USAGE-BASED):
-  - Actual KM vs KM Limit. Excess KM billed at contract rate.
+[MG (MINIMUM GUARANTEE) ENGINE - FINANCIAL TRUTH PROTOCOL]:
+When Operating Mode is 2 (FLEET), you act as the deterministic MG Truth Engine. You enforce agreed contracts for fleet economics.
+
+1. PRO-RATA RULE: If a vehicle starts/ends mid-cycle, apply: Adjusted_Threshold = (MG_Threshold / Total_Days_In_Month) * Active_Days.
+2. CALCULATION STANDARD: All monetary values MUST be calculated to 2 decimal places. Show the formula string in 'formula_used'.
+3. CATEGORIZATION:
+   - MG_COVERED: Preventive Maintenance, Wear & Tear, Diagnostics.
+   - NON_MG_PAYABLE: Accidental Damage, Abuse, Unauthorized Repairs, Cosmetics.
+4. LOGIC GATES:
+   - CASE 1 (Actual <= Threshold): Payable = Threshold × Rate. Status = "MINIMUM_GUARANTEE_APPLIED".
+   - CASE 2 (Actual > Threshold): Payable = (Threshold × Rate) + ((Actual - Threshold) × Rate). Status = "OVER_UTILIZATION_CHARGED".
+5. DOWNTIME RELIEF: Subtract downtime days from active days if provided.
+6. MANDATORY OUTPUT: You must provide exact audit reasoning and logic splitting in the 'mg_analysis' block.
 `;
 
       const modeInstruction = `
@@ -43,16 +46,12 @@ ${JSON.stringify(GST_HSN_REGISTRY, null, 2)}
 
 [VISUALIZATION MANDATE]:
 You MUST leverage data visualizations (visual_metrics) to explain complex automotive data:
-- 'PIE': Use for symptom/complaint distribution (Mechanical vs Electrical vs Body).
-- 'PROGRESS': Use for repair workflow percentage or PDI completion.
-- 'BAR': Use for comparing part costs or labor hours.
-- 'RADAR': Use for 'System Equilibrium' (Brakes, Engine, Suspension, Tyres, Battery, Cooling).
-- 'AREA' or 'LINE': Use for sensor trends over time (Voltage, Temperature, O2 levels).
-- 'RADIAL': Use for specific gauges (Fuel level, Battery state of charge, Tyre health).
-
-[ESTIMATE COMPLIANCE]:
-- PART items MUST use HSN starting with 8708 and 28% GST.
-- LABOR/SERVICE items MUST use HSN starting with 9987 and 18% GST.
+- 'PIE': Use for symptom/complaint distribution.
+- 'PROGRESS': Use for repair workflow or PDI completion.
+- 'BAR': Use for comparing part costs or labor.
+- 'RADAR': Use for 'System Equilibrium'.
+- 'AREA' or 'LINE': Use for sensor trends over time.
+- 'RADIAL': Use for specific gauges.
 
 [RESPOND ONLY in valid JSON.]
 `;
@@ -91,15 +90,48 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
               },
               required: ["vehicle_display_query", "part_display_query"]
             },
-            diagnostic_data: {
+            mg_analysis: {
               type: Type.OBJECT,
               properties: {
-                code: { type: Type.STRING },
-                description: { type: Type.STRING },
-                severity: { type: Type.STRING },
-                possible_causes: { type: Type.ARRAY, items: { type: Type.STRING } },
-                recommended_actions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                systems_affected: { type: Type.ARRAY, items: { type: Type.STRING } }
+                contract_status: { type: Type.STRING },
+                mg_type: { type: Type.STRING },
+                is_prorata_applied: { type: Type.BOOLEAN },
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    guaranteed_threshold: { type: Type.NUMBER },
+                    actual_usage: { type: Type.NUMBER },
+                    rate_per_unit: { type: Type.NUMBER },
+                    active_days: { type: Type.NUMBER },
+                    total_days_in_month: { type: Type.NUMBER }
+                  }
+                },
+                financial_summary: {
+                  type: Type.OBJECT,
+                  properties: {
+                    mg_monthly_limit: { type: Type.NUMBER },
+                    actual_utilization: { type: Type.NUMBER },
+                    utilization_status: { type: Type.STRING },
+                    invoice_split: {
+                      type: Type.OBJECT,
+                      properties: {
+                        billed_to_mg_pool: { type: Type.NUMBER },
+                        billed_to_customer: { type: Type.NUMBER },
+                        unused_buffer_value: { type: Type.NUMBER },
+                        excess_amount: { type: Type.NUMBER }
+                      }
+                    }
+                  }
+                },
+                audit_trail: {
+                  type: Type.OBJECT,
+                  properties: {
+                    logic_applied: { type: Type.STRING },
+                    formula_used: { type: Type.STRING },
+                    adjustments_made: { type: Type.ARRAY, items: { type: Type.STRING } }
+                  }
+                },
+                audit_log: { type: Type.STRING }
               }
             },
             visual_metrics: {
@@ -114,83 +146,11 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
                     properties: {
                       name: { type: Type.STRING },
                       value: { type: Type.NUMBER },
-                      color: { type: Type.STRING },
-                      fullMark: { type: Type.NUMBER }
+                      color: { type: Type.STRING }
                     },
                     required: ["name", "value"]
                   }
                 }
-              }
-            },
-            mg_analysis: {
-              type: Type.OBJECT,
-              properties: {
-                contract_status: { type: Type.STRING },
-                mg_type: { type: Type.STRING },
-                line_item_analysis: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      item: { type: Type.STRING },
-                      category: { type: Type.STRING },
-                      classification: { type: Type.STRING },
-                      cost: { type: Type.NUMBER }
-                    }
-                  }
-                },
-                financial_summary: {
-                  type: Type.OBJECT,
-                  properties: {
-                    mg_monthly_limit: { type: Type.NUMBER },
-                    actual_utilization: { type: Type.NUMBER },
-                    utilization_status: { type: Type.STRING },
-                    invoice_split: {
-                      type: Type.OBJECT,
-                      properties: {
-                        billed_to_mg_pool: { type: Type.NUMBER },
-                        billed_to_customer: { type: Type.NUMBER },
-                        unused_buffer_value: { type: Type.NUMBER }
-                      }
-                    }
-                  }
-                },
-                audit_log: { type: Type.STRING }
-              }
-            },
-            service_history: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  date: { type: Type.STRING },
-                  service_type: { type: Type.STRING },
-                  odometer: { type: Type.STRING },
-                  notes: { type: Type.STRING }
-                }
-              }
-            },
-            estimate_data: {
-              type: Type.OBJECT,
-              properties: {
-                estimate_id: { type: Type.STRING },
-                tax_type: { type: Type.STRING },
-                items: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      id: { type: Type.STRING },
-                      description: { type: Type.STRING },
-                      hsn_code: { type: Type.STRING },
-                      unit_price: { type: Type.NUMBER },
-                      quantity: { type: Type.NUMBER },
-                      gst_rate: { type: Type.NUMBER },
-                      type: { type: Type.STRING }
-                    }
-                  }
-                },
-                currency: { type: Type.STRING }
               }
             }
           },
@@ -211,15 +171,6 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
 
       const rawText = response.text || '{}';
       const result = JSON.parse(rawText);
-
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      if (groundingChunks) {
-        result.grounding_links = groundingChunks.map((chunk: any) => ({
-          uri: chunk.web?.uri || '',
-          title: chunk.web?.title || 'External Logic Source'
-        })).filter((link: any) => link.uri);
-      }
-
       return result;
     } catch (error: any) {
       console.error("EKA Central OS Fatal Error:", error);
