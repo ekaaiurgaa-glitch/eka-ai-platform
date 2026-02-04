@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { EstimateData, EstimateItem } from '../types';
+import { EstimateData, EstimateItem } from '../types/types';
 import { GST_HSN_REGISTRY } from '../constants';
 
 interface EstimateGovernanceProps {

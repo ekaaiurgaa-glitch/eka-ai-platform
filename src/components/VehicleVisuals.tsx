@@ -7,7 +7,7 @@ import {
   AreaChart, Area, CartesianGrid, RadialBarChart, RadialBar, Legend,
   LineChart, Line, ComposedChart
 } from 'recharts';
-import { VisualMetric } from '../types';
+import { VisualMetric } from '../types/types';
 
 interface VehicleVisualsProps {
   metric: VisualMetric;
@@ -117,7 +117,7 @@ const VehicleVisuals: React.FC<VehicleVisualsProps> = ({ metric }) => {
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#71717a', fontSize: 9, fontWeight: 'black', textTransform: 'uppercase', fontFamily: 'monospace' }} 
+                  tick={{ fill: '#71717a', fontSize: 9, fontWeight: 'bold', fontFamily: 'monospace' }} 
                 />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#3f3f46', fontSize: 9, fontFamily: 'monospace' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#ffffff05' }} />
@@ -193,7 +193,7 @@ const VehicleVisuals: React.FC<VehicleVisualsProps> = ({ metric }) => {
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="80%" data={metric.data}>
                 <PolarGrid stroke="#262626" />
-                <PolarAngleAxis dataKey="name" tick={{ fill: '#71717a', fontSize: 10, fontWeight: 'black', fontFamily: 'monospace', textTransform: 'uppercase' }} />
+                <PolarAngleAxis dataKey="name" tick={{ fill: '#71717a', fontSize: 10, fontWeight: 'bold', fontFamily: 'monospace' }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} hide />
                 <Radar
                   name={metric.label}

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  eka-ai:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CORS_ORIGINS=*
+      - PORT=8001
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development mode - runs frontend and backend separately
+  frontend-dev:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    command: sh -c "npm install && npm run dev"
+    profiles:
+      - dev
+
+  backend-dev:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8001:8001"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - FLASK_DEBUG=true
+      - CORS_ORIGINS=http://localhost:3000
+      - PORT=8001
+    command: sh -c "pip install -r requirements.txt && python app.py"
+    profiles:
+      - dev

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { JobStatus } from '../types';
+import { JobStatus } from '../types/types';
 
 interface TelemetryDashboardProps {
   status: JobStatus;
