@@ -7,10 +7,14 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Message, JobStatus, VehicleContext, IntelligenceMode, OperatingMode, AuditEntry } from './types';
 import { geminiService } from './services/geminiService';
 
-// Environment validation
+// Environment validation - checks for required configuration
 const validateEnvironment = (): { valid: boolean; error?: string } => {
-  // Check for required environment variables (in production, these would be VITE_ prefixed)
-  // For now, we just validate the app can run
+  // In Vite, environment variables are available via import.meta.env
+  // For this application, we check if the build was successful and basic runtime is available
+  // API key validation happens in geminiService when making requests
+  if (typeof window === 'undefined') {
+    return { valid: false, error: 'Browser environment required' };
+  }
   return { valid: true };
 };
 
@@ -49,7 +53,6 @@ const App: React.FC = () => {
   const [envError, setEnvError] = useState<string | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Environment validation on startup
   useEffect(() => {
@@ -76,10 +79,11 @@ const App: React.FC = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+K to focus input
+      // Ctrl+K to focus the chat input (uses document query as ChatInput manages its own input)
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        inputRef.current?.focus();
+        const chatInput = document.querySelector('textarea[placeholder*="vehicle issue"]') as HTMLTextAreaElement;
+        chatInput?.focus();
       }
       // Escape to close sidebar on mobile
       if (e.key === 'Escape' && sidebarOpen) {

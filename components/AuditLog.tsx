@@ -41,10 +41,10 @@ const AuditLog: React.FC<AuditLogProps> = ({ entries, jobId, className = '' }) =
     });
   };
 
-  const handleExportPDF = async () => {
+  const handleExportAuditTrail = async () => {
     setIsExporting(true);
     
-    // Simulate PDF generation
+    // Export as text file (PDF would require additional library like jsPDF)
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // Create a simple text representation for download
@@ -170,7 +170,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ entries, jobId, className = '' }) =
           {entries.length > 0 && (
             <div className="p-2 border-t border-zinc-900">
               <button
-                onClick={handleExportPDF}
+                onClick={handleExportAuditTrail}
                 disabled={isExporting}
                 className={`w-full py-2 px-3 rounded-lg text-[9px] font-black uppercase tracking-wider font-mono transition-all flex items-center justify-center gap-2 ${
                   isExporting 

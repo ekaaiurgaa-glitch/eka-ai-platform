@@ -31,8 +31,11 @@ const CustomerApprovalGate: React.FC<CustomerApprovalGateProps> = ({
   const [signature, setSignature] = useState<SignatureState>({ isDrawing: false, hasSignature: false });
   const [isProcessing, setIsProcessing] = useState(false);
   const [approvalToken] = useState(() => 
-    `${jobCardId}-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 8)}`
+    `${jobCardId}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
   );
+  
+  // Price range variance for estimates (±10% as stated in legal notice)
+  const PRICE_RANGE_VARIANCE = 0.10;
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -184,7 +187,7 @@ const CustomerApprovalGate: React.FC<CustomerApprovalGateProps> = ({
                 </div>
               </div>
               <span className="text-[12px] font-bold text-[#f18a22] font-mono">
-                {item.price_range || `₹${(item.unit_price * 0.9).toLocaleString()} - ₹${(item.unit_price * 1.1).toLocaleString()}`}
+                {item.price_range || `₹${(item.unit_price * (1 - PRICE_RANGE_VARIANCE)).toLocaleString()} - ₹${(item.unit_price * (1 + PRICE_RANGE_VARIANCE)).toLocaleString()}`}
               </span>
             </div>
           ))}

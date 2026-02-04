@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 interface FileUploadProps {
   onFileSelect: (file: File, previewUrl: string) => void;
@@ -36,6 +36,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup upload interval on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadIntervalRef.current) {
+        clearInterval(uploadIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Compress image client-side
   const compressImage = useCallback(async (file: File): Promise<File> => {
@@ -136,22 +146,26 @@ const FileUpload: React.FC<FileUploadProps> = ({
     // Simulate upload progress (in real implementation, this would be actual upload)
     setState(prev => ({ ...prev, isUploading: true, progress: 0 }));
     
-    const simulateUpload = () => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 20;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          setState(prev => ({ ...prev, isUploading: false, progress: 100 }));
-          onUploadComplete?.(previewUrl);
-        } else {
-          setState(prev => ({ ...prev, progress }));
-        }
-      }, 200);
-    };
+    // Clear any existing interval
+    if (uploadIntervalRef.current) {
+      clearInterval(uploadIntervalRef.current);
+    }
     
-    simulateUpload();
+    let progress = 0;
+    uploadIntervalRef.current = setInterval(() => {
+      progress += Math.random() * 20;
+      if (progress >= 100) {
+        progress = 100;
+        if (uploadIntervalRef.current) {
+          clearInterval(uploadIntervalRef.current);
+          uploadIntervalRef.current = null;
+        }
+        setState(prev => ({ ...prev, isUploading: false, progress: 100 }));
+        onUploadComplete?.(previewUrl);
+      } else {
+        setState(prev => ({ ...prev, progress }));
+      }
+    }, 200);
   }, [maxSizeMB, compressImage, onFileSelect, onUploadComplete]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
