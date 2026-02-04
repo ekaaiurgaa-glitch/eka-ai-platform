@@ -108,9 +108,9 @@ export interface DiagnosticData {
 }
 
 export interface VisualMetric {
-  type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL';
+  type: 'PROGRESS' | 'PIE' | 'BAR' | 'RADAR' | 'AREA' | 'RADIAL' | 'LINE' | 'COMPOSED';
   label: string;
-  data: Array<{ name: string; value: number; color?: string; fullMark?: number }>;
+  data: Array<{ name: string; value: number; color?: string; fullMark?: number; unit?: string }>;
 }
 
 export interface Message {

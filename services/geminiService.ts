@@ -19,6 +19,11 @@ export class GeminiService {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const lastUserMessage = history[history.length - 1]?.parts[0]?.text || "";
       const isMGTrigger = lastUserMessage.includes("Calculate MG Value") || opMode === 2;
+      
+      const needsSearch = lastUserMessage.toLowerCase().includes("recall") || 
+                          lastUserMessage.toLowerCase().includes("mechanical issues") ||
+                          lastUserMessage.toLowerCase().includes("trending issues") ||
+                          lastUserMessage.toLowerCase().includes("scan");
 
       const jobCardLogic = `
 [SECTION B: JOB CARD → INVOICING FLOW PROTOCOL]
@@ -27,44 +32,37 @@ You are a deterministic automobile service advisor. You govern the workflow gate
 1. INTAKE GATE (B1):
    - Mandatory: Brand, Model, Year, Fuel Type.
    - Current Context: ${JSON.stringify(context)}
-   - If missing any mandatory field, you MUST STOP and request it. Do not proceed to diagnosis.
+   - If missing any mandatory field, you MUST STOP and request it.
 
 2. DIAGNOSIS GATE (B2):
-   - Normalize symptoms to known fault categories.
-   - CONFIDENCE RULE: If diagnostic confidence < 90%, set status to 'AWAITING_ROOT_CAUSE' and ask clarifying questions.
-   - Prohibited: Suggesting parts or labor until confidence >= 90%.
+   - Normalize symptoms. Confidence MUST be >= 90%.
+   - VISUAL REQUIREMENT: Return a PIE chart showing "Complaint Distribution" if multiple symptoms are listed.
 
 3. ESTIMATION GATE (B3):
-   - ONLY permitted after Diagnosis confidence >= 90%.
-   - Price range ONLY. No exact prices.
-   - Apply HSN/GST: 8708 (28%) Parts, 9987 (18%) Labor.
+   - Use HSN 8708 (28%) Parts, 9987 (18%) Labor.
+   - VISUAL REQUIREMENT: Return a BAR chart comparing "Estimated Costs" across categories.
 
-4. APPROVAL GATE (B4):
-   - Workflow STOPS until explicit approval is detected in history.
-
-5. PDI GATE (B5 - CRITICAL):
-   - After work execution, status moves to 'PDI'.
-   - Mandatory requirements: Safety checklist, Technician declaration, Photo/Video proof.
-   - PDI_VERIFIED_STATUS: ${context?.pdiVerified ? "TRUE" : "FALSE"}
-   - HARD GATE: You are STRICTLY PROHIBITED from transitioning status to 'INVOICE_ELIGIBLE', 'INVOICING', 'COMPLETION', or 'CLOSED' if PDI_VERIFIED_STATUS is FALSE.
-   - If PDI is not verified, remain in 'PDI' status and request verification.
-
-6. INVOICING & CLOSURE (B6):
-   - ONLY transition to 'INVOICE_ELIGIBLE' or 'INVOICING' when PDI_VERIFIED_STATUS is TRUE.
-   - ONLY transition to 'CLOSED' after explicit confirmation of payment settlement.
+4. PDI GATE (B5):
+   - HARD GATE: Prohibition of status transition to 'CLOSED' if pdiVerified is false.
+   - VISUAL REQUIREMENT: Return a PROGRESS chart showing "Overall Job Completion %".
 `;
 
-      const mgEngineInstruction = `
-[SECTION A: MG GOVERNANCE ENGINE]
-Apply Risk-Weighted calculations for fleet contracts.
-Weights: Low (1.0), Medium (1.3), High (1.7).
-Formula: MG_Amount = Σ (Component_Cost × Risk_Weight) + Safety_Buffer(15%)
+      const visualInstruction = `
+[VISUAL INTELLIGENCE PROTOCOL]
+You MUST generate visual_metrics for the following scenarios:
+1. Symptoms List: Type 'PIE' for "Symptom Cluster".
+2. Job Card Flow: Type 'PROGRESS' for "Protocol Fulfillment".
+3. Component Analysis: Type 'RADAR' for "Component Integrity Scores".
+4. Financials: Type 'BAR' for "Category Allocation".
+5. Temporal Data: Type 'LINE' for "Telemetry History".
 `;
 
       const fullSystemPrompt = `
 ${EKA_CONSTITUTION}
+${visualInstruction}
 ${opMode === 1 ? jobCardLogic : ""}
-${isMGTrigger ? mgEngineInstruction : ""}
+${isMGTrigger ? "[SECTION A: MG GOVERNANCE ENGINE] Apply formula and return MG_ANALYSIS object." : ""}
+${needsSearch ? "[SECTION C: SEARCH GROUNDING] Scan recalls and common faults." : ""}
 
 [OPERATING PARAMETERS]:
 Operating Mode: ${opMode}
@@ -113,6 +111,25 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                 missing_info: { type: Type.ARRAY, items: { type: Type.STRING } }
               }
             },
+            visual_metrics: {
+              type: Type.OBJECT,
+              properties: {
+                type: { type: Type.STRING },
+                label: { type: Type.STRING },
+                data: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      value: { type: Type.NUMBER },
+                      unit: { type: Type.STRING },
+                      color: { type: Type.STRING }
+                    }
+                  }
+                }
+              }
+            },
             pdi_checklist: {
               type: Type.OBJECT,
               properties: {
@@ -149,13 +166,6 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                       }
                     }
                   }
-                },
-                audit_trail: {
-                  type: Type.OBJECT,
-                  properties: {
-                    risk_weights_used: { type: Type.STRING },
-                    formula_used: { type: Type.STRING }
-                  }
                 }
               }
             },
@@ -177,30 +187,15 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
                   }
                 }
               }
-            },
-            visual_metrics: {
-              type: Type.OBJECT,
-              properties: {
-                type: { type: Type.STRING },
-                label: { type: Type.STRING },
-                data: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      name: { type: Type.STRING },
-                      value: { type: Type.NUMBER }
-                    }
-                  }
-                }
-              }
             }
           },
           required: ["response_content", "job_status_update", "ui_triggers"]
         }
       };
 
-      const modelToUse = (intelMode === 'THINKING' || isMGTrigger) ? this.thinkingModel : this.fastModel;
+      if (needsSearch) config.tools = [{ googleSearch: {} }];
+
+      const modelToUse = (intelMode === 'THINKING' || isMGTrigger || needsSearch) ? this.thinkingModel : this.fastModel;
       
       const response: GenerateContentResponse = await ai.models.generateContent({
         model: modelToUse,
@@ -209,10 +204,25 @@ PDI Verified: ${context?.pdiVerified ? "TRUE" : "FALSE"}
       });
 
       const rawText = response.text || '{}';
-      return JSON.parse(rawText);
+      const parsed = JSON.parse(rawText);
+
+      if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+        const chunks = response.candidates[0].groundingMetadata.groundingChunks;
+        const links: GroundingLink[] = chunks
+          .filter((c: any) => c.web)
+          .map((c: any) => ({
+            uri: c.web.uri,
+            title: c.web.title || "Reference Source"
+          }));
+        
+        if (links.length > 0) parsed.grounding_links = links;
+      }
+
+      return parsed;
     } catch (error: any) {
+      console.error("Gemini Error:", error);
       return {
-        response_content: { visual_text: "ERROR: Central logic gate failure.", audio_text: "Logic failure." },
+        response_content: { visual_text: "ERROR: Logic gate failure. " + error.message, audio_text: "Logic failure." },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true }
       };
