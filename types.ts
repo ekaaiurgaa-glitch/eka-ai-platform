@@ -2,24 +2,24 @@
 
 export type MessageRole = 'user' | 'assistant';
 
-export type OperatingMode = 0 | 1 | 2; // 0: Default, 1: Job Card, 2: MG Fleet
+export type OperatingMode = 0 | 1 | 2; // 0: Default, 1: Workshop, 2: MG Fleet
 
 export type JobStatus = 
   | 'CREATED' 
-  // MG States (Section A6)
-  | 'MG_CREATED' 
-  | 'MG_ACTIVE' 
-  | 'BILLING_CYCLE_CLOSED' 
-  | 'SETTLED' 
-  | 'TERMINATED'
-  // Job Card States (Section B)
-  | 'INTAKE_PENDING'
-  | 'ESTIMATION_PHASE'
-  | 'CUSTOMER_APPROVAL_PENDING'
-  | 'WORK_IN_PROGRESS'
-  | 'PDI_VERIFICATION'
-  | 'COMPLETED'  // Work done, PDI done, Evidence Locked (B6)
-  | 'CLOSED';    // Payment settled, Learning enabled (B8)
+  // New Job Card Flow (Strict)
+  | 'DIAGNOSED' 
+  | 'ESTIMATED' 
+  | 'CUSTOMER_APPROVED' 
+  | 'PDI_COMPLETED' 
+  | 'INVOICED' 
+  | 'CLOSED'
+  // Legacy/Other Statuses (Kept for safety)
+  | 'IGNITION_TRIAGE' | 'RSA_ACTIVE' | 'URGAA_QUERY'
+  | 'AUTH_INTAKE' | 'SYMPTOM_RECORDING' | 'DIAGNOSTICS_WISDOM'
+  | 'INVENTORY_GATING' | 'ESTIMATE_GOVERNANCE' | 'APPROVAL_GATE'
+  | 'EXECUTION_QUALITY' | 'PDI_CHECKLIST'
+  | 'CONTRACT_VALIDATION' | 'UTILIZATION_TRACKING' | 'SETTLEMENT_LOGIC'
+  | 'SLA_BREACH_CHECK' | 'MG_COMPLETE';
 
 export type IntelligenceMode = 'FAST' | 'THINKING';
 
@@ -52,32 +52,23 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
-// Updated to match Section A2 - A5
 export interface MGAnalysis {
-  contract_status: 'CREATED' | 'ACTIVE' | 'BILLING_CYCLE_CLOSED' | 'SETTLED' | 'TERMINATED';
+  contract_status: 'ACTIVE' | 'INACTIVE' | 'BREACHED';
   mg_type: 'KM_BASED'; 
   parameters: {
     assured_kilometers: number;
-    contract_months: number;
-    monthly_assured_km: number;
     rate_per_km: number;
-    monthly_assured_revenue: number;
+    billing_cycle: string;
   };
   cycle_data: {
     actual_km_run: number;
-    shortfall_km: number; // Section A3
-    excess_km: number;    // Section A4
+    shortfall_km: number;
+    excess_km: number;
   };
   financials: {
-    revenue_payable: number; // Section A3
-    excess_revenue: number;  // Section A4
-    total_revenue: number;
-  };
-  fleet_intelligence: { // Section A5
-    utilization_ratio: number;
-    revenue_stability_index: number;
-    asset_efficiency_score: number;
-    contract_health: 'HEALTHY' | 'RISK' | 'LOSS';
+    base_fee: number;
+    excess_fee: number;
+    total_invoice: number;
   };
   audit_log: string;
 }
@@ -86,7 +77,6 @@ export interface DiagnosticData {
   code: string;
   description: string;
   severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY';
-  root_cause_confidence: number; // Section B2 (<90% triggers questions)
   possible_causes: string[];
   recommended_actions: string[];
   systems_affected: string[];

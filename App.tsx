@@ -83,8 +83,8 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['INTAKE_PENDING', 'ESTIMATION_PHASE', 'CUSTOMER_APPROVAL_PENDING', 'WORK_IN_PROGRESS', 'PDI_VERIFICATION', 'COMPLETED', 'CLOSED'];
-    const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED'];
+    const workshopStates: JobStatus[] = ['DIAGNOSED', 'ESTIMATED', 'CUSTOMER_APPROVED', 'PDI_COMPLETED', 'INVOICED', 'CLOSED'];
+    const fleetStates: JobStatus[] = ['CONTRACT_VALIDATION', 'UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK', 'MG_COMPLETE'];
 
     if (workshopStates.includes(status)) return 1;
     if (fleetStates.includes(status)) return 2;
@@ -154,7 +154,7 @@ const App: React.FC = () => {
     setOperatingMode(mode);
     if (mode !== 0) setPanelTriggered(true);
     
-    const entryStatus: JobStatus = mode === 1 ? 'INTAKE_PENDING' : mode === 2 ? 'MG_ACTIVE' : 'CREATED';
+    const entryStatus: JobStatus = mode === 1 ? 'DIAGNOSED' : mode === 2 ? 'CONTRACT_VALIDATION' : 'CREATED';
     setStatus(entryStatus);
     
     let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
@@ -172,13 +172,13 @@ const App: React.FC = () => {
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
-    setStatus('CUSTOMER_APPROVAL_PENDING');
+    setStatus('CUSTOMER_APPROVED');
     setMessages(prev => [...prev, {
       id: `auth-success-${Date.now()}`,
       role: 'assistant',
-      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been moved to CUSTOMER_APPROVAL_PENDING gate. Awaiting explicit customer authorization.`,
+      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been approved. Customer authorization complete.`,
       timestamp: new Date(),
-      job_status_update: 'CUSTOMER_APPROVAL_PENDING',
+      job_status_update: 'CUSTOMER_APPROVED',
       operatingMode: 1
     }]);
     
@@ -249,7 +249,7 @@ const App: React.FC = () => {
             <div className="px-4">
                <TelemetryDashboard 
                  status={status} 
-                 complianceScore={status === 'CUSTOMER_APPROVAL_PENDING' ? 100 : status === 'ESTIMATION_PHASE' ? 75 : 40} 
+                 complianceScore={status === 'CUSTOMER_APPROVED' ? 100 : status === 'ESTIMATED' ? 75 : 40} 
                  systemHealth={98} 
                />
             </div>

@@ -63,7 +63,7 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     };
   }
 
-  if (status === 'CLOSED' || status === 'COMPLETED') {
+  if (status === 'CLOSED' || status === 'INVOICED' || status === 'PDI_COMPLETED') {
     return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
   }
 
