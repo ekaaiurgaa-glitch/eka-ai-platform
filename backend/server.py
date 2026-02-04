@@ -4,7 +4,7 @@ The Brain of Go4Garage's Governed Automobile Intelligence System
 
 This Flask server contains:
 - Master Constitution for governed AI behavior
-- Dual-Model Router (Gemini 2.0 Flash + Claude 3.5 Sonnet)
+- Triple-Model Router (Gemini 2.0 Flash + Claude 3.5 Sonnet + Kimi K2.5)
 - Supabase integration for vehicle lookup and audit logging
 - Rate limiting for security
 - File upload handling for PDI evidence
@@ -45,6 +45,21 @@ except ImportError:
     print("Anthropic client not installed, THINKING mode will use Gemini fallback")
 except Exception as e:
     print(f"Anthropic initialization error: {e}")
+
+# Moonshot/Kimi client (optional - for DEEP_CONTEXT mode)
+moonshot_client = None
+try:
+    moonshot_api_key = os.environ.get("MOONSHOT_API_KEY")
+    if moonshot_api_key:
+        import openai
+        moonshot_client = openai.OpenAI(
+            api_key=moonshot_api_key,
+            base_url="https://api.moonshot.cn/v1"
+        )
+except ImportError:
+    print("OpenAI client not installed, DEEP_CONTEXT mode will use fallback")
+except Exception as e:
+    print(f"Moonshot initialization error: {e}")
 
 # Supabase client (optional - graceful degradation if not configured)
 supabase = None
@@ -173,7 +188,7 @@ def fetch_vehicle_from_db(reg_number: str):
         return None
 
 
-def log_intelligence(mode, status, query, response, confidence=None):
+def log_intelligence(mode, status, query, response, model_used=None, confidence=None):
     """Audit trail logging to Supabase"""
     if not supabase:
         return
@@ -183,6 +198,7 @@ def log_intelligence(mode, status, query, response, confidence=None):
             "status": status,
             "user_query": query,
             "ai_response": response,
+            "ai_model": model_used,
             "confidence_score": confidence,
             "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }).execute()
@@ -242,9 +258,40 @@ def call_claude(history, system_prompt):
     return json.loads(response_text.strip())
 
 
-def normalize_response(result, default_status):
+def call_kimi(history, system_prompt):
+    """Kimi K2.5 (Moonshot AI) for DEEP_CONTEXT mode - 200K context window"""
+    if not moonshot_client:
+        raise ValueError("Moonshot client not initialized")
+    
+    # Convert Gemini format to OpenAI format
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in history:
+        role = "user" if msg.get("role") == "user" else "assistant"
+        parts = msg.get("parts", [])
+        content = parts[0].get("text", "") if parts else ""
+        messages.append({"role": role, "content": content})
+    
+    response = moonshot_client.chat.completions.create(
+        model="moonshot-v1-auto",
+        messages=messages,
+        temperature=0.1,
+        max_tokens=4096
+    )
+    
+    content = response.choices[0].message.content
+    
+    # Strip markdown code blocks if present
+    if "```json" in content:
+        content = content.split("```json")[1].split("```")[0]
+    elif "```" in content:
+        content = content.split("```")[1].split("```")[0]
+    
+    return json.loads(content.strip())
+
+
+def normalize_response(result, default_status, model_used=None):
     """Ensure consistent response format regardless of AI model"""
-    return {
+    normalized = {
         "response_content": result.get("response_content", {
             "visual_text": result.get("content", "No response"),
             "audio_text": result.get("content", "No response")[:200] if result.get("content") else "No response"
@@ -263,6 +310,12 @@ def normalize_response(result, default_status):
             "show_orange_border": True
         })
     }
+    if model_used:
+        normalized["_meta"] = {
+            "model": model_used,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+    return normalized
 
 
 @flask_app.route('/api/health')
@@ -271,10 +324,11 @@ def health():
     return jsonify({
         'status': 'healthy',
         'service': 'eka-ai-brain',
-        'version': '4.6',
+        'version': '5.0',
         'models': {
             'gemini': bool(os.environ.get("GEMINI_API_KEY")),
-            'claude': anthropic_client is not None
+            'claude': anthropic_client is not None,
+            'kimi': moonshot_client is not None
         },
         'db_connected': supabase is not None
     })
@@ -283,7 +337,7 @@ def health():
 @flask_app.route('/api/chat', methods=['POST'])
 @limiter.limit("10 per minute")
 def chat():
-    """Main chat endpoint with intelligent Model Router (Gemini/Claude)"""
+    """Main chat endpoint with Triple Model Router (Gemini/Claude/Kimi)"""
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No data provided'}), 400
@@ -292,7 +346,7 @@ def chat():
     context = data.get('context', {})
     status = data.get('status', 'CREATED')
     op_mode = data.get('operating_mode', 0)
-    intel_mode = data.get('intelligence_mode', 'FAST')
+    intel_mode = data.get('intelligence_mode', 'FAST')  # FAST, THINKING, or DEEP_CONTEXT
 
     # Enhance context from database if reg number provided
     if context.get('registrationNumber'):
@@ -314,55 +368,91 @@ def chat():
 Operating Mode: {op_mode}
 Job Status: {status}
 Vehicle Context: {json.dumps(context)}
-AI Model: {intel_mode}
+AI Model Selected: {intel_mode}
 """
 
+    # MODEL ROUTER with Fallback Chain
+    result = None
+    model_used = intel_mode
+    errors = []
+
     try:
-        # MODEL ROUTER: Use Claude for THINKING mode, Gemini for FAST mode
-        if intel_mode == 'THINKING' and anthropic_client:
+        if intel_mode == 'DEEP_CONTEXT' and moonshot_client:
+            print(f"[{datetime.datetime.now()}] Using Kimi (Deep Context Mode)...")
+            result = call_kimi(history, system_prompt)
+            model_used = "kimi-moonshot"
+            
+        elif intel_mode == 'THINKING' and anthropic_client:
             print(f"[{datetime.datetime.now()}] Using Claude (Thinking Mode)...")
             result = call_claude(history, system_prompt)
+            model_used = "claude-3.5-sonnet"
+            
         else:
+            # Default to Gemini for FAST mode
             print(f"[{datetime.datetime.now()}] Using Gemini (Fast Mode)...")
             result = call_gemini(history, system_prompt)
-        
-        normalized = normalize_response(result, status)
-        
-        # Log to audit trail
-        user_query = history[-1]['parts'][0]['text'] if history else ""
-        diagnostic_data = normalized.get('diagnostic_data')
-        log_intelligence(
-            op_mode,
-            normalized['job_status_update'],
-            user_query,
-            normalized['response_content']['visual_text'],
-            diagnostic_data.get('confidence_score') if diagnostic_data else None
-        )
-        
-        return jsonify(normalized)
-        
+            model_used = "gemini-2.0-flash"
+            
     except Exception as e:
-        print(f"Primary AI Error: {e}")
+        print(f"Primary model {intel_mode} failed: {e}")
+        errors.append(f"{intel_mode}: {str(e)}")
         
-        # FALLBACK: If THINKING mode fails, try FAST mode (Gemini)
-        if intel_mode == 'THINKING':
+        # FALLBACK CHAIN: DEEP_CONTEXT -> Claude -> Gemini
+        if intel_mode == 'DEEP_CONTEXT' and anthropic_client and not result:
+            try:
+                print("Falling back to Claude...")
+                result = call_claude(history, system_prompt)
+                model_used = "claude-3.5-sonnet (fallback)"
+            except Exception as e2:
+                errors.append(f"claude: {str(e2)}")
+                
+        # FALLBACK: THINKING -> Gemini
+        if intel_mode == 'THINKING' and not result:
             try:
                 print("Falling back to Gemini...")
                 result = call_gemini(history, system_prompt)
-                normalized = normalize_response(result, status)
-                normalized['response_content']['visual_text'] += "\n\n[Fallback: Claude unavailable, used Gemini]"
-                return jsonify(normalized)
-            except Exception as fallback_error:
-                print(f"Fallback also failed: {fallback_error}")
+                model_used = "gemini-2.0-flash (fallback)"
+            except Exception as e3:
+                errors.append(f"gemini: {str(e3)}")
         
+        # Final fallback to Gemini if still no result
+        if not result and os.environ.get("GEMINI_API_KEY"):
+            try:
+                print("Final fallback to Gemini...")
+                result = call_gemini(history, system_prompt)
+                model_used = "gemini-2.0-flash (fallback)"
+            except Exception as e4:
+                errors.append(f"gemini final: {str(e4)}")
+
+    if not result:
         return jsonify({
             "response_content": {
-                "visual_text": "⚠️ Governance Engine Error. All AI models unavailable. Please retry.",
+                "visual_text": f"⚠️ Governance Engine Error. All AI models failed. Errors: {'; '.join(errors)}",
                 "audio_text": "System error."
             },
             "job_status_update": status,
             "ui_triggers": {"theme_color": "#FF0000", "brand_identity": "ERROR", "show_orange_border": True}
         }), 500
+
+    normalized = normalize_response(result, status, model_used)
+    
+    # Add fallback notice if applicable
+    if "fallback" in model_used:
+        normalized['response_content']['visual_text'] += f"\n\n[Notice: {intel_mode} unavailable, used {model_used}]"
+
+    # Log to audit trail
+    user_query = history[-1]['parts'][0]['text'] if history else ""
+    diagnostic_data = normalized.get('diagnostic_data')
+    log_intelligence(
+        op_mode,
+        normalized['job_status_update'],
+        user_query,
+        normalized['response_content']['visual_text'],
+        model_used,
+        diagnostic_data.get('confidence_score') if diagnostic_data else None
+    )
+    
+    return jsonify(normalized)
 
 
 @flask_app.route('/api/speak', methods=['POST'])

@@ -33,9 +33,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEstimateApprove, o
             <span className={`text-[10px] ml-2 ${
               message.intelligenceMode === 'THINKING' 
                 ? 'text-purple-400' 
+                : message.intelligenceMode === 'DEEP_CONTEXT'
+                ? 'text-blue-400'
                 : 'text-[#f18a22]/70'
             }`}>
-              • {message.intelligenceMode === 'THINKING' ? 'Claude' : 'Gemini'}
+              • {message.intelligenceMode === 'THINKING' ? 'Claude' : message.intelligenceMode === 'DEEP_CONTEXT' ? 'Kimi' : 'Gemini'}
             </span>
           )}
         </div>

@@ -296,10 +296,10 @@ const App: React.FC = () => {
           {/* Intelligence Mode */}
           <div className="mb-4">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2 block">Intelligence</span>
-            <div className="flex items-center gap-1 bg-[#111] border border-[#222] p-1 rounded-lg">
+            <div className="flex flex-col gap-1 bg-[#111] border border-[#222] p-1 rounded-lg">
               <button 
                 onClick={() => setIntelligenceMode('FAST')} 
-                className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   intelligenceMode === 'FAST' 
                     ? 'bg-[#f18a22] text-black shadow-lg' 
                     : 'text-zinc-400 hover:text-white hover:bg-[#222]'
@@ -309,7 +309,7 @@ const App: React.FC = () => {
               </button>
               <button 
                 onClick={() => setIntelligenceMode('THINKING')} 
-                className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   intelligenceMode === 'THINKING' 
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
                     : 'text-zinc-400 hover:text-white hover:bg-[#222]'
@@ -317,9 +317,19 @@ const App: React.FC = () => {
               >
                 <span>🧠</span> Think
               </button>
+              <button 
+                onClick={() => setIntelligenceMode('DEEP_CONTEXT')} 
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  intelligenceMode === 'DEEP_CONTEXT' 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                    : 'text-zinc-400 hover:text-white hover:bg-[#222]'
+                }`}
+              >
+                <span>📚</span> Deep
+              </button>
             </div>
             <p className="text-[8px] text-zinc-600 mt-1 text-center">
-              {intelligenceMode === 'FAST' ? 'Gemini 2.0 Flash' : 'Claude 3.5 Sonnet'}
+              {intelligenceMode === 'FAST' ? 'Gemini 2.0 Flash' : intelligenceMode === 'THINKING' ? 'Claude 3.5 Sonnet' : 'Kimi (200K context)'}
             </p>
           </div>
           
