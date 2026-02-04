@@ -33,7 +33,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   const isAi = message.role === 'assistant';
 
   return (
-    <div className={`flex flex-col mb-10 ${isAi ? 'items-start' : 'items-end'} w-full`}>
+    <div className={`flex flex-col mb-10 ${isAi ? 'items-start' : 'items-end'} w-full animate-in fade-in slide-in-from-bottom-4 duration-500`}>
       <div className={`message-bubble ${isAi ? 'ai-bubble' : 'user-bubble'}`}>
         <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
            <span className={`text-[10px] font-black uppercase tracking-[2px] font-mono ${isAi ? 'text-[#f18a22]' : 'text-zinc-500'}`}>
@@ -42,7 +42,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            {isAi && onPlayAudio && (
              <button 
                 onClick={() => onPlayAudio(message.content)}
-                className={`p-1 rounded hover:bg-[#f18a22]/10 transition-colors ${isAudioPlaying ? 'text-[#f18a22]' : 'text-zinc-500'}`}
+                className={`p-1.5 rounded-md hover:bg-[#f18a22]/10 transition-colors ${isAudioPlaying ? 'text-[#f18a22] shadow-[0_0_10px_rgba(241,138,34,0.3)]' : 'text-zinc-500'}`}
+                title="Play Audio Briefing"
              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
@@ -51,8 +52,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
            )}
         </div>
 
-        <div className="text-base leading-relaxed text-zinc-200">
-          {message.content.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)}
+        <div className="text-base leading-relaxed text-zinc-200 font-inter">
+          {message.content.split('\n').map((line, i) => <p key={i} className="mb-2 last:mb-0">{line}</p>)}
         </div>
 
         {isAi && (
@@ -69,7 +70,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
         <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between opacity-30 text-[9px] font-mono font-black uppercase tracking-widest">
            <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-           {isAi && <span>OS_SYNC: STABLE</span>}
+           {isAi && <span>OS_SYNC: SECURE_STABLE</span>}
         </div>
       </div>
 
@@ -79,8 +80,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           width: fit-content;
           min-width: 300px;
           padding: 24px;
-          border-radius: 16px;
-          box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+          border-radius: 20px;
+          box-shadow: 0 10px 40px -10px rgba(0,0,0,0.8);
           position: relative;
         }
         .ai-bubble {

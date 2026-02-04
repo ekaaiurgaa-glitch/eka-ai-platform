@@ -46,7 +46,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter symptom, DTC or part name..."
-            className="w-full bg-[#050505] text-white border border-[#f18a22] rounded-xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-700 text-base"
+            className="w-full bg-[#050505] text-white border-2 border-[#f18a22] rounded-xl py-4 px-5 focus:outline-none focus:ring-1 focus:ring-[#f18a22] transition-all duration-300 resize-none placeholder:text-zinc-800 text-base font-inter"
             disabled={isLoading}
           />
         </div>
@@ -54,22 +54,22 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
         <button
           onClick={handleSubmit}
           disabled={!input.trim() || isLoading}
-          className="h-[58px] px-8 bg-[#f18a22] text-black font-black uppercase tracking-widest rounded-xl hover:bg-[#d97a1d] transition-all disabled:bg-zinc-800 disabled:text-zinc-600 shadow-[0_0_20px_rgba(241,138,34,0.3)] active:scale-95 flex items-center gap-3"
+          className="h-[62px] px-10 bg-[#f18a22] text-black font-black uppercase tracking-widest rounded-xl hover:bg-white transition-all disabled:bg-zinc-800 disabled:text-zinc-600 shadow-[0_0_25px_rgba(241,138,34,0.3)] active:scale-95 flex items-center gap-3 font-outfit"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+            <div className="w-6 h-6 border-4 border-black/30 border-t-black rounded-full animate-spin"></div>
           ) : (
             <>
               <span>SEND</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </>
           )}
         </button>
       </div>
-      <div className="mt-3 text-center">
-        <p className="text-[9px] text-zinc-700 font-black uppercase tracking-[0.5em] font-mono">
+      <div className="mt-4 text-center">
+        <p className="text-[10px] text-zinc-700 font-black uppercase tracking-[0.5em] font-mono">
           EKA-AI GOVERNANCE ENGINE ACTIVE • GO4GARAGE PRIVATE LIMITED
         </p>
       </div>

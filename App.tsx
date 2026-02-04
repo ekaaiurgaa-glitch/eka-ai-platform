@@ -98,33 +98,38 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#000000] text-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-[#000000] text-white overflow-hidden selection:bg-[#f18a22]/30">
       <Header status={status} vehicle={vehicleContext} isLoading={isLoading} operatingMode={operatingMode} />
       
-      <div className="bg-zinc-900/50 border-b border-white/5 px-6 py-3 flex items-center justify-between z-10">
-        <div className="flex gap-4">
-          <div className="flex bg-black/60 rounded-lg p-1 border border-white/10">
-            <button onClick={() => setIntelligenceMode('FAST')} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-600'}`}>FAST</button>
-            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${intelligenceMode === 'THINKING' ? 'bg-purple-600/50 text-white' : 'text-zinc-600'}`}>EXPERT</button>
+      <div className="bg-zinc-950 border-b border-white/5 px-8 py-3 flex items-center justify-between z-10">
+        <div className="flex gap-5">
+          <div className="flex bg-black rounded-xl p-1 border border-white/10 shadow-lg">
+            <button onClick={() => setIntelligenceMode('FAST')} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>FAST</button>
+            <button onClick={() => setIntelligenceMode('THINKING')} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${intelligenceMode === 'THINKING' ? 'bg-purple-600/50 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>EXPERT</button>
           </div>
-          <div className="flex bg-black/60 rounded-lg p-1 border border-white/10">
-            <button onClick={() => handleModeChange(0)} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black' : 'text-zinc-600'}`}>IGNITION</button>
-            <button onClick={() => handleModeChange(1)} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black' : 'text-zinc-600'}`}>WORKSHOP</button>
-            <button onClick={() => handleModeChange(2)} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black' : 'text-zinc-600'}`}>FLEET</button>
+          <div className="flex bg-black rounded-xl p-1 border border-white/10 shadow-lg">
+            <button onClick={() => handleModeChange(0)} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${operatingMode === 0 ? 'bg-[#f18a22] text-black' : 'text-zinc-600 hover:text-zinc-400'}`}>IGNITION</button>
+            <button onClick={() => handleModeChange(1)} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${operatingMode === 1 ? 'bg-[#f18a22] text-black' : 'text-zinc-600 hover:text-zinc-400'}`}>WORKSHOP</button>
+            <button onClick={() => handleModeChange(2)} className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all tracking-widest font-outfit ${operatingMode === 2 ? 'bg-[#f18a22] text-black' : 'text-zinc-600 hover:text-zinc-400'}`}>FLEET</button>
           </div>
+        </div>
+        <div className="hidden md:flex items-center gap-2">
+           <span className="text-[9px] font-black text-zinc-700 uppercase tracking-widest font-mono">Dossier ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto px-6 py-8" ref={scrollRef}>
-        <div className="max-w-4xl mx-auto flex flex-col gap-8">
-          <TelemetryDashboard status={status} complianceScore={85} systemHealth={99} />
+      <main className="flex-1 overflow-y-auto px-8 py-10" ref={scrollRef}>
+        <div className="max-w-4xl mx-auto flex flex-col gap-10">
+          <TelemetryDashboard status={status} complianceScore={94} systemHealth={99} />
           
           {(operatingMode === 1 || !isContextComplete(vehicleContext)) && (
-            <VehicleContextPanel 
-              context={vehicleContext} 
-              onUpdate={setVehicleContext} 
-              operatingMode={operatingMode}
-            />
+            <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+              <VehicleContextPanel 
+                context={vehicleContext} 
+                onUpdate={setVehicleContext} 
+                operatingMode={operatingMode}
+              />
+            </div>
           )}
 
           <div className="flex flex-col">
@@ -133,13 +138,13 @@ const App: React.FC = () => {
                 key={msg.id} 
                 message={msg} 
                 vehicleContext={vehicleContext} 
-                onEstimateAuthorize={(data) => console.log('Auth:', data)}
+                onEstimateAuthorize={(data) => console.log('Audit Auth Logged:', data)}
               />
             ))}
             {isLoading && (
-              <div className="flex justify-start mb-12">
-                <div className="px-6 py-3 bg-[#0b0b0b] border border-[#f18a22]/30 rounded-full animate-pulse text-[10px] font-black uppercase tracking-[0.2em] text-[#f18a22]">
-                  Processing Governance Protocol...
+              <div className="flex justify-start mb-12 animate-in fade-in duration-300">
+                <div className="px-8 py-4 bg-[#0b0b0b] border-2 border-[#f18a22]/40 rounded-full animate-pulse text-[11px] font-black uppercase tracking-[0.3em] text-[#f18a22] font-mono shadow-[0_0_20px_rgba(241,138,34,0.1)]">
+                  Architectural Sync In Progress...
                 </div>
               </div>
             )}

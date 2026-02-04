@@ -9,14 +9,6 @@ interface HeaderProps {
   operatingMode: OperatingMode;
 }
 
-const FUEL_ICONS: Record<string, string> = {
-  Petrol: "M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M13 11l-4-4m0 4l4-4",
-  Diesel: "M19 16V8m0 0a2 2 0 10-4 0v8m4-8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2v-3M9 11h4",
-  Electric: "M13 10V3L4 14h7v7l9-11h-7z",
-  CNG: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9",
-  Hybrid: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-};
-
 const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingMode, vehicle: VehicleContext) => {
   if (isLoading) return { label: 'VERIFYING...', dotClass: 'bg-[#FFEA00] animate-pulse' };
   
@@ -53,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
             <h1 className="text-white font-black tracking-tighter text-3xl leading-tight uppercase font-outfit">EKA-AI</h1>
             <span className="px-1.5 py-0.5 bg-zinc-800 rounded text-[8px] font-black text-zinc-400 tracking-widest uppercase font-mono">G4G ORIGINAL</span>
           </div>
-          <span className="text-[#f18a22] text-[11px] font-black uppercase tracking-[0.1em] font-outfit">Governed Automobile Intelligence · Go4Garage Private Limited</span>
+          <span className="text-[#f18a22] text-[11px] font-bold uppercase tracking-[0.1em] font-outfit">Governed Automobile Intelligence · Go4Garage Private Limited</span>
         </div>
       </div>
       
