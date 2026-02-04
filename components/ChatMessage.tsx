@@ -188,17 +188,17 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
   return (
     <div className={`flex flex-col mb-10 ${isAi ? 'items-start' : 'items-end'} w-full`}>
       <div className={`message-card transition-all duration-300 ${isAi ? 'ai-style' : 'user-style'}`}>
-        <div className="flex items-center gap-2 mb-4 border-b border-[#f18a22]/20 pb-2">
+        <div className="flex items-center gap-2 mb-4 border-b border-[#f18a22]/20 pb-3">
            <span className={`text-[10px] font-black uppercase tracking-[2px] font-mono ${isAi ? 'text-[#f18a22]' : 'text-zinc-500'}`}>
              {isAi ? 'EKA-Ai Architecture' : 'User Terminal'}
            </span>
            {isAi && onPlayAudio && message.response_content?.audio_text && (
              <button 
                 onClick={() => onPlayAudio(message.response_content!.audio_text)}
-                className={`ml-auto p-1.5 rounded transition-all ${isAudioPlaying ? 'bg-[#f18a22] text-black' : 'text-[#f18a22] hover:bg-[#f18a22]/10'}`}
+                className={`ml-auto p-1.5 rounded-md transition-all ${isAudioPlaying ? 'bg-[#f18a22] text-black shadow-[0_0_10px_#f18a22]' : 'text-[#f18a22] hover:bg-[#f18a22]/10'}`}
                 disabled={isAudioPlaying}
              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                 </svg>
              </button>
@@ -209,49 +209,77 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
           {renderContent()}
         </div>
 
-        <div className="mt-4 flex items-center justify-between opacity-40 text-[9px] font-mono font-bold uppercase">
-           <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
-           {isAi && <span>{message.intelligenceMode} MODE</span>}
+        <div className="mt-5 pt-3 border-t border-zinc-900/50 flex items-center justify-between opacity-50 text-[9px] font-mono font-black uppercase tracking-widest">
+           <div className="flex items-center gap-2">
+             <span className="w-1 h-1 rounded-full bg-[#f18a22]"></span>
+             <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+           </div>
+           {isAi && <span>OS: {message.intelligenceMode} • SYNC_OK</span>}
         </div>
       </div>
 
       <style>{`
         .message-card {
-          border-radius: 8px;
-          max-width: 90%;
+          border-radius: 12px;
+          max-width: 92%;
           width: fit-content;
-          min-width: 320px;
+          min-width: 340px;
           position: relative;
           box-sizing: border-box;
           overflow: hidden;
+          box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
         }
 
         .ai-style {
-          background: #050505;
+          background: #080808;
           border: 1px solid #f18a22;
-          border-left: 8px solid #f18a22;
-          padding: 24px 24px 24px 32px;
-          box-shadow: 0 10px 40px rgba(241, 138, 34, 0.15);
+          border-left: 10px solid #f18a22;
+          padding: 28px 28px 24px 36px; /* Corrected padding for border-left alignment */
+          box-shadow: inset -5px 0 30px rgba(241, 138, 34, 0.03), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
         }
 
         .user-style {
-          background: #0A0A0A;
-          border: 1px solid #333;
+          background: #0F0F0F;
+          border: 1px solid #262626;
           padding: 24px;
           color: #eee;
+          box-shadow: 0 10px 40px -15px rgba(0, 0, 0, 0.6);
         }
 
         .report-frame {
           border: 1px solid #262626;
-          border-radius: 12px;
+          border-radius: 16px;
           overflow: hidden;
           background: #000;
           margin-top: 1.5rem;
+          box-shadow: 0 15px 40px -10px rgba(0,0,0,0.4);
         }
 
         .content-box {
           position: relative;
           width: 100%;
+          z-index: 10;
+        }
+
+        /* HUD scanline effect for AI messages */
+        .ai-style::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, rgba(241, 138, 34, 0.2), transparent);
+          z-index: 1;
+          pointer-events: none;
+          animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+          0% { transform: translateY(0); opacity: 0; }
+          5% { opacity: 1; }
+          95% { opacity: 1; }
+          100% { transform: translateY(100vh); opacity: 0; }
         }
       `}</style>
     </div>
