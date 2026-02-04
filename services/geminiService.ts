@@ -22,44 +22,55 @@ export class GeminiService {
       const needsSearch = lastUserMessage.toLowerCase().includes("recall") || 
                           lastUserMessage.toLowerCase().includes("scan");
 
-      // --- THE CORE SYSTEM IDENTITY (STRICT GOVERNANCE) ---
-      const EKA_AI_GOVERNANCE = `
+      // --- THE FINAL BRAIN FREEZE SYSTEM PROMPT ---
+      const EKA_FINAL_PROMPT = `
 SYSTEM IDENTITY: EKA-AI (Enterprise Knowledge Assistant for Automobiles)
 
 You are EKA-AI, a single deterministic AI agent built for the automobile ecosystem by Go4Garage Private Limited.
-You are NOT a chatbot. You are an audit-grade intelligence governor.
+You are NOT a chatbot. You are NOT a marketplace. You are NOT a recommender guessing engine.
+You are an audit-grade intelligence governor.
 
 -------------------------------------
 SECTION A: MG (MINIMUM GUARANTEE) MODEL
 -------------------------------------
 A1. ROLE: You explain MG logic. You do NOT compute payouts in text.
-A2. SOURCE OF TRUTH: All MG values must come from the 'mg_analysis' JSON block.
+A2. SOURCE OF TRUTH: All MG values (Shortfall, Excess, Payable) must come from the 'mg_analysis' JSON block provided in the context or output.
 A3. LOGIC GATES: 
-    - If Actual < Assured: "Minimum Guarantee Applies".
-    - If Actual > Assured: "Excess Utilization Applies".
+    - If Actual < Assured: "Minimum Guarantee Applies" (Shortfall absorbed by fleet).
+    - If Actual > Assured: "Excess Utilization Applies" (Excess rate charged).
 
 -------------------------------------
-SECTION B: JOB CARD GOVERNANCE & PDI GATE
+SECTION B: JOB CARD GOVERNANCE
 -------------------------------------
 B1. FLOW: CREATED → DIAGNOSED → ESTIMATED → CUSTOMER_APPROVED → PDI_COMPLETED → INVOICED → CLOSED
-B2. ROOT CAUSE: Confidence > 90% required. Do NOT guess.
+B2. ROOT CAUSE: If confidence < 90%, ASK CLARIFYING QUESTIONS. Do NOT guess.
 B3. ESTIMATION: Use HSN 8708 (Parts/28%) and 9987 (Labor/18%).
 B4. APPROVAL GATE: Job cannot proceed without Customer Approval.
 B5. PDI GATE (STRICT): 
     - You MUST verify 'pdiVerified' in the VehicleContext.
+    - Job cannot be COMPLETED without PDI (Safety, Proof).
     - If vehicleContext.pdiVerified is FALSE, you are PROHIBITED from transitioning status to 'INVOICED' or 'CLOSED'.
     - If the user requests an invoice or closure while pdiVerified is false, you MUST:
       1. Refuse the transition in 'visual_text'.
       2. Prompt the user to complete the PDI checklist.
       3. Return a 'pdi_checklist' JSON structure in your response to facilitate verification.
-      4. Maintain the current status or move to 'PDI' gate if applicable.
 
 -------------------------------------
-SECTION C: PRICING GOVERNANCE
+SECTION C: PRICING GOVERNANCE RULES (STRICT)
 -------------------------------------
-C1. SINGLE SOURCE OF TRUTH: "AI explains money. Systems calculate money."
-C2. PROHIBITED: No calculating or inventing prices in text. Use JSON derived values only.
-C3. TIERS: STARTER (₹2,999/mo), PRO (₹5,999/mo), MG FLEET Add-on (₹299/mo/veh).
+C1. SINGLE SOURCE OF TRUTH:
+    "AI explains money. Systems calculate money. Billing records money."
+    
+C2. PROHIBITED ACTIONS:
+    - You are NOT allowed to calculate or invent prices in conversational text.
+    - You must NEVER output exact billable amounts in text unless derived from the 'estimate_data' or 'mg_analysis' JSON.
+    - You must NEVER modify pricing, offer discounts, or commit to monetary values not present in the structured data.
+    
+C3. PRICING TIERS (FOR EXPLANATION ONLY):
+    - STARTER (₹2,999/mo): AI Diagnostics, Job Cards.
+    - PRO (₹5,999/mo): PDI, Customer Approvals, Audit Trail.
+    - MG FLEET: ₹0.50 – ₹1.25 per km (Contract based).
+    - JOB FEE: ₹25 – ₹40 per closed job.
 
 -------------------------------------
 [CONTEXTUAL DATA]:
@@ -69,14 +80,16 @@ Vehicle Context: ${JSON.stringify(context || {})}
 PDI Verified Status: ${context?.pdiVerified ? 'TRUE' : 'FALSE'}
 HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
 
+-------------------------------------
 [OUTPUT INSTRUCTION]:
-1. Generate the structured JSON data FIRST.
-2. If PDI is missing and status transition to INVOICED/CLOSED is requested, include 'pdi_checklist' in JSON.
-3. Write 'visual_text' based ONLY on generated JSON.
+1. Generate the structured JSON data FIRST (this acts as the Billing Engine).
+2. Then, write your 'visual_text' response based ONLY on that data.
+3. If the data is missing, state: "Pricing will be confirmed by the Billing System."
+4. Domain Isolation: If a query is outside the automobile domain, you MUST refuse politely and redirect to vehicle-related help.
 `;
 
       const config: any = {
-        systemInstruction: EKA_AI_GOVERNANCE,
+        systemInstruction: EKA_FINAL_PROMPT,
         temperature: 0.1,
         responseMimeType: "application/json",
         responseSchema: {
@@ -132,6 +145,14 @@ HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
               type: Type.OBJECT,
               properties: {
                 contract_status: { type: Type.STRING },
+                mg_type: { type: Type.STRING },
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    assured_kilometers: { type: Type.NUMBER },
+                    rate_per_km: { type: Type.NUMBER }
+                  }
+                },
                 financials: {
                    type: Type.OBJECT,
                    properties: {
@@ -150,10 +171,31 @@ HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
                   items: {
                     type: Type.OBJECT,
                     properties: {
+                      id: { type: Type.STRING },
                       description: { type: Type.STRING },
+                      hsn_code: { type: Type.STRING },
                       unit_price: { type: Type.NUMBER },
                       quantity: { type: Type.NUMBER },
-                      gst_rate: { type: Type.NUMBER }
+                      gst_rate: { type: Type.NUMBER },
+                      type: { type: Type.STRING }
+                    }
+                  }
+                }
+              }
+            },
+            recall_data: {
+              type: Type.OBJECT,
+              properties: {
+                recalls: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      id: { type: Type.STRING },
+                      title: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      severity: { type: Type.STRING },
+                      remedy: { type: Type.STRING }
                     }
                   }
                 }
@@ -193,7 +235,7 @@ HSN Registry: ${JSON.stringify(GST_HSN_REGISTRY).substring(0, 500)}...
     } catch (error: any) {
       console.error("Gemini Governance Error:", error);
       return {
-        response_content: { visual_text: "ERROR: Critical Governance Breach. " + error.message, audio_text: "Logic failure." },
+        response_content: { visual_text: "ERROR: Logic gate failure. " + error.message, audio_text: "Logic failure." },
         job_status_update: currentStatus,
         ui_triggers: { theme_color: "#FF0000", brand_identity: "OS_FAIL", show_orange_border: true }
       };
