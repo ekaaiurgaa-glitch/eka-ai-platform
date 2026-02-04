@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS job_cards (
     vehicle_id TEXT,
     status TEXT DEFAULT 'CREATED',
     customer_phone TEXT,
-    customer_approval_token TEXT,
+    approval_token TEXT,
     approval_expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
