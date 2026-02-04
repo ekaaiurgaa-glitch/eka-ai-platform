@@ -72,32 +72,33 @@ export interface EstimateData {
 }
 
 export interface MGAnalysis {
-  contract_status: 'MG_CREATED' | 'MG_ACTIVE' | 'MG_CONSUMING' | 'MG_THRESHOLD_ALERT' | 'MG_EXHAUSTED' | 'MG_CLOSED';
-  mg_type: 'KM_BASED'; 
-  parameters: {
-    assured_kilometers: number;
-    rate_per_km: number;
-    billing_cycle: string;
-    monthly_assured_km: number;
-    monthly_assured_revenue: number;
+  contract_status: string;
+  mg_type: string;
+  risk_profile: {
+    base_risk_score: number;
+    safety_buffer_percent: number;
   };
-  cycle_data: {
-    actual_km_run: number;
-    shortfall_km: number;
-    excess_km: number;
-  };
-  financials: {
-    base_fee: number;
-    excess_fee: number;
-    total_invoice: number;
+  financial_summary: {
     utilization_status: 'SAFE' | 'WARNING' | 'BREACHED';
+    actual_utilization: number;
+    mg_monthly_limit: number;
     invoice_split: {
       billed_to_mg_pool: number;
       billed_to_customer: number;
       unused_buffer_value: number;
     };
   };
-  audit_log: string;
+  audit_trail: {
+    risk_weights_used: string;
+    formula_used: string;
+  };
+  parameters?: {
+    assured_kilometers: number;
+    rate_per_km: number;
+    billing_cycle: string;
+    monthly_assured_km: number;
+    monthly_assured_revenue: number;
+  };
 }
 
 export interface DiagnosticData {
