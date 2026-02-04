@@ -241,18 +241,13 @@ const App: React.FC = () => {
 
   const activeTab = getActiveTab();
   
-  // Specific Conditional Rendering Logic
-  const isWorkshopMode = activeTab === 1;
-  const isFleetMode = activeTab === 2;
-  const isIgnitionMode = activeTab === 0;
+  // Specific Conditional Rendering Logic based on operatingMode state
+  const showVehiclePanel = operatingMode === 1 
+    ? (status === 'AUTH_INTAKE' || status === 'PDI' || status === 'INTAKE') 
+    : (panelTriggered || isContextComplete(vehicleContext) || operatingMode === 2);
 
-  // Rule: Workshop Panel only visible when status is 'AUTH_INTAKE' or 'PDI'
-  const showVehiclePanel = isWorkshopMode 
-    ? (status === 'AUTH_INTAKE' || status === 'PDI') 
-    : (panelTriggered || isContextComplete(vehicleContext) || isFleetMode);
-
-  // Rule: Telemetry Dashboard visible when operatingMode is 0 or 2
-  const showTelemetry = isIgnitionMode || isFleetMode;
+  // Telemetry Dashboard visible when operatingMode is 0 (Ignition) or 2 (Fleet)
+  const showTelemetry = operatingMode === 0 || operatingMode === 2;
 
   return (
     <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden relative">
@@ -268,9 +263,9 @@ const App: React.FC = () => {
           </div>
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block"></div>
           <div className="flex bg-black/60 border border-white/10 rounded-xl p-1 shadow-2xl">
-            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
-            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
-            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${activeTab === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
+            <button onClick={() => handleModeChange(0)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 0 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Ignition</button>
+            <button onClick={() => handleModeChange(1)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 1 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Workshop</button>
+            <button onClick={() => handleModeChange(2)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${operatingMode === 2 ? 'bg-[#f18a22] text-black shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}>Fleet</button>
           </div>
         </div>
       </div>
@@ -293,7 +288,7 @@ const App: React.FC = () => {
                   context={vehicleContext} 
                   onUpdate={setVehicleContext} 
                   onScanRecalls={handleScanRecalls}
-                  operatingMode={activeTab}
+                  operatingMode={operatingMode}
                   status={status}
                 />
               </div>
@@ -374,7 +369,7 @@ const App: React.FC = () => {
              </div>
         </aside>
       </main>
-      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={activeTab} status={status} />
+      <ChatInput onSend={handleSendMessage} isLoading={isLoading} operatingMode={operatingMode} status={status} />
     </div>
   );
 };
