@@ -65,7 +65,7 @@ const App: React.FC = () => {
       <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} onNewChat={startNewChat} />
       <div className="flex-1 flex flex-col relative h-full max-w-full">
         <div className="p-4 flex justify-between items-center z-20 bg-[#000000]/80 backdrop-blur-md">
-            <div className="flex items-center gap-2"><span className="text-[#f18a22] font-black text-lg tracking-tighter">Gemini 2.0 Flash</span><span className="px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] text-zinc-400 font-mono">EXPERIMENTAL</span></div>
+            <div className="flex items-center gap-2"><span className="text-[#f18a22] font-black text-lg tracking-tighter">Eka-Ai 2.0 Flash</span><span className="px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] text-zinc-400 font-mono">EXPERIMENTAL</span></div>
             <div className="flex bg-[#1a1a1a] rounded-lg p-1">
                 <button onClick={() => setIntelligenceMode('FAST')} className={`px-3 py-1 rounded text-xs font-bold transition-all ${intelligenceMode === 'FAST' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}>Fast</button>
                 <button onClick={() => setIntelligenceMode('THINKING')} className={`px-3 py-1 rounded text-xs font-bold transition-all ${intelligenceMode === 'THINKING' ? 'bg-[#f18a22] text-black' : 'text-zinc-500'}`}>Thinking</button>

@@ -1,11 +1,26 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 interface StartScreenProps {
   onOptionSelect: (text: string) => void;
   username?: string;
 }
 
+const getTimeBasedGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return "Good Morning From Go4Garage Family";
+  } else if (hour >= 12 && hour < 17) {
+    return "Good Afternoon From Go4Garage Family";
+  } else if (hour >= 17 && hour < 21) {
+    return "Good Evening From Go4Garage Family";
+  } else {
+    return "Good Night From Go4Garage Family";
+  }
+};
+
 const StartScreen: React.FC<StartScreenProps> = ({ onOptionSelect, username = "Technician" }) => {
+  const greeting = useMemo(() => getTimeBasedGreeting(), []);
+  
   const options = [
     {
       title: "Calculate MG Value", desc: "Contract validation & settlement logic",
@@ -25,7 +40,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onOptionSelect, username = "T
     <div className="flex flex-col items-center justify-center h-full max-w-4xl mx-auto px-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="mb-12 text-left w-full pl-2">
         <h1 className="text-5xl md:text-6xl font-black mb-2 tracking-tight">
-          <span className="bg-gradient-to-r from-[#f18a22] to-[#ffb366] bg-clip-text text-transparent">Hello, {username}</span>
+          <span className="bg-gradient-to-r from-[#f18a22] to-[#ffb366] bg-clip-text text-transparent">{greeting}</span>
         </h1>
         <p className="text-3xl text-zinc-600 font-medium">How can I assist the fleet today?</p>
       </div>
