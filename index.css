@@ -1,5 +1,5 @@
 /* index.css - EKA-AI Dark Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;700&display=swap');
 
 :root {
   /* Core Colors - EKA-AI Ultra-Dark Industrial */
@@ -10,6 +10,7 @@
   --text-secondary: #a1a1aa;
   --accent-primary: #f18a22;   /* Go4Garage Orange */
   --border-color: #222222;
+  --border-inactive: #333333;  /* Inactive/default borders */
   
   /* Message Bubbles */
   --msg-user-bg: #111111;

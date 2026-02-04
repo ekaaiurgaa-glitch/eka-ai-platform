@@ -27,7 +27,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading, operatingMode,
   }, [input]);
 
   return (
-    <div className="relative bg-[var(--input-bg)] border border-[#333] rounded-2xl shadow-lg focus-within:border-[var(--accent-primary)] focus-within:shadow-[0_0_0_1px_var(--accent-primary)] transition-all">
+    <div className="relative bg-[var(--input-bg)] border border-[var(--border-inactive)] rounded-2xl shadow-lg focus-within:border-[var(--accent-primary)] focus-within:shadow-[0_0_0_1px_var(--accent-primary)] transition-all">
       <textarea
         ref={textareaRef}
         value={input}
