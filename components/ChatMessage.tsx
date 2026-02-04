@@ -211,19 +211,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
 
       <style>{`
         .message-card {
-          padding: 24px 24px 24px 32px;
           border-radius: 8px;
           max-width: 90%;
           width: fit-content;
           min-width: 320px;
           position: relative;
           box-sizing: border-box;
+          overflow: hidden;
         }
 
         .ai-style {
           background: #050505;
           border: 1px solid #f18a22;
           border-left: 8px solid #f18a22;
+          padding: 24px 24px 24px 32px;
           box-shadow: 0 10px 40px rgba(241, 138, 34, 0.15);
         }
 

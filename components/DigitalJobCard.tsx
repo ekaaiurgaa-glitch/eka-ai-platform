@@ -244,7 +244,6 @@ const DigitalJobCard: React.FC<DigitalJobCardProps> = ({
               ) : (
                 'Commit To Registry'
               )}
-              {/* SCANNING LINE EFFECT */}
               {!isFinalizing && (
                 <div className="absolute inset-0 bg-white/10 -translate-x-full hover:translate-x-full transition-transform duration-1000"></div>
               )}
