@@ -27,7 +27,18 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEstimateApprove, o
       <div className={`flex-1 max-w-[85%] text-[15px] leading-7 ${
         isAi ? 'text-white' : 'bg-[var(--msg-user-bg)] p-3 rounded-2xl rounded-tr-sm text-white'
       }`}>
-        <div className="whitespace-pre-wrap">{message.content}</div>
+        <div className="whitespace-pre-wrap">
+          {message.content}
+          {isAi && message.intelligenceMode && (
+            <span className={`text-[10px] ml-2 ${
+              message.intelligenceMode === 'THINKING' 
+                ? 'text-purple-400' 
+                : 'text-[#f18a22]/70'
+            }`}>
+              • {message.intelligenceMode === 'THINKING' ? 'Claude' : 'Gemini'}
+            </span>
+          )}
+        </div>
         {isAi && (
           <div className="mt-4 space-y-4">
             {/* Diagnostic Result */}

@@ -4,6 +4,7 @@ The Brain of Go4Garage's Governed Automobile Intelligence System
 
 This Flask server contains:
 - Master Constitution for governed AI behavior
+- Dual-Model Router (Gemini 2.0 Flash + Claude 3.5 Sonnet)
 - Supabase integration for vehicle lookup and audit logging
 - Rate limiting for security
 - File upload handling for PDI evidence
@@ -32,6 +33,18 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["10 per minute"]
 )
+
+# Anthropic client (optional - for THINKING mode)
+anthropic_client = None
+try:
+    anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if anthropic_api_key:
+        import anthropic
+        anthropic_client = anthropic.Anthropic(api_key=anthropic_api_key)
+except ImportError:
+    print("Anthropic client not installed, THINKING mode will use Gemini fallback")
+except Exception as e:
+    print(f"Anthropic initialization error: {e}")
 
 # Supabase client (optional - graceful degradation if not configured)
 supabase = None
@@ -177,13 +190,92 @@ def log_intelligence(mode, status, query, response, confidence=None):
         print(f"Logging Error: {e}")
 
 
+def call_gemini(history, system_prompt):
+    """Gemini 2.0 Flash for FAST mode"""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY not configured")
+    
+    from google import genai
+    client = genai.Client(api_key=api_key)
+    response = client.models.generate_content(
+        model='gemini-2.0-flash',
+        contents=history,
+        config={
+            "system_instruction": system_prompt,
+            "response_mime_type": "application/json",
+            "temperature": 0.1
+        }
+    )
+    return json.loads(response.text)
+
+
+def call_claude(history, system_prompt):
+    """Claude 3.5 Sonnet for THINKING mode"""
+    if not anthropic_client:
+        raise ValueError("Anthropic client not initialized")
+    
+    # Convert Gemini format to Claude format
+    messages = []
+    for msg in history:
+        role = "user" if msg.get("role") == "user" else "assistant"
+        parts = msg.get("parts", [])
+        content = parts[0].get("text", "") if parts else ""
+        messages.append({"role": role, "content": content})
+    
+    message = anthropic_client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=4096,
+        temperature=0.1,
+        system=system_prompt,
+        messages=messages
+    )
+    
+    response_text = message.content[0].text
+    
+    # Strip markdown code blocks if present
+    if "```json" in response_text:
+        response_text = response_text.split("```json")[1].split("```")[0]
+    elif "```" in response_text:
+        response_text = response_text.split("```")[1].split("```")[0]
+    
+    return json.loads(response_text.strip())
+
+
+def normalize_response(result, default_status):
+    """Ensure consistent response format regardless of AI model"""
+    return {
+        "response_content": result.get("response_content", {
+            "visual_text": result.get("content", "No response"),
+            "audio_text": result.get("content", "No response")[:200] if result.get("content") else "No response"
+        }),
+        "job_status_update": result.get("job_status_update", default_status),
+        "diagnostic_data": result.get("diagnostic_data"),
+        "mg_analysis": result.get("mg_analysis"),
+        "estimate_data": result.get("estimate_data"),
+        "pdi_checklist": result.get("pdi_checklist"),
+        "visual_metrics": result.get("visual_metrics"),
+        "recall_data": result.get("recall_data"),
+        "service_history": result.get("service_history"),
+        "ui_triggers": result.get("ui_triggers", {
+            "theme_color": "#f18a22",
+            "brand_identity": "EKA-AI",
+            "show_orange_border": True
+        })
+    }
+
+
 @flask_app.route('/api/health')
 def health():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
         'service': 'eka-ai-brain',
-        'version': '4.5',
+        'version': '4.6',
+        'models': {
+            'gemini': bool(os.environ.get("GEMINI_API_KEY")),
+            'claude': anthropic_client is not None
+        },
         'db_connected': supabase is not None
     })
 
@@ -191,7 +283,7 @@ def health():
 @flask_app.route('/api/chat', methods=['POST'])
 @limiter.limit("10 per minute")
 def chat():
-    """Main chat endpoint - proxies to Gemini with Constitution"""
+    """Main chat endpoint with intelligent Model Router (Gemini/Claude)"""
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No data provided'}), 400
@@ -215,62 +307,56 @@ def chat():
             })
 
     # Build system instruction with context
-    sys_instr = f"""
+    system_prompt = f"""
 {EKA_CONSTITUTION}
 
 [CURRENT CONTEXT]:
 Operating Mode: {op_mode}
 Job Status: {status}
 Vehicle Context: {json.dumps(context)}
+AI Model: {intel_mode}
 """
 
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        return jsonify({'error': 'AI service not configured'}), 500
-
     try:
-        from google import genai
-        client = genai.Client(api_key=api_key)
-        model_id = 'gemini-2.0-flash-thinking-exp' if intel_mode == 'THINKING' else 'gemini-2.0-flash'
+        # MODEL ROUTER: Use Claude for THINKING mode, Gemini for FAST mode
+        if intel_mode == 'THINKING' and anthropic_client:
+            print(f"[{datetime.datetime.now()}] Using Claude (Thinking Mode)...")
+            result = call_claude(history, system_prompt)
+        else:
+            print(f"[{datetime.datetime.now()}] Using Gemini (Fast Mode)...")
+            result = call_gemini(history, system_prompt)
         
-        response = client.models.generate_content(
-            model=model_id,
-            contents=history,
-            config={
-                "system_instruction": sys_instr,
-                "response_mime_type": "application/json",
-                "temperature": 0.1
-            }
-        )
-
-        result = json.loads(response.text)
+        normalized = normalize_response(result, status)
         
         # Log to audit trail
         user_query = history[-1]['parts'][0]['text'] if history else ""
         log_intelligence(
-            op_mode, 
-            result.get('job_status_update', status),
+            op_mode,
+            normalized['job_status_update'],
             user_query,
-            result.get('response_content', {}).get('visual_text', ''),
-            result.get('orchestrator_log', {}).get('confidence_score')
+            normalized['response_content']['visual_text'],
+            normalized.get('diagnostic_data', {}).get('confidence_score') if normalized.get('diagnostic_data') else None
         )
-
-        return jsonify(result)
-
-    except ImportError:
-        return jsonify({
-            "response_content": {
-                "visual_text": "AI service not available. Please install google-genai package.",
-                "audio_text": "AI service unavailable."
-            },
-            "job_status_update": status,
-            "ui_triggers": {"theme_color": "#FF0000", "brand_identity": "ERROR", "show_orange_border": True}
-        }), 500
+        
+        return jsonify(normalized)
+        
     except Exception as e:
-        print(f"AI Error: {e}")
+        print(f"Primary AI Error: {e}")
+        
+        # FALLBACK: If THINKING mode fails, try FAST mode (Gemini)
+        if intel_mode == 'THINKING':
+            try:
+                print("Falling back to Gemini...")
+                result = call_gemini(history, system_prompt)
+                normalized = normalize_response(result, status)
+                normalized['response_content']['visual_text'] += "\n\n[Fallback: Claude unavailable, used Gemini]"
+                return jsonify(normalized)
+            except Exception as fallback_error:
+                print(f"Fallback also failed: {fallback_error}")
+        
         return jsonify({
             "response_content": {
-                "visual_text": "Governance system encountered an error. Please retry or contact support.",
+                "visual_text": "⚠️ Governance Engine Error. All AI models unavailable. Please retry.",
                 "audio_text": "System error."
             },
             "job_status_update": status,

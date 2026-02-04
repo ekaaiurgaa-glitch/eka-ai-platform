@@ -296,20 +296,31 @@ const App: React.FC = () => {
           {/* Intelligence Mode */}
           <div className="mb-4">
             <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide mb-2 block">Intelligence</span>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1 bg-[#111] border border-[#222] p-1 rounded-lg">
               <button 
                 onClick={() => setIntelligenceMode('FAST')} 
-                className={`flex-1 px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all tracking-wide touch-target ${intelligenceMode === 'FAST' ? 'bg-zinc-800 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+                className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  intelligenceMode === 'FAST' 
+                    ? 'bg-[#f18a22] text-black shadow-lg' 
+                    : 'text-zinc-400 hover:text-white hover:bg-[#222]'
+                }`}
               >
-                FAST
+                <span>⚡</span> Fast
               </button>
               <button 
                 onClick={() => setIntelligenceMode('THINKING')} 
-                className={`flex-1 px-3 py-2 rounded-lg text-[10px] font-bold uppercase transition-all tracking-wide touch-target ${intelligenceMode === 'THINKING' ? 'bg-purple-600/50 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+                className={`flex-1 px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  intelligenceMode === 'THINKING' 
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
+                    : 'text-zinc-400 hover:text-white hover:bg-[#222]'
+                }`}
               >
-                EXPERT
+                <span>🧠</span> Think
               </button>
             </div>
+            <p className="text-[8px] text-zinc-600 mt-1 text-center">
+              {intelligenceMode === 'FAST' ? 'Gemini 2.0 Flash' : 'Claude 3.5 Sonnet'}
+            </p>
           </div>
           
           {/* Status Panel */}
