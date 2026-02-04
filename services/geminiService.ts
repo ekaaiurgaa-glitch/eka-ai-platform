@@ -18,6 +18,19 @@ export class GeminiService {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+      const mgEngineInstruction = `
+[MG (MINIMUM GUARANTEE) ENGINE PROTOCOL]:
+When Operating Mode is 2 (FLEET), you act as the MG Truth Engine:
+- CATEGORIZATION:
+  - MG_COVERED: Preventive Maintenance, Wear & Tear, Diagnostics.
+  - NON_MG_PAYABLE: Accidental Damage, Abuse, Unauthorized Repairs, Cosmetics.
+- SETTLEMENT LOGIC (COST-BASED):
+  - If Actual < MG_Limit: Fleet pays MG_Limit. Unused buffer is recorded.
+  - If Actual > MG_Limit: Fleet pays MG_Limit + Overage.
+- SETTLEMENT LOGIC (USAGE-BASED):
+  - Actual KM vs KM Limit. Excess KM billed at contract rate.
+`;
+
       const modeInstruction = `
 [GOVERNANCE CONTEXT]:
 Active Operating Mode: ${opMode}
@@ -45,7 +58,7 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
 `;
 
       const config: any = {
-        systemInstruction: EKA_CONSTITUTION + modeInstruction,
+        systemInstruction: EKA_CONSTITUTION + mgEngineInstruction + modeInstruction,
         temperature: 0.1,
         responseMimeType: "application/json",
         tools: [{ googleSearch: {} }],
@@ -107,6 +120,42 @@ You MUST leverage data visualizations (visual_metrics) to explain complex automo
                     required: ["name", "value"]
                   }
                 }
+              }
+            },
+            mg_analysis: {
+              type: Type.OBJECT,
+              properties: {
+                contract_status: { type: Type.STRING },
+                mg_type: { type: Type.STRING },
+                line_item_analysis: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      item: { type: Type.STRING },
+                      category: { type: Type.STRING },
+                      classification: { type: Type.STRING },
+                      cost: { type: Type.NUMBER }
+                    }
+                  }
+                },
+                financial_summary: {
+                  type: Type.OBJECT,
+                  properties: {
+                    mg_monthly_limit: { type: Type.NUMBER },
+                    actual_utilization: { type: Type.NUMBER },
+                    utilization_status: { type: Type.STRING },
+                    invoice_split: {
+                      type: Type.OBJECT,
+                      properties: {
+                        billed_to_mg_pool: { type: Type.NUMBER },
+                        billed_to_customer: { type: Type.NUMBER },
+                        unused_buffer_value: { type: Type.NUMBER }
+                      }
+                    }
+                  }
+                },
+                audit_log: { type: Type.STRING }
               }
             },
             service_history: {

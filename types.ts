@@ -57,6 +57,30 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
+export interface MGLineItem {
+  item: string;
+  category: 'PREVENTIVE' | 'ACCIDENTAL' | 'WEAR_TEAR' | 'ABUSE' | 'COSMETIC' | 'DIAGNOSTIC';
+  classification: 'MG_COVERED' | 'NON_MG_PAYABLE';
+  cost: number;
+}
+
+export interface MGAnalysis {
+  contract_status: 'ACTIVE' | 'INACTIVE';
+  mg_type: 'COST_BASED' | 'USAGE_BASED';
+  line_item_analysis: MGLineItem[];
+  financial_summary: {
+    mg_monthly_limit: number;
+    actual_utilization: number;
+    utilization_status: 'UNDER_RUN' | 'OVER_RUN' | 'EXACT';
+    invoice_split: {
+      billed_to_mg_pool: number;
+      billed_to_customer: number;
+      unused_buffer_value: number;
+    };
+  };
+  audit_log: string;
+}
+
 export interface DiagnosticData {
   code: string;
   description: string;
@@ -94,6 +118,7 @@ export interface Message {
   diagnostic_data?: DiagnosticData;
   service_history?: ServiceHistoryItem[];
   estimate_data?: EstimateData;
+  mg_analysis?: MGAnalysis;
   grounding_links?: GroundingLink[];
   timestamp: Date;
   isValidated?: boolean;

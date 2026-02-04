@@ -98,7 +98,7 @@ const App: React.FC = () => {
     const trimmedText = text.trim();
     const lowerText = trimmedText.toLowerCase();
     
-    const vehicleKeywords = ['car', 'bike', 'registration', 'vehicle', 'repair', 'service', 'engine', 'fuel', 'hsn', 'estimate', 'job card'];
+    const vehicleKeywords = ['car', 'bike', 'registration', 'vehicle', 'repair', 'service', 'engine', 'fuel', 'hsn', 'estimate', 'job card', 'fleet', 'contract', 'mg'];
     if (vehicleKeywords.some(kw => lowerText.includes(kw))) {
       setPanelTriggered(true);
     }
@@ -142,6 +142,7 @@ const App: React.FC = () => {
       service_history: responseData.service_history,
       estimate_data: responseData.estimate_data,
       visual_metrics: responseData.visual_metrics,
+      mg_analysis: responseData.mg_analysis,
       timestamp: new Date(),
       intelligenceMode,
       operatingMode

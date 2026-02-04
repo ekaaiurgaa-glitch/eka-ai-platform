@@ -6,6 +6,7 @@ import ServiceHistory from './ServiceHistory';
 import EstimateGovernance from './EstimateGovernance';
 import VehicleVisuals from './VehicleVisuals';
 import DiagnosticResult from './DiagnosticResult';
+import MGAnalysisView from './MGAnalysis';
 
 interface ChatMessageProps {
   message: Message;
@@ -92,6 +93,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     const showEstimate = (message.job_status_update === 'ESTIMATE_GOVERNANCE' || message.estimate_data) && onEstimateAuthorize;
     const showMetrics = !!message.visual_metrics;
     const showDiagnostics = !!message.diagnostic_data;
+    const showMGAnalysis = !!message.mg_analysis;
 
     return (
       <div className="space-y-6">
@@ -121,6 +123,10 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                <span className="text-[7px] font-black text-zinc-800 font-mono uppercase tracking-widest italic">Encrypted Logic Stream Sync</span>
             </div>
           </div>
+        )}
+
+        {showMGAnalysis && message.mg_analysis && (
+          <MGAnalysisView data={message.mg_analysis} />
         )}
 
         {showDiagnostics && message.diagnostic_data && (
