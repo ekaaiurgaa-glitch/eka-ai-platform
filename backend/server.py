@@ -271,6 +271,8 @@ def call_kimi(history, system_prompt):
         content = parts[0].get("text", "") if parts else ""
         messages.append({"role": role, "content": content})
     
+    # moonshot-v1-auto: Automatically selects optimal model based on context length
+    # Supports up to 200K tokens, handles long fleet contracts and documents
     response = moonshot_client.chat.completions.create(
         model="moonshot-v1-auto",
         messages=messages,

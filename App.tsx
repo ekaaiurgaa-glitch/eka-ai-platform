@@ -7,6 +7,13 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Message, JobStatus, VehicleContext, IntelligenceMode, OperatingMode, AuditEntry } from './types';
 import { geminiService } from './services/geminiService';
 
+// Model display names for UI
+const MODEL_NAMES: Record<IntelligenceMode, string> = {
+  'FAST': 'Gemini 2.0 Flash',
+  'THINKING': 'Claude 3.5 Sonnet',
+  'DEEP_CONTEXT': 'Kimi (200K context)'
+};
+
 // Environment validation - checks for required configuration
 const validateEnvironment = (): { valid: boolean; error?: string } => {
   // In Vite, environment variables are available via import.meta.env
@@ -329,7 +336,7 @@ const App: React.FC = () => {
               </button>
             </div>
             <p className="text-[8px] text-zinc-600 mt-1 text-center">
-              {intelligenceMode === 'FAST' ? 'Gemini 2.0 Flash' : intelligenceMode === 'THINKING' ? 'Claude 3.5 Sonnet' : 'Kimi (200K context)'}
+              {MODEL_NAMES[intelligenceMode]}
             </p>
           </div>
           

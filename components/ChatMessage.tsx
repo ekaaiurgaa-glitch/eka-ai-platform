@@ -1,5 +1,5 @@
 import React from 'react';
-import { Message } from '../types';
+import { Message, IntelligenceMode } from '../types';
 import DiagnosticResult from './DiagnosticResult';
 import MGAnalysis from './MGAnalysis';
 import VehicleVisuals from './VehicleVisuals';
@@ -7,6 +7,13 @@ import EstimateGovernance from './EstimateGovernance';
 import PDIChecklist from './PDIChecklist';
 import ServiceHistory from './ServiceHistory';
 import RecallReport from './RecallReport';
+
+// Model indicator configuration
+const MODEL_CONFIG: Record<IntelligenceMode, { name: string; color: string }> = {
+  'FAST': { name: 'Gemini', color: 'text-[#f18a22]/70' },
+  'THINKING': { name: 'Claude', color: 'text-purple-400' },
+  'DEEP_CONTEXT': { name: 'Kimi', color: 'text-blue-400' }
+};
 
 interface ChatMessageProps {
   message: Message;
@@ -16,6 +23,7 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEstimateApprove, onPDIVerify }) => {
   const isAi = message.role === 'assistant';
+  const modelConfig = message.intelligenceMode ? MODEL_CONFIG[message.intelligenceMode] : null;
   
   return (
     <div className={`flex gap-4 ${isAi ? 'flex-row' : 'flex-row-reverse'}`}>
@@ -29,15 +37,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, onEstimateApprove, o
       }`}>
         <div className="whitespace-pre-wrap">
           {message.content}
-          {isAi && message.intelligenceMode && (
-            <span className={`text-[10px] ml-2 ${
-              message.intelligenceMode === 'THINKING' 
-                ? 'text-purple-400' 
-                : message.intelligenceMode === 'DEEP_CONTEXT'
-                ? 'text-blue-400'
-                : 'text-[#f18a22]/70'
-            }`}>
-              • {message.intelligenceMode === 'THINKING' ? 'Claude' : message.intelligenceMode === 'DEEP_CONTEXT' ? 'Kimi' : 'Gemini'}
+          {isAi && modelConfig && (
+            <span className={`text-[10px] ml-2 ${modelConfig.color}`}>
+              • {modelConfig.name}
             </span>
           )}
         </div>
