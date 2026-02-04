@@ -22,67 +22,67 @@ interface StatusConfig {
   dotClass: string;
 }
 
-const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingMode): StatusConfig => {
+const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingMode, isIdentified: boolean): StatusConfig => {
   if (isLoading) {
     return { label: 'STATUS: VERIFYING...', dotClass: 'bg-[#FFEA00] animate-flicker shadow-[0_0_8px_#FFEA00]' };
   }
 
-  // Completion states
-  if (status === 'CLOSED' || status === 'MG_COMPLETE') {
-    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
-  }
-
   // Workshop Mode Logic
   if (mode === 1) {
-    if (status === 'AUTH_INTAKE') {
+    if (!isIdentified) {
       return { 
         label: 'STATUS: AWAITING_ID', 
-        dotClass: 'bg-[#FF9F1C] animate-pulse-orange shadow-[0_0_10px_rgba(255,159,28,0.5)]' 
+        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.5)]' 
       };
     }
     return { 
       label: 'PROTOCOL: ACTIVE', 
-      dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' 
+      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
     };
   }
 
   // Fleet Mode Logic
   if (mode === 2) {
-    if (status === 'CONTRACT_VALIDATION') {
+    if (!isIdentified) {
       return { 
-        label: 'STATUS: AWAITING_ID', 
-        dotClass: 'bg-[#FF9F1C] animate-pulse-orange shadow-[0_0_10px_rgba(255,159,28,0.5)]' 
+        label: 'FLEET: AWAITING_ID', 
+        dotClass: 'bg-[#f18a22] animate-pulse shadow-[0_0_10px_rgba(241,138,34,0.5)]' 
       };
     }
     return { 
       label: 'FLEET: SYNC_ACTIVE', 
-      dotClass: 'bg-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.4)]' 
+      dotClass: 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.4)]' 
     };
   }
 
-  // Ignition (Mode 0) / Global Fallbacks
-  switch (status) {
-    case 'RSA_ACTIVE':
-      return { 
-        label: 'STATUS: RSA_DEPLOYED', 
-        dotClass: 'bg-red-500 animate-pulse-red shadow-[0_0_12px_rgba(239,68,68,0.6)]' 
-      };
-    case 'URGAA_QUERY':
-      return { 
-        label: 'QUERY: GRID_ACCESS', 
-        dotClass: 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.4)]' 
-      };
-    default:
-      return { 
-        label: 'SYSTEM: ONLINE', 
-        dotClass: 'bg-[#00E676] shadow-[0_0_5px_rgba(0,230,118,0.4)]' 
-      };
+  // Ignition Mode (0) Logic
+  if (status === 'RSA_ACTIVE') {
+    return { 
+      label: 'STATUS: RSA_ACTIVE', 
+      dotClass: 'bg-red-500 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.6)]' 
+    };
   }
+  
+  if (status === 'IGNITION_TRIAGE') {
+    return { 
+      label: 'IGNITION: TRIAGE', 
+      dotClass: 'bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(96,165,250,0.5)]' 
+    };
+  }
+
+  if (status === 'CLOSED' || status === 'MG_COMPLETE') {
+    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
+  }
+
+  return { 
+    label: isIdentified ? 'SYSTEM: READY' : 'SYSTEM: AWAITING_AUTH', 
+    dotClass: isIdentified ? 'bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-zinc-600' 
+  };
 };
 
 const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, operatingMode }) => {
   const isLocked = vehicle && isContextComplete(vehicle);
-  const config = getStatusConfig(status, isLoading, operatingMode);
+  const config = getStatusConfig(status, isLoading, operatingMode, !!isLocked);
 
   const renderFuelIcon = () => {
     if (!vehicle?.fuelType || !FUEL_ICONS[vehicle.fuelType]) return null;
@@ -122,9 +122,9 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
           </div>
         )}
 
-        <div className="flex items-center gap-2.5 px-4 py-1.5 bg-white/5 border border-orange-500/20 rounded-full transition-all duration-300 shadow-sm group hover:border-white/20">
+        <div className="flex items-center gap-2.5 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full transition-all duration-300 shadow-sm group hover:border-[#f18a22]/30">
           <div className={`w-2 h-2 rounded-full transition-all duration-300 ${config.dotClass}`}></div>
-          <span className="text-[10px] text-zinc-500 font-black uppercase tracking-[1px] font-mono group-hover:text-white transition-colors">
+          <span className="text-[10px] text-zinc-400 font-black uppercase tracking-[1px] font-mono group-hover:text-white transition-colors">
             {config.label}
           </span>
         </div>
@@ -137,22 +137,6 @@ const Header: React.FC<HeaderProps> = ({ status, vehicle, isLoading = false, ope
         </div>
       </div>
       <style>{`
-        @keyframes pulse-orange {
-          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0.7); opacity: 1; }
-          50% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(255, 159, 28, 0); opacity: 0.8; }
-          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(255, 159, 28, 0); opacity: 1; }
-        }
-        @keyframes pulse-red {
-          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); opacity: 1; }
-          50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); opacity: 0.6; }
-          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); opacity: 1; }
-        }
-        .animate-pulse-orange {
-          animation: pulse-orange 1.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
-        }
-        .animate-pulse-red {
-          animation: pulse-red 1.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-        }
         @keyframes flicker {
           0%, 100% { opacity: 1; filter: brightness(1.2); }
           50% { opacity: 0.3; filter: brightness(0.8); }
