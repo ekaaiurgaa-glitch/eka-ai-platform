@@ -33,6 +33,7 @@ export type JobStatus =
   | 'ESTIMATED' 
   | 'CUSTOMER_APPROVAL'
   | 'CUSTOMER_APPROVED' 
+  | 'CONCERN_RAISED'
   | 'IN_PROGRESS'
   | 'PDI'
   | 'PDI_COMPLETED' 

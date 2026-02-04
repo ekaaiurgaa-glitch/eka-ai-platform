@@ -8,12 +8,16 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+          // Proxy API calls to the Python backend during development
+          '/api': {
+            target: env.BACKEND_URL || 'http://localhost:8001',
+            changeOrigin: true,
+            secure: false,
+          }
+        }
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
