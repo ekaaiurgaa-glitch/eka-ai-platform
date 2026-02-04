@@ -28,18 +28,58 @@ Active Operating Mode: ${opMode}
 Current Logic State: ${currentStatus}
 Context Identity: ${context && context.brand ? `${context.year} ${context.brand} ${context.model}` : 'Awaiting Context'}
 
-[SECTION A: MG FLEET INTELLIGENCE]:
-- Enforce Monthly_Assured_KM = AK / Contract_Months.
+[SECTION A: MG FLEET INTELLIGENCE - RISK-WEIGHTED MODEL]:
+
+[A1: MG CALCULATION LOGIC (Risk-Weighted)]:
+When calculating MG Value (Mode 2), strictly apply this formula:
+1. RISK WEIGHTS:
+   - Low Risk (Filters, Oil, Fluids): Weight = 1.0
+   - Medium Risk (Brakes, Wipers): Weight = 1.3
+   - High Risk (Clutch, Suspension, Cooling): Weight = 1.7
+2. FORMULA: 
+   MG_Amount = Σ (Component_Cost × Risk_Weight) + Safety_Buffer(15%)
+   *Example: (Brakes ₹2000 * 1.3 = ₹2600) + (Oil ₹1000 * 1.0 = ₹1000) = ₹3600 + 15% Buffer = ₹4140*
+3. MG STATE MACHINE:
+   - Contract Created: "MG_CREATED"
+   - < 70% Utilized: "MG_ACTIVE"
+   - 70-85% Utilized: "MG_CONSUMING"
+   - 85-99% Utilized: "MG_THRESHOLD_ALERT"
+   - >= 100% Utilized: "MG_EXHAUSTED" (Requires manual approval)
+   - Contract Closed: "MG_CLOSED"
+
+[A2: FINANCIAL SUMMARY RULES]:
+- Track mg_monthly_limit, actual_utilization, and utilization_status (SAFE/WARNING/BREACHED).
+- Invoice Split: Separate billed_to_mg_pool vs billed_to_customer vs unused_buffer_value.
 - Enforce Under-utilization: IF Actual < Assured, Revenue = Monthly_Assured_Revenue.
 - Enforce Over-utilization: IF Actual > Assured, Revenue = Assured + (Excess * Excess_Rate).
 - MUST calculate: Utilization Ratio, Revenue Stability Index, Asset Efficiency, Contract Health.
 
-[SECTION B: JOB CARD GATES]:
+[A3: AUDIT TRAIL REQUIREMENTS]:
+- Map 'risk_weights_used' showing each component and its applied weight.
+- Show the exact 'Safety Buffer' percentage added in calculations.
+- Document 'formula_used' with the full calculation breakdown.
+
+[SECTION B: JOB CARD GATES - CONFIDENCE GATE MODEL]:
+
+[B1: CONFIDENCE GATE]:
+Before generating any diagnosis or estimate (Mode 1):
+1. CONFIDENCE CHECK: Evaluate the user's problem description.
+   - If ambiguity exists or details are vague -> CONFIDENCE < 90%.
+   - ACTION: Refuse to diagnose. Ask clarifying questions. Set missing_info array.
+   - ONLY if Confidence >= 90% -> Proceed to Estimate.
+2. confidence_score MUST be >= 90 for root cause determination.
+
+[B2: PDI GATE (Mandatory)]:
+- You CANNOT set status to 'COMPLETION', 'INVOICING', or 'CLOSED' unless PDI_Verified is explicitly TRUE in context.
+- Block status transition to COMPLETION/INVOICING if PDI_Evidence is missing.
+
+[B3: JOB CARD FLOW]:
 1. INTAKE: Brand, Model, Year, Fuel Type mandatory. Request clarification if missing.
-2. DIAGNOSIS: confidence_score MUST be >= 90 for root cause. If < 90, ask clarifying questions only.
+2. DIAGNOSIS: Apply Confidence Gate. If < 90%, ask clarifying questions only.
 3. ESTIMATION: Pricing ranges ONLY. Never exact prices. Use HSN 8708/9987.
-4. PDI: Block status transition to COMPLETION/INVOICING if PDI_Evidence is missing.
-5. INVOICING: Signal 'Invoice Eligible' but do not calculate final invoice values.
+4. APPROVAL: Block progress until explicit customer authorization.
+5. PDI: Safety checklist and photo/video proof required for completion.
+6. INVOICING: Signal 'Invoice Eligible' but do not calculate final invoice values.
 
 [RESPOND IN VALID JSON ONLY]
 `;
@@ -94,9 +134,18 @@ Context Identity: ${context && context.brand ? `${context.year} ${context.brand}
               properties: {
                 fleet_id: { type: Type.STRING },
                 vehicle_id: { type: Type.STRING },
+                contract_status: { type: Type.STRING }, // MG_CREATED, MG_ACTIVE, MG_CONSUMING, MG_THRESHOLD_ALERT, MG_EXHAUSTED, MG_CLOSED
+                mg_type: { type: Type.STRING }, // COST_BASED or USAGE_BASED
                 contract_period: {
                   type: Type.OBJECT,
                   properties: { start: { type: Type.STRING }, end: { type: Type.STRING } }
+                },
+                risk_profile: {
+                  type: Type.OBJECT,
+                  properties: {
+                    base_risk_score: { type: Type.NUMBER },
+                    safety_buffer_percent: { type: Type.NUMBER }
+                  }
                 },
                 assured_metrics: {
                   type: Type.OBJECT,
@@ -123,6 +172,22 @@ Context Identity: ${context && context.brand ? `${context.year} ${context.brand}
                     status: { type: Type.STRING }
                   }
                 },
+                financial_summary: {
+                  type: Type.OBJECT,
+                  properties: {
+                    mg_monthly_limit: { type: Type.NUMBER },
+                    actual_utilization: { type: Type.NUMBER },
+                    utilization_status: { type: Type.STRING }, // SAFE, WARNING, BREACHED
+                    invoice_split: {
+                      type: Type.OBJECT,
+                      properties: {
+                        billed_to_mg_pool: { type: Type.NUMBER },
+                        billed_to_customer: { type: Type.NUMBER },
+                        unused_buffer_value: { type: Type.NUMBER }
+                      }
+                    }
+                  }
+                },
                 intelligence: {
                   type: Type.OBJECT,
                   properties: {
@@ -136,7 +201,8 @@ Context Identity: ${context && context.brand ? `${context.year} ${context.brand}
                   type: Type.OBJECT,
                   properties: {
                     logic_applied: { type: Type.STRING },
-                    formula_used: { type: Type.STRING }
+                    formula_used: { type: Type.STRING },
+                    risk_weights_used: { type: Type.STRING } // e.g., "Brakes: 1.3x, Filters: 1.0x"
                   }
                 }
               }

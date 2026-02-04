@@ -5,8 +5,14 @@ export type OperatingMode = 0 | 1 | 2; // 0: Default/Ignition, 1: Job Card/GST, 
 
 export type JobStatus = 
   | 'CREATED' 
-  // MG State Machine (A6)
+  // MG State Machine (Risk-Weighted Model)
+  | 'MG_CREATED'
   | 'MG_ACTIVE'
+  | 'MG_CONSUMING'
+  | 'MG_THRESHOLD_ALERT'
+  | 'MG_EXHAUSTED'
+  | 'MG_CLOSED'
+  // Legacy MG States
   | 'BILLING_CYCLE_CLOSED'
   | 'SETTLED'
   | 'TERMINATED'
@@ -65,12 +71,29 @@ export interface EstimateData {
   tax_type: 'CGST_SGST' | 'IGST';
 }
 
+// MG Contract Status (Risk-Weighted State Machine)
+export type MGContractStatus = 'MG_CREATED' | 'MG_ACTIVE' | 'MG_CONSUMING' | 'MG_THRESHOLD_ALERT' | 'MG_EXHAUSTED' | 'MG_CLOSED';
+
+// MG Type Classification
+export type MGType = 'COST_BASED' | 'USAGE_BASED';
+
+// Utilization Status for Financial Summary
+export type UtilizationStatus = 'SAFE' | 'WARNING' | 'BREACHED';
+
 export interface MGAnalysis {
   fleet_id: string;
   vehicle_id: string;
+  // Risk-Weighted Contract Status
+  contract_status: MGContractStatus;
+  mg_type: MGType;
   contract_period: {
     start: string;
     end: string;
+  };
+  // Risk Profile (New for Risk-Weighted Model)
+  risk_profile: {
+    base_risk_score: number;
+    safety_buffer_percent: number; // e.g., 15%
   };
   assured_metrics: {
     total_assured_km: number;
@@ -88,6 +111,17 @@ export interface MGAnalysis {
     revenue_payable: number;
     status: 'MINIMUM_GUARANTEE_APPLIED' | 'OVER_UTILIZATION_CHARGED';
   };
+  // Financial Summary with Invoice Split (Risk-Weighted Model)
+  financial_summary: {
+    mg_monthly_limit: number;
+    actual_utilization: number;
+    utilization_status: UtilizationStatus;
+    invoice_split: {
+      billed_to_mg_pool: number;
+      billed_to_customer: number;
+      unused_buffer_value: number;
+    };
+  };
   intelligence: {
     utilization_ratio: number;
     revenue_stability_index: number;
@@ -97,6 +131,7 @@ export interface MGAnalysis {
   audit_trail: {
     logic_applied: string;
     formula_used: string;
+    risk_weights_used: string; // e.g., "Brakes: 1.3x, Filters: 1.0x"
   };
 }
 
