@@ -101,11 +101,11 @@ const App: React.FC = () => {
       <aside className="sidebar hidden md:flex flex-col">
         <div className="mb-6 px-2">
            {/* New Chat Button */}
-           <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--accent-primary)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-black transition-all mb-4" style={{ fontFamily: 'var(--font-headers)' }}>
+           <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--accent-primary)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)] hover:text-black transition-all mb-4 font-headers">
              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
              New Chat
            </button>
-           <h2 className="font-semibold text-sm text-[var(--text-secondary)]" style={{ fontFamily: 'var(--font-headers)' }}>History</h2>
+           <h2 className="font-semibold text-sm text-[var(--text-secondary)] font-headers">History</h2>
         </div>
         {/* Placeholder for history items */}
         <div className="flex-1 overflow-y-auto space-y-2">
@@ -127,15 +127,13 @@ const App: React.FC = () => {
            <div className="bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
               <button 
                 onClick={() => setIntelligenceMode('FAST')} 
-                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'FAST' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-                style={{ fontFamily: 'var(--font-headers)' }}
+                className={`px-3 py-1 rounded-md transition-all font-headers ${intelligenceMode === 'FAST' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
               >
                 Fast 2.0
               </button>
               <button 
                 onClick={() => setIntelligenceMode('THINKING')} 
-                className={`px-3 py-1 rounded-md transition-all ${intelligenceMode === 'THINKING' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-                style={{ fontFamily: 'var(--font-headers)' }}
+                className={`px-3 py-1 rounded-md transition-all font-headers ${intelligenceMode === 'THINKING' ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
               >
                 Thinking
               </button>
@@ -143,22 +141,19 @@ const App: React.FC = () => {
            <div className="ml-4 bg-[var(--bg-secondary)] p-1 rounded-lg flex text-xs font-medium">
               <button 
                 onClick={() => handleModeChange(0)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 0 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-                style={{ fontFamily: 'var(--font-headers)' }}
+                className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 0 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
               >
                 Ignition
               </button>
               <button 
                 onClick={() => handleModeChange(1)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 1 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-                style={{ fontFamily: 'var(--font-headers)' }}
+                className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 1 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
               >
                 Workshop
               </button>
               <button 
                 onClick={() => handleModeChange(2)} 
-                className={`px-3 py-1 rounded-md transition-all ${operatingMode === 2 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
-                style={{ fontFamily: 'var(--font-headers)' }}
+                className={`px-3 py-1 rounded-md transition-all font-headers ${operatingMode === 2 ? 'bg-[var(--accent-primary)] text-black shadow-sm' : 'text-[var(--text-secondary)]'}`}
               >
                 Fleet
               </button>

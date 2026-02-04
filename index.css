@@ -84,6 +84,11 @@ h1, h2, h3 {
 }
 p { line-height: 1.6; margin-bottom: 0.75em; }
 
+/* Font utility classes */
+.font-headers {
+  font-family: var(--font-headers);
+}
+
 /* Scrollbar Styling for Dark Theme */
 ::-webkit-scrollbar {
   width: 8px;

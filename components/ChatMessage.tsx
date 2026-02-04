@@ -37,7 +37,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
       
       {/* AI Indicator - Orange Square for AI, no avatar for User (right-aligned bubble) */}
       {isAi ? (
-        <div className="shrink-0 w-2 h-2 mt-2 rounded-sm bg-[var(--accent-primary)]"></div>
+        <div 
+          className="shrink-0 w-2 h-2 mt-2 rounded-sm bg-[var(--accent-primary)]"
+          aria-label="AI message indicator"
+          role="img"
+        ></div>
       ) : null}
 
       {/* Content */}
@@ -49,7 +53,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
         
         {/* Name Label for AI */}
         {isAi && (
-          <div className="font-semibold text-xs mb-1 text-[var(--accent-primary)] flex items-center gap-2" style={{ fontFamily: 'var(--font-headers)' }}>
+          <div className="font-semibold text-xs mb-1 text-[var(--accent-primary)] flex items-center gap-2 font-headers">
             EKA
           </div>
         )}
