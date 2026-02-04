@@ -24,7 +24,7 @@ const ChatsPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-serif text-4xl text-gray-900">Chats</h1>
-          <button onClick={() => navigate('/')} className="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
+          <button onClick={() => navigate('/app')} className="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
             <MessageSquare size={16} />
             New chat
           </button>
@@ -45,7 +45,7 @@ const ChatsPage = () => {
         {/* List */}
         <div className="space-y-1">
           {filteredChats.map((chat) => (
-            <div key={chat.id} className="group flex items-center justify-between p-4 -mx-4 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => navigate(`/chat/${chat.id}`)}>
+            <div key={chat.id} className="group flex items-center justify-between p-4 -mx-4 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => navigate('/app')}>
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-1 group-hover:text-brand-purple transition-colors">{chat.title}</h3>
                 <p className="text-sm text-gray-500">Last message {chat.date}</p>
