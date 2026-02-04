@@ -143,6 +143,8 @@ const ChatPage = () => {
 
              <button 
                 onClick={() => setShowAttachMenu(!showAttachMenu)}
+                aria-label="Attach files"
+                aria-expanded={showAttachMenu}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
              >
                <Plus size={20}/>
@@ -151,7 +153,12 @@ const ChatPage = () => {
              <textarea 
                value={input}
                onChange={(e) => setInput(e.target.value)}
-               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+               onKeyDown={(e) => {
+                 if (e.key === 'Enter' && !e.shiftKey) {
+                   e.preventDefault();
+                   handleSend();
+                 }
+               }}
                placeholder="Message EKA-AI..."
                className="flex-1 resize-none border-0 focus:ring-0 text-gray-900 placeholder-gray-400 py-3 px-2 max-h-32 bg-transparent text-sm outline-none"
                rows={1}
@@ -167,7 +174,7 @@ const ChatPage = () => {
            </div>
            
            <div className="text-center mt-2">
-             <p className="text-[10px] text-gray-400">EKA-AI can make mistakes. Verify critical repairs.</p>
+             <p className="text-[11px] text-gray-400">EKA-AI can make mistakes. Verify critical repairs.</p>
            </div>
         </div>
       </div>
