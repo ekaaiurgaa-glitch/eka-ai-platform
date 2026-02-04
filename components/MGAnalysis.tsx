@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MGAnalysis } from '../types/types';
+import { MGAnalysis } from '../types';
 
 interface MGAnalysisProps {
   data: MGAnalysis;

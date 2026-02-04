@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { RecallData } from '../types/types';
+import { RecallData } from '../types';
 
 interface RecallReportProps {
   data: RecallData;

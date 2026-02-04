@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { VehicleContext, isContextComplete, OperatingMode, JobStatus } from '../types/types';
+import { VehicleContext, isContextComplete, OperatingMode, JobStatus } from '../types';
 
 interface VehicleContextPanelProps {
   context: VehicleContext;
