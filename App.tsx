@@ -84,8 +84,8 @@ const App: React.FC = () => {
   }, [intelligenceMode, operatingMode]);
 
   const getActiveTab = (): OperatingMode => {
-    const workshopStates: JobStatus[] = ['INTAKE', 'DIAGNOSIS', 'ESTIMATION', 'APPROVAL', 'EXECUTION', 'PDI', 'COMPLETION', 'INVOICING', 'CLOSED', 'AUTH_INTAKE', 'DIAGNOSED', 'ESTIMATED', 'CUSTOMER_APPROVED', 'PDI_COMPLETED'];
-    const fleetStates: JobStatus[] = ['MG_ACTIVE', 'BILLING_CYCLE_CLOSED', 'SETTLED', 'TERMINATED', 'MG_CREATED', 'MG_CONSUMING', 'MG_THRESHOLD_ALERT', 'MG_EXHAUSTED'];
+    const workshopStates: JobStatus[] = ['DIAGNOSED', 'ESTIMATED', 'CUSTOMER_APPROVED', 'PDI_COMPLETED', 'INVOICED', 'CLOSED'];
+    const fleetStates: JobStatus[] = ['CONTRACT_VALIDATION', 'UTILIZATION_TRACKING', 'SETTLEMENT_LOGIC', 'SLA_BREACH_CHECK', 'MG_COMPLETE'];
 
     if (workshopStates.includes(status)) return 1;
     if (fleetStates.includes(status)) return 2;
@@ -156,7 +156,7 @@ const App: React.FC = () => {
     setOperatingMode(mode);
     setPanelTriggered(mode !== 0);
     
-    const entryStatus: JobStatus = mode === 1 ? 'AUTH_INTAKE' : mode === 2 ? 'MG_ACTIVE' : 'IGNITION_TRIAGE';
+    const entryStatus: JobStatus = mode === 1 ? 'DIAGNOSED' : mode === 2 ? 'CONTRACT_VALIDATION' : 'CREATED';
     setStatus(entryStatus);
     
     let promptContent = "EKA-AI Brain initialized. Governed intelligence active. Awaiting structured input.";
@@ -180,13 +180,13 @@ const App: React.FC = () => {
   };
 
   const handleEstimateAuthorize = (finalData: EstimateData) => {
-    setStatus('APPROVAL');
+    setStatus('CUSTOMER_APPROVED');
     setMessages(prev => [...prev, {
       id: `auth-success-${Date.now()}`,
       role: 'assistant',
-      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been moved to APPROVAL gate. Awaiting explicit customer authorization.`,
+      content: `ESTIMATE AUTHORIZED: Logic dossier ${finalData.estimate_id} has been approved. Customer authorization complete.`,
       timestamp: new Date(),
-      job_status_update: 'APPROVAL',
+      job_status_update: 'CUSTOMER_APPROVED',
       operatingMode: 1
     }]);
     
@@ -274,13 +274,11 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto pt-8 pb-4 relative scroll-smooth" ref={scrollRef}>
           <div className="max-w-4xl mx-auto flex flex-col min-h-full">
             <div className="px-4">
-               {showTelemetry && (
-                 <TelemetryDashboard 
-                   status={status} 
-                   complianceScore={status === 'APPROVAL' ? 100 : status === 'ESTIMATION' ? 75 : 40} 
-                   systemHealth={98} 
-                 />
-               )}
+               <TelemetryDashboard 
+                 status={status} 
+                 complianceScore={status === 'CUSTOMER_APPROVED' ? 100 : status === 'ESTIMATED' ? 75 : 40} 
+                 systemHealth={98} 
+               />
             </div>
             {showVehiclePanel && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500 px-4">

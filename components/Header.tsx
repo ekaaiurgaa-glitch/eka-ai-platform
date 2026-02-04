@@ -76,8 +76,18 @@ const getStatusConfig = (status: JobStatus, isLoading: boolean, mode: OperatingM
     };
   }
 
-  // 4. Default / Ignition (Mode 0)
-  const isComplete = isContextComplete(vehicle);
+  // Ignition Mode (0) Logic
+  if (status === 'CREATED') {
+    return { 
+      label: 'IGNITION: READY', 
+      dotClass: 'bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(96,165,250,0.5)]' 
+    };
+  }
+
+  if (status === 'CLOSED' || status === 'INVOICED' || status === 'PDI_COMPLETED') {
+    return { label: 'PROTOCOL: COMPLETE', dotClass: 'bg-blue-500 shadow-[0_0_8px_#3B82F6]' };
+  }
+
   return { 
     label: isComplete ? 'SYSTEM: READY' : 'SYSTEM: AWAITING_AUTH', 
     dotClass: isComplete ? 'bg-[#22c55e] shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-zinc-700' 
