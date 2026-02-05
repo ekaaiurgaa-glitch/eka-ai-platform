@@ -1,0 +1,33 @@
+flask>=2.3.2
+flask-cors>=4.0.0
+flask-limiter>=3.0.0
+python-dotenv>=1.0.0
+google-genai>=0.3.0
+supabase>=2.0.0
+PyJWT>=2.8.0
+gunicorn>=21.2.0
+werkzeug>=3.0.0
+redis>=5.0.0
+
+# AI Clients
+anthropic>=0.18.0
+openai>=1.12.0
+
+# LangChain
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langchain-google-genai>=2.0.0
+
+# LlamaIndex
+llama-index>=0.12.0
+llama-index-embeddings-openai>=0.3.0
+llama-index-embeddings-huggingface>=0.4.0
+llama-index-vector-stores-supabase>=0.3.0
+llama-index-llms-openai>=0.3.0
+
+# Vector Embeddings (Local fallback)
+sentence-transformers>=3.0.0
+
+# Optional File Validation
+python-magic>=0.4.27
