@@ -41,7 +41,7 @@ def require_auth(allowed_roles=None):
                     token, 
                     get_jwt_secret(), 
                     algorithms=['HS256'],
-                    options={"require": ["sub", "role", "workshop_id", "exp"]}
+                    options={"require": ["sub", "role", "workshop_id", "exp", "iat"]}
                 )
                 
                 # Store user context in Flask g object
@@ -89,13 +89,15 @@ def generate_token(user_id: str, role: str, workshop_id: str, email: str = None,
     from datetime import timedelta
     
     now = datetime.now(timezone.utc)
+    exp_time = now + timedelta(hours=expiry_hours)
+    
     payload = {
         'sub': user_id,
         'role': role,
         'workshop_id': workshop_id,
         'email': email,
-        'iat': now,
-        'exp': now + timedelta(hours=expiry_hours)
+        'iat': int(now.timestamp()),
+        'exp': int(exp_time.timestamp())
     }
     
     return jwt.encode(payload, get_jwt_secret(), algorithm='HS256')

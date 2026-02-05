@@ -14,9 +14,14 @@ import json
 import base64
 import jwt
 import datetime
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────
 # FLASK APP INIT
@@ -40,7 +45,7 @@ if redis_url:
         storage_uri=redis_url,
         strategy="fixed-window"
     )
-    print("✅ Redis Rate Limiter Connected")
+    logger.info("✅ Redis Rate Limiter Connected")
 else:
     limiter = Limiter(
         key_func=get_remote_address,
@@ -48,7 +53,7 @@ else:
         default_limits=["60 per minute"],
         storage_uri="memory://"
     )
-    print("⚠️ Using In-Memory Rate Limiter (Development Only)")
+    logger.warning("⚠️ Using In-Memory Rate Limiter (Development Only)")
 
 # ─────────────────────────────────────────
 # CLIENT INITIALIZATION (Graceful Degradation)
