@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Clock, Globe } from 'lucide-react';
 
 interface TimeZoneInfo {
@@ -40,7 +40,9 @@ const getTimezones = (): TimeZoneInfo[] => {
 const DigitalClock: React.FC<DigitalClockProps> = ({ showTimezones }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [is24Hour, setIs24Hour] = useState(true);
-  const TIMEZONES = getTimezones();
+  
+  // Memoize timezones list to avoid recalculation on every render
+  const TIMEZONES = useMemo(() => getTimezones(), []);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -78,11 +80,12 @@ const DigitalClock: React.FC<DigitalClockProps> = ({ showTimezones }) => {
     const options: Intl.DateTimeFormatOptions = {
       timeZone: timezone,
       timeZoneName: 'short',
+      hour: 'numeric',
     };
     
-    const formatted = new Intl.DateTimeFormat('en-US', options).format(date);
-    const parts = formatted.split(' ');
-    return parts[parts.length - 1];
+    const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(date);
+    const tzPart = parts.find(part => part.type === 'timeZoneName');
+    return tzPart ? tzPart.value : '';
   };
 
   const displayedTimezones = showTimezones
