@@ -1,0 +1,7 @@
+{
+  "name": "EKA-Ai",
+  "description": "A single-agent automobile intelligence platform for Go4Garage Private Limited, providing expert diagnostics and service guidance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
