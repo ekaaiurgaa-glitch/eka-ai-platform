@@ -11,7 +11,8 @@ from datetime import datetime
 from decimal import Decimal
 
 # LangChain imports
-from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import AgentExecutor
+from langchain.agents.tool_calling_agent.base import create_tool_calling_agent
 from langchain.tools import Tool, StructuredTool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -217,7 +218,7 @@ Pricing Guidance:
             ])
             
             # Create agent
-            self.agent = create_openai_tools_agent(self.llm, self.tools, prompt)
+            self.agent = create_tool_calling_agent(self.llm, self.tools, prompt)
             
             # Create executor
             self.agent_executor = AgentExecutor(

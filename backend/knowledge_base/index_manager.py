@@ -25,10 +25,22 @@ from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
-from llama_index.vector_stores.supabase import SupabaseVectorStore
+
+# Optional Supabase vector store - will use local storage if not available
+try:
+    from llama_index.vector_stores.supabase import SupabaseVectorStore
+    HAS_SUPABASE_VECTOR = True
+except ImportError:
+    HAS_SUPABASE_VECTOR = False
+    SupabaseVectorStore = None
 
 # Supabase for metadata storage
-from supabase import create_client
+try:
+    from supabase import create_client
+    HAS_SUPABASE = True
+except ImportError:
+    HAS_SUPABASE = False
+    create_client = None
 
 logger = logging.getLogger(__name__)
 
@@ -95,17 +107,20 @@ class KnowledgeBaseIndex:
     def _initialize_supabase(self):
         """Initialize Supabase connection for vector storage"""
         try:
-            if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_KEY"):
+            if HAS_SUPABASE and os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_KEY"):
                 self.supabase = create_client(
                     os.getenv("SUPABASE_URL"),
                     os.getenv("SUPABASE_SERVICE_KEY")
                 )
                 
                 # Initialize Supabase vector store
-                self.vector_store = SupabaseVectorStore(
-                    postgres_connection_string=os.getenv("DATABASE_URL"),
-                    collection_name="eka_ai_knowledge"
-                )
+                if HAS_SUPABASE_VECTOR and os.getenv("DATABASE_URL"):
+                    self.vector_store = SupabaseVectorStore(
+                        postgres_connection_string=os.getenv("DATABASE_URL"),
+                        collection_name="eka_ai_knowledge"
+                    )
+                else:
+                    self.vector_store = None
                 
                 logger.info("✅ Supabase vector store connected")
         except Exception as e:
