@@ -19,15 +19,16 @@ langchain-core>=0.3.0
 langchain-openai>=0.2.0
 langchain-google-genai>=2.0.0
 
-# LlamaIndex
-llama-index>=0.12.0
-llama-index-embeddings-openai>=0.3.0
-llama-index-embeddings-huggingface>=0.4.0
-llama-index-vector-stores-supabase>=0.3.0
-llama-index-llms-openai>=0.3.0
+# LlamaIndex - OPTIONAL (Heavy ML dependencies, disabled for standard deployment)
+# Uncomment if deploying with ML resources (min 2GB RAM, 1 CPU)
+# llama-index>=0.12.0
+# llama-index-embeddings-openai>=0.3.0
+# llama-index-embeddings-huggingface>=0.4.0
+# llama-index-vector-stores-supabase>=0.3.0
+# llama-index-llms-openai>=0.3.0
 
-# Vector Embeddings (Local fallback)
-sentence-transformers>=3.0.0
+# Vector Embeddings - OPTIONAL (Large models, disabled for standard deployment)
+# sentence-transformers>=3.0.0
 
 # Optional File Validation
 python-magic>=0.4.27
