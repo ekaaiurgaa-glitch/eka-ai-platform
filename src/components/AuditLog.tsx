@@ -114,7 +114,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ entries, jobId, className = '' }) =
               </div>
             ) : (
               <div className="p-2 space-y-1">
-                {Object.entries(groupedEntries).map(([date, dateEntries]) => (
+                {Object.entries(groupedEntries).map(([date, dateEntries]: [string, AuditEntry[]]) => (
                   <div key={date}>
                     <div className="px-2 py-1">
                       <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest font-mono">
