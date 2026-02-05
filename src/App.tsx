@@ -8,6 +8,7 @@ import SettingsPage from './pages/SettingsPage';
 import ChatsPage from './pages/ChatsPage';
 import LandingPage from './pages/LandingPage';
 import ClockDemoPage from './pages/ClockDemoPage';
+import WorldClockPage from './pages/WorldClockPage';
 
 // Layout wrapper for the Dashboard (Sidebar + Page Content)
 const DashboardLayout = () => (
@@ -32,6 +33,7 @@ const App = () => {
           <Route path="artifacts" element={<ArtifactsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="clock" element={<ClockDemoPage />} />
+          <Route path="worldclock" element={<WorldClockPage />} />
         </Route>
 
         {/* Fallback */}
