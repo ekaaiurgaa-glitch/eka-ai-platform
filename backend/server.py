@@ -1078,6 +1078,911 @@ Please provide a comprehensive answer using the above context."""
         return chat()
 
 
+# ═══════════════════════════════════════════════════════════════
+# PHASE 1: JOB CARD MANAGEMENT API
+# ═══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────
+# JOB CARD CRUD ENDPOINTS
+# ─────────────────────────────────────────
+@flask_app.route('/api/job-cards', methods=['POST'])
+@require_auth()
+def create_job_card():
+    """Create a new job card"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    registration_number = data.get('registration_number')
+    if not registration_number:
+        return jsonify({'error': 'registration_number is required'}), 400
+    
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.create_job_card(
+        workshop_id=g.workshop_id,
+        registration_number=registration_number,
+        vehicle_id=data.get('vehicle_id'),
+        symptoms=data.get('symptoms', []),
+        customer_phone=data.get('customer_phone'),
+        customer_email=data.get('customer_email'),
+        priority=JobPriority(data.get('priority', 'NORMAL')),
+        notes=data.get('notes'),
+        created_by=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to create job card')}), 400
+    
+    return jsonify(result), 201
+
+
+@flask_app.route('/api/job-cards', methods=['GET'])
+@require_auth()
+def list_job_cards():
+    """List job cards with filters"""
+    manager = get_job_card_manager(supabase)
+    
+    status = request.args.get('status')
+    priority = request.args.get('priority')
+    technician_id = request.args.get('technician_id')
+    limit = int(request.args.get('limit', 50))
+    offset = int(request.args.get('offset', 0))
+    
+    success, result = manager.list_job_cards(
+        workshop_id=g.workshop_id,
+        status=JobStatus(status) if status else None,
+        technician_id=technician_id,
+        priority=JobPriority(priority) if priority else None,
+        limit=limit,
+        offset=offset
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to list job cards')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/job-cards/<job_id>', methods=['GET'])
+@require_auth()
+def get_job_card(job_id):
+    """Get a specific job card"""
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.get_job_card(
+        job_id=job_id,
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Job card not found')}), 404
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/job-cards/<job_id>', methods=['PUT'])
+@require_auth()
+def update_job_card(job_id):
+    """Update job card fields"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.update_job_card(
+        job_id=job_id,
+        workshop_id=g.workshop_id,
+        updates=data,
+        updated_by=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to update job card')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/job-cards/<job_id>/transitions', methods=['GET'])
+@require_auth()
+def get_job_transitions(job_id):
+    """Get valid transitions for a job card"""
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.get_valid_transitions(
+        job_id=job_id,
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to get transitions')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/job-cards/<job_id>/transition', methods=['POST'])
+@require_auth()
+def transition_job_state(job_id):
+    """Transition job card to new state"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    target_state = data.get('target_state')
+    if not target_state:
+        return jsonify({'error': 'target_state is required'}), 400
+    
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.transition_state(
+        job_id=job_id,
+        target_state=JobStatus(target_state),
+        workshop_id=g.workshop_id,
+        updated_by=g.user_id,
+        notes=data.get('notes')
+    )
+    
+    if not success:
+        status_code = 409 if result.get('code') == 'INVALID_TRANSITION' else 400
+        return jsonify(result), status_code
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/job-cards/<job_id>/history', methods=['GET'])
+@require_auth()
+def get_job_history(job_id):
+    """Get state transition history for a job card"""
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.get_state_history(
+        job_id=job_id,
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to get history')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/job-cards/stats', methods=['GET'])
+@require_auth()
+def get_job_stats():
+    """Get job card statistics for workshop"""
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.get_workshop_stats(
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to get stats')}), 400
+    
+    return jsonify(result)
+
+
+# ─────────────────────────────────────────
+# PUBLIC JOB CARD VIEW (Token-based)
+# ─────────────────────────────────────────
+@flask_app.route('/api/public/job-card', methods=['GET'])
+def public_job_card():
+    """Get job card details via public token"""
+    token = request.args.get('token')
+    if not token:
+        return jsonify({'error': 'Token required'}), 400
+    
+    manager = get_job_card_manager(supabase)
+    
+    success, result = manager.get_job_card_by_token(token)
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Invalid token')}), 401
+    
+    # Return limited public-safe data
+    job_card = result['job_card']
+    public_data = {
+        'id': job_card['id'],
+        'registration_number': job_card['registration_number'],
+        'status': job_card['status'],
+        'symptoms': job_card['symptoms'],
+        'diagnosis': job_card.get('diagnosis'),
+        'estimate': job_card.get('estimate'),
+        'created_at': job_card['created_at']
+    }
+    
+    return jsonify({'job_card': public_data})
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 1: PDI MANAGEMENT API
+# ═══════════════════════════════════════════════════════════════
+
+@flask_app.route('/api/pdi/checklists', methods=['POST'])
+@require_auth()
+def create_pdi_checklist():
+    """Create PDI checklist for a job card"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    job_card_id = data.get('job_card_id')
+    if not job_card_id:
+        return jsonify({'error': 'job_card_id is required'}), 400
+    
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.create_checklist(
+        job_card_id=job_card_id,
+        workshop_id=g.workshop_id,
+        category=PDICategory(data.get('category', 'STANDARD')),
+        custom_items=data.get('custom_items'),
+        created_by=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to create checklist')}), 400
+    
+    return jsonify(result), 201
+
+
+@flask_app.route('/api/pdi/checklists/<checklist_id>', methods=['GET'])
+@require_auth()
+def get_pdi_checklist(checklist_id):
+    """Get PDI checklist"""
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.get_checklist(
+        checklist_id=checklist_id,
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Checklist not found')}), 404
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/pdi/checklists/by-job/<job_card_id>', methods=['GET'])
+@require_auth()
+def get_pdi_by_job(job_card_id):
+    """Get PDI checklist by job card ID"""
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.get_checklist_by_job(
+        job_card_id=job_card_id,
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Checklist not found')}), 404
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/pdi/checklists/<checklist_id>/items/<item_code>', methods=['PUT'])
+@require_auth()
+def update_pdi_item(checklist_id, item_code):
+    """Update PDI checklist item status"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    status = data.get('status')
+    if not status:
+        return jsonify({'error': 'status is required'}), 400
+    
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.update_checklist_item(
+        checklist_id=checklist_id,
+        item_code=item_code,
+        status=PDIStatus(status),
+        workshop_id=g.workshop_id,
+        notes=data.get('notes'),
+        updated_by=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to update item')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/pdi/checklists/<checklist_id>/declare', methods=['POST'])
+@require_auth()
+def declare_pdi_completion(checklist_id):
+    """Technician declaration for PDI completion"""
+    data = request.get_json() or {}
+    
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.set_technician_declaration(
+        checklist_id=checklist_id,
+        workshop_id=g.workshop_id,
+        declared=data.get('declared', True),
+        technician_id=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to set declaration')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/pdi/checklists/<checklist_id>/complete', methods=['POST'])
+@require_auth()
+def complete_pdi_checklist(checklist_id):
+    """Complete PDI checklist"""
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.complete_checklist(
+        checklist_id=checklist_id,
+        workshop_id=g.workshop_id,
+        supervisor_id=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to complete checklist')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/pdi/evidence', methods=['GET'])
+@require_auth()
+def get_pdi_evidence():
+    """Get PDI evidence for a job card"""
+    job_card_id = request.args.get('job_card_id')
+    item_code = request.args.get('item_code')
+    
+    if not job_card_id:
+        return jsonify({'error': 'job_card_id is required'}), 400
+    
+    manager = get_pdi_manager(supabase)
+    
+    success, result = manager.get_evidence(
+        job_card_id=job_card_id,
+        checklist_item_code=item_code
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to get evidence')}), 400
+    
+    return jsonify(result)
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 1: INVOICE MANAGEMENT API
+# ═══════════════════════════════════════════════════════════════
+
+@flask_app.route('/api/invoices', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'ACCOUNTANT'])
+def create_invoice():
+    """Create new invoice"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    required = ['job_card_id', 'customer_details', 'items', 'workshop_state', 'customer_state']
+    for field in required:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    manager = get_invoice_manager(supabase)
+    
+    success, result = manager.create_invoice(
+        job_card_id=data['job_card_id'],
+        workshop_id=g.workshop_id,
+        customer_details=data['customer_details'],
+        items=data['items'],
+        workshop_state=data['workshop_state'],
+        customer_state=data['customer_state'],
+        generated_by=g.user_id,
+        notes=data.get('notes'),
+        due_days=data.get('due_days', 15)
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to create invoice')}), 400
+    
+    return jsonify(result), 201
+
+
+@flask_app.route('/api/invoices', methods=['GET'])
+@require_auth()
+def list_invoices():
+    """List invoices"""
+    manager = get_invoice_manager(supabase)
+    
+    status = request.args.get('status')
+    job_card_id = request.args.get('job_card_id')
+    limit = int(request.args.get('limit', 50))
+    offset = int(request.args.get('offset', 0))
+    
+    success, result = manager.list_invoices(
+        workshop_id=g.workshop_id,
+        status=InvoiceStatus(status) if status else None,
+        job_card_id=job_card_id,
+        limit=limit,
+        offset=offset
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to list invoices')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/invoices/<invoice_id>', methods=['GET'])
+@require_auth()
+def get_invoice(invoice_id):
+    """Get invoice details"""
+    manager = get_invoice_manager(supabase)
+    
+    success, result = manager.get_invoice(
+        invoice_id=invoice_id,
+        workshop_id=g.workshop_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Invoice not found')}), 404
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/invoices/<invoice_id>/finalize', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER'])
+def finalize_invoice(invoice_id):
+    """Finalize invoice (move from DRAFT to SENT)"""
+    manager = get_invoice_manager(supabase)
+    
+    success, result = manager.finalize_invoice(
+        invoice_id=invoice_id,
+        workshop_id=g.workshop_id,
+        finalized_by=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to finalize invoice')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/invoices/<invoice_id>/mark-paid', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'ACCOUNTANT'])
+def mark_invoice_paid(invoice_id):
+    """Mark invoice as paid"""
+    manager = get_invoice_manager(supabase)
+    
+    success, result = manager.mark_paid(
+        invoice_id=invoice_id,
+        workshop_id=g.workshop_id,
+        paid_by=g.user_id
+    )
+    
+    if not success:
+        return jsonify({'error': result.get('error', 'Failed to mark invoice paid')}), 400
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/invoices/<invoice_id>/pdf', methods=['GET'])
+@require_auth()
+def download_invoice_pdf(invoice_id):
+    """Download invoice as PDF"""
+    manager = get_invoice_manager(supabase)
+    
+    workshop_details = {
+        'name': g.get('workshop_name', 'Go4Garage'),
+        'address': g.get('workshop_address', ''),
+        'gstin': g.get('workshop_gstin', ''),
+        'phone': g.get('workshop_phone', '')
+    }
+    
+    success, result = manager.generate_pdf(
+        invoice_id=invoice_id,
+        workshop_id=g.workshop_id,
+        workshop_details=workshop_details
+    )
+    
+    if not success:
+        return jsonify({'error': result.decode() if isinstance(result, bytes) else 'Failed to generate PDF'}), 400
+    
+    from flask import Response
+    return Response(
+        result,
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename=invoice_{invoice_id}.pdf'
+        }
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 2: PRICING GOVERNANCE API
+# ═══════════════════════════════════════════════════════════════
+
+@flask_app.route('/api/pricing/parts', methods=['GET'])
+@require_auth()
+def get_parts_catalog():
+    """Get parts catalog with pricing ranges"""
+    try:
+        result = supabase.table('parts_catalog')\
+            .select('*')\
+            .eq('workshop_id', g.workshop_id)\
+            .eq('is_active', True)\
+            .execute()
+        
+        supabase.table('pricing_access_logs').insert({
+            'workshop_id': g.workshop_id,
+            'user_id': g.user_id,
+            'access_type': 'VIEW',
+            'item_type': 'PART'
+        }).execute()
+        
+        return jsonify({'parts': result.data, 'count': len(result.data)})
+    except Exception as e:
+        logger.error(f"Error fetching parts catalog: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/pricing/parts', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER'])
+def add_part_to_catalog():
+    """Add part to catalog"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    required = ['part_code', 'description', 'price_min', 'price_max']
+    for field in required:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    try:
+        part_data = {
+            'workshop_id': g.workshop_id,
+            'part_code': data['part_code'],
+            'description': data['description'],
+            'hsn_code': data.get('hsn_code', '8708'),
+            'gst_rate': data.get('gst_rate', 28.0),
+            'price_min': data['price_min'],
+            'price_max': data['price_max'],
+            'stock_qty': data.get('stock_qty', 0),
+            'supplier_info': data.get('supplier_info'),
+            'updated_by': g.user_id
+        }
+        
+        result = supabase.table('parts_catalog').insert(part_data).execute()
+        
+        supabase.table('pricing_access_logs').insert({
+            'workshop_id': g.workshop_id,
+            'user_id': g.user_id,
+            'access_type': 'MODIFY',
+            'item_type': 'PART',
+            'item_code': data['part_code']
+        }).execute()
+        
+        return jsonify({'part': result.data[0]}), 201
+    except Exception as e:
+        logger.error(f"Error adding part: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/pricing/labor', methods=['GET'])
+@require_auth()
+def get_labor_catalog():
+    """Get labor/service catalog"""
+    try:
+        result = supabase.table('labor_catalog')\
+            .select('*')\
+            .eq('workshop_id', g.workshop_id)\
+            .eq('is_active', True)\
+            .execute()
+        
+        supabase.table('pricing_access_logs').insert({
+            'workshop_id': g.workshop_id,
+            'user_id': g.user_id,
+            'access_type': 'VIEW',
+            'item_type': 'LABOR'
+        }).execute()
+        
+        return jsonify({'services': result.data, 'count': len(result.data)})
+    except Exception as e:
+        logger.error(f"Error fetching labor catalog: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/pricing/guidance', methods=['POST'])
+@require_auth()
+def get_pricing_guidance():
+    """Get AI pricing guidance (ranges only, never exact prices)"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query', '')
+    part_code = data.get('part_code')
+    service_code = data.get('service_code')
+    
+    try:
+        if part_code:
+            result = supabase.table('parts_catalog')\
+                .select('*')\
+                .eq('workshop_id', g.workshop_id)\
+                .eq('part_code', part_code)\
+                .execute()
+            
+            if result.data:
+                part = result.data[0]
+                return jsonify({
+                    'guidance': {
+                        'type': 'PART',
+                        'description': part['description'],
+                        'price_range': {
+                            'min': part['price_min'],
+                            'max': part['price_max']
+                        },
+                        'gst_rate': part['gst_rate'],
+                        'hsn_code': part['hsn_code'],
+                        'note': 'Price range only - exact pricing determined at estimate'
+                    }
+                })
+        
+        if service_code:
+            result = supabase.table('labor_catalog')\
+                .select('*')\
+                .eq('workshop_id', g.workshop_id)\
+                .eq('service_code', service_code)\
+                .execute()
+            
+            if result.data:
+                service = result.data[0]
+                return jsonify({
+                    'guidance': {
+                        'type': 'LABOR',
+                        'description': service['description'],
+                        'standard_rate': service['standard_rate'],
+                        'estimated_hours': service.get('estimated_hours'),
+                        'gst_rate': service['gst_rate'],
+                        'sac_code': service['sac_code']
+                    }
+                })
+        
+        return jsonify({
+            'guidance': {
+                'type': 'GENERAL',
+                'note': 'AI pricing guidance requires specific part_code or service_code',
+                'available_endpoints': [
+                    '/api/pricing/parts',
+                    '/api/pricing/labor'
+                ]
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting pricing guidance: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 2: MG FLEET CONTRACTS API
+# ═══════════════════════════════════════════════════════════════
+
+@flask_app.route('/api/mg/contracts', methods=['GET'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER'])
+def list_mg_contracts():
+    """List MG fleet contracts"""
+    try:
+        result = supabase.table('mg_contracts')\
+            .select('*')\
+            .eq('workshop_id', g.workshop_id)\
+            .eq('is_active', True)\
+            .order('created_at', desc=True)\
+            .execute()
+        
+        return jsonify({'contracts': result.data, 'count': len(result.data)})
+    except Exception as e:
+        logger.error(f"Error listing MG contracts: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/mg/contracts', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER'])
+def create_mg_contract():
+    """Create new MG fleet contract"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    required = ['fleet_name', 'contract_start_date', 'contract_end_date', 'assured_km_per_year', 'rate_per_km']
+    for field in required:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    try:
+        contract_data = {
+            'workshop_id': g.workshop_id,
+            'fleet_name': data['fleet_name'],
+            'contract_start_date': data['contract_start_date'],
+            'contract_end_date': data['contract_end_date'],
+            'assured_km_per_year': data['assured_km_per_year'],
+            'rate_per_km': data['rate_per_km'],
+            'excess_rate_per_km': data.get('excess_rate_per_km'),
+            'billing_cycle_months': data.get('billing_cycle_months', 1),
+            'created_by': g.user_id
+        }
+        
+        result = supabase.table('mg_contracts').insert(contract_data).execute()
+        return jsonify({'contract': result.data[0]}), 201
+    except Exception as e:
+        logger.error(f"Error creating MG contract: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/mg/contracts/<contract_id>', methods=['GET'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER'])
+def get_mg_contract(contract_id):
+    """Get MG contract details"""
+    try:
+        result = supabase.table('mg_contracts')\
+            .select('*')\
+            .eq('id', contract_id)\
+            .eq('workshop_id', g.workshop_id)\
+            .execute()
+        
+        if not result.data:
+            return jsonify({'error': 'Contract not found'}), 404
+        
+        logs_result = supabase.table('mg_vehicle_logs')\
+            .select('*')\
+            .eq('contract_id', contract_id)\
+            .order('billing_month', desc=True)\
+            .execute()
+        
+        return jsonify({
+            'contract': result.data[0],
+            'vehicle_logs': logs_result.data
+        })
+    except Exception as e:
+        logger.error(f"Error fetching MG contract: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/mg/vehicle-logs', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER'])
+def create_mg_vehicle_log():
+    """Create MG vehicle log entry"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    required = ['contract_id', 'vehicle_reg_number', 'billing_month', 'opening_odometer', 'closing_odometer']
+    for field in required:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    try:
+        log_data = {
+            'contract_id': data['contract_id'],
+            'vehicle_reg_number': data['vehicle_reg_number'],
+            'billing_month': data['billing_month'],
+            'opening_odometer': data['opening_odometer'],
+            'closing_odometer': data['closing_odometer'],
+            'notes': data.get('notes')
+        }
+        
+        result = supabase.table('mg_vehicle_logs').insert(log_data).execute()
+        return jsonify({'vehicle_log': result.data[0]}), 201
+    except Exception as e:
+        logger.error(f"Error creating vehicle log: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/mg/reports/<contract_id>', methods=['GET'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER'])
+def get_mg_report(contract_id):
+    """Get MG billing report for a contract"""
+    try:
+        contract_result = supabase.table('mg_contracts')\
+            .select('*')\
+            .eq('id', contract_id)\
+            .eq('workshop_id', g.workshop_id)\
+            .execute()
+        
+        if not contract_result.data:
+            return jsonify({'error': 'Contract not found'}), 404
+        
+        contract = contract_result.data[0]
+        
+        logs_result = supabase.table('mg_vehicle_logs')\
+            .select('*')\
+            .eq('contract_id', contract_id)\
+            .execute()
+        
+        total_km = sum(log['actual_km_run'] for log in logs_result.data if log.get('actual_km_run'))
+        total_billed = sum(log['billable_amount'] for log in logs_result.data if log.get('billable_amount'))
+        
+        return jsonify({
+            'contract': contract,
+            'summary': {
+                'total_vehicles': len(set(log['vehicle_reg_number'] for log in logs_result.data)),
+                'total_km_run': total_km,
+                'total_billed_amount': total_billed,
+                'log_entries': len(logs_result.data)
+            },
+            'vehicle_logs': logs_result.data
+        })
+    except Exception as e:
+        logger.error(f"Error generating MG report: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 3: AI GOVERNANCE API
+# ═══════════════════════════════════════════════════════════════
+
+@flask_app.route('/api/governance/check', methods=['POST'])
+def governance_check():
+    """Check query against AI governance gates"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query')
+    if not query:
+        return jsonify({'error': 'query is required'}), 400
+    
+    governance = get_ai_governance(supabase)
+    
+    decision = governance.evaluate(
+        query_id=data.get('query_id', str(uuid.uuid4())[:8]),
+        query=query,
+        user_role=data.get('user_role'),
+        vehicle_context=data.get('vehicle_context'),
+        query_type=data.get('query_type'),
+        required_permission=data.get('required_permission'),
+        raw_confidence=data.get('confidence')
+    )
+    
+    return jsonify(decision.to_dict())
+
+
+@flask_app.route('/api/governance/quick-check', methods=['POST'])
+def governance_quick_check():
+    """Quick binary governance check"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query')
+    if not query:
+        return jsonify({'error': 'query is required'}), 400
+    
+    governance = get_ai_governance(supabase)
+    
+    allowed, message = governance.quick_check(
+        query=query,
+        user_role=data.get('user_role'),
+        vehicle_context=data.get('vehicle_context')
+    )
+    
+    return jsonify({
+        'allowed': allowed,
+        'message': message,
+        'query': query
+    })
+
+
+@flask_app.route('/api/governance/stats', methods=['GET'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER'])
+def governance_stats():
+    """Get governance statistics"""
+    governance = get_ai_governance(supabase)
+    return jsonify(governance.get_stats(g.workshop_id))
+
+
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)
 # ─────────────────────────────────────────
