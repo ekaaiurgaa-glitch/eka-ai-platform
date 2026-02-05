@@ -2,10 +2,11 @@
 
 ## Supported Versions
 
+The latest version of EKA-AI Platform is supported with security updates.
+
 | Version | Supported          |
 | ------- | ------------------ |
-| 4.5.x   | :white_check_mark: |
-| < 4.5   | :x:                |
+| latest  | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
