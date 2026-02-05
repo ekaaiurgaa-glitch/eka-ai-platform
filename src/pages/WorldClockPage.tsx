@@ -5,7 +5,6 @@ const WorldClockPage = () => {
   return (
     <main className="flex-1 overflow-y-auto bg-[#000000] h-screen">
       <div className="max-w-6xl mx-auto px-8 py-12">
-        
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-outfit text-4xl font-black text-white uppercase tracking-tight mb-2">World Clock</h1>
