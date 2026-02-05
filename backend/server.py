@@ -26,7 +26,9 @@ flask_app = Flask(__name__, static_folder='../dist', static_url_path='')
 # PROXY FIX: Essential for correct IP detection behind Nginx/Emergent/AWS
 flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-CORS(flask_app, origins=os.environ.get('CORS_ORIGINS', '*').split(','))
+raw_origins = os.environ.get('CORS_ORIGINS', '*')
+origins_list = [origin.strip() for origin in raw_origins.split(',') if origin.strip()]
+CORS(flask_app, origins=origins_list)
 
 # Rate Limiting (Use Redis URI in production for multi-instance)
 limiter = Limiter(
