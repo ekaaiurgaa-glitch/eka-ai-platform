@@ -14,9 +14,14 @@ import json
 import base64
 import jwt
 import datetime
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────
 # FLASK APP INIT
@@ -30,13 +35,25 @@ raw_origins = os.environ.get('CORS_ORIGINS', '*')
 origins_list = [origin.strip() for origin in raw_origins.split(',') if origin.strip()]
 CORS(flask_app, origins=origins_list)
 
-# Rate Limiting (Use Redis URI in production for multi-instance)
-limiter = Limiter(
-    key_func=get_remote_address,
-    app=flask_app,
-    default_limits=["60 per minute"],
-    storage_uri="memory://"
-)
+# Production Rate Limiting (Redis-backed)
+redis_url = os.environ.get('REDIS_URL')
+if redis_url:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=flask_app,
+        default_limits=["60 per minute"],
+        storage_uri=redis_url,
+        strategy="fixed-window"
+    )
+    logger.info("✅ Redis Rate Limiter Connected")
+else:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=flask_app,
+        default_limits=["60 per minute"],
+        storage_uri="memory://"
+    )
+    logger.warning("⚠️ Using In-Memory Rate Limiter (Development Only)")
 
 # ─────────────────────────────────────────
 # CLIENT INITIALIZATION (Graceful Degradation)
