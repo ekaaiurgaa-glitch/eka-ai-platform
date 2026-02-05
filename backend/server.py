@@ -522,7 +522,9 @@ def generate_approval_link():
             'customer_phone': customer_phone
         }).eq('id', job_card_id).execute()
         
-        base_url = os.environ.get('FRONTEND_URL', 'https://eka-ai.go4garage.in')
+        base_url = os.environ.get('FRONTEND_URL')
+        if not base_url:
+            return jsonify({'error': 'FRONTEND_URL environment variable not configured'}), 500
         approval_url = f"{base_url}/customer-approval?token={token}"
         
         return jsonify({
