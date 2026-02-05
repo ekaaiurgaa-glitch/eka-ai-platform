@@ -33,7 +33,7 @@ const ChatPage = () => {
 
     try {
       // Call the AI Service
-      const response = await geminiService.sendMessage([...history, userMsg], {}, status, mode, operatingMode);
+      const response = await geminiService.sendMessage([...history, userMsg], undefined, status, mode, operatingMode);
       
       const aiText = response.response_content?.visual_text || "System processing...";
       setHistory(prev => [...prev, { role: 'model', parts: [{ text: aiText }] }]);
