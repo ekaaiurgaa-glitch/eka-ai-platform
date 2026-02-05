@@ -19,3 +19,4 @@ jobs:
         uses: samushi/code-review-action@v1.0.13
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
