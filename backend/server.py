@@ -19,6 +19,10 @@ import datetime
 import logging
 from dotenv import load_dotenv
 
+# Setup logging first (before any imports that might fail)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Import EKA-AI Services
 from services.mg_service import MGEngine
 from services.billing import calculate_invoice_totals, validate_gstin, determine_tax_type
@@ -39,10 +43,6 @@ except ImportError as e:
     KNOWLEDGE_BASE_AVAILABLE = False
 
 load_dotenv()
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────
 # FLASK APP INIT
