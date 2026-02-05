@@ -425,6 +425,182 @@ Upload PDI evidence.
 
 ---
 
+## LangChain/LlamaIndex - Knowledge Base & RAG
+
+### GET /kb/status
+Get knowledge base status and statistics.
+
+**Auth:** Any authenticated user
+
+**Response:**
+```json
+{
+  "available": true,
+  "stats": {
+    "index_ready": true,
+    "vector_store_connected": true,
+    "document_count": 1523,
+    "embed_model": "OpenAIEmbedding"
+  }
+}
+```
+
+### POST /kb/search
+Semantic search on knowledge base.
+
+**Auth:** Any authenticated user
+
+**Request:**
+```json
+{
+  "query": "brake pad replacement procedure",
+  "top_k": 5,
+  "filters": {
+    "source_type": "manual"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "query": "brake pad replacement procedure",
+  "results": [
+    {
+      "content": "To replace brake pads: 1. Remove wheel...",
+      "source": "Maruti_Service_Manual.pdf",
+      "score": 0.94,
+      "metadata": {
+        "page": 45,
+        "source_type": "manual"
+      }
+    }
+  ],
+  "count": 5
+}
+```
+
+### POST /kb/query
+RAG query with LLM synthesis.
+
+**Auth:** Any authenticated user
+
+**Request:**
+```json
+{
+  "query": "How do I replace brake pads on a Swift?",
+  "vehicle_context": {
+    "brand": "Maruti",
+    "model": "Swift",
+    "year": "2020"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "query": "How do I replace brake pads on a Swift?",
+  "answer": "Based on the service manual, here are the steps...",
+  "sources": [
+    {
+      "source": "Maruti_Service_Manual.pdf",
+      "score": 0.95,
+      "excerpt": "Brake pad replacement procedure..."
+    }
+  ],
+  "confidence": 92.5,
+  "tokens_used": 450,
+  "success": true
+}
+```
+
+### POST /kb/documents
+Add documents to knowledge base.
+
+**Auth:** OWNER, MANAGER
+
+**Request:**
+```json
+{
+  "documents": [
+    {
+      "content": "Document text content...",
+      "metadata": {
+        "title": "Service Bulletin",
+        "category": "brakes"
+      }
+    }
+  ],
+  "source_type": "bulletin"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "documents_added": 1,
+  "source_type": "bulletin"
+}
+```
+
+### POST /agent/diagnose
+Intelligent diagnostic with LangChain agent.
+
+**Auth:** Any authenticated user  
+**Rate Limit:** 10 per minute
+
+**Request:**
+```json
+{
+  "symptoms": "Car makes grinding noise when braking",
+  "vehicle_context": {
+    "brand": "Maruti",
+    "model": "Swift",
+    "year": "2020"
+  },
+  "history": []
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "diagnosis": {
+    "root_cause_analysis": "Grinding noise indicates worn brake pads...",
+    "confidence_score": 85.0,
+    "possible_causes": [
+      "Worn brake pads (85%)",
+      "Damaged rotors (10%)",
+      "Foreign object (5%)"
+    ],
+    "recommended_actions": [
+      "Inspect brake pads",
+      "Measure rotor thickness",
+      "Check for debris"
+    ],
+    "knowledge_sources": ["Service_Manual.pdf", "TSB_2024_03.pdf"]
+  },
+  "tokens_used": 850,
+  "cost": 0.0125,
+  "ai_generated": true
+}
+```
+
+### POST /agent/enhanced-chat
+Enhanced chat with RAG context augmentation.
+
+**Auth:** Any authenticated user  
+**Rate Limit:** 15 per minute
+
+**Request:** Same as `/chat`
+
+**Response:** Same as `/chat` but with knowledge base augmentation
+
+---
+
 ## Error Codes
 
 | Code | HTTP Status | Description |
@@ -439,6 +615,7 @@ Upload PDI evidence.
 | CALCULATION_ERROR | 500 | MG/Billing calculation failed |
 | BILLING_ERROR | 500 | Invoice calculation failed |
 | TRANSITION_ERROR | 500 | State transition failed |
+| KB_UNAVAILABLE | 503 | Knowledge base service not available |
 
 ---
 

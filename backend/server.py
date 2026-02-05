@@ -24,6 +24,16 @@ from services.mg_service import MGEngine
 from services.billing import calculate_invoice_totals, validate_gstin, determine_tax_type
 from middleware.auth import require_auth, get_current_user
 
+# Import LangChain/LlamaIndex Knowledge Base and Agents
+try:
+    from knowledge_base.index_manager import get_knowledge_base
+    from agents.rag_service import get_rag_service
+    from agents.diagnostic_agent import get_diagnostic_agent
+    KNOWLEDGE_BASE_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"⚠️ Knowledge base not available: {e}")
+    KNOWLEDGE_BASE_AVAILABLE = False
+
 load_dotenv()
 
 # Setup logging
@@ -790,6 +800,283 @@ def get_tax_type():
         'tax_type': tax_type,
         'is_interstate': tax_type == 'IGST'
     })
+
+# ═══════════════════════════════════════════════════════════════
+# LANGCHAIN/LLAMAINDEX - KNOWLEDGE BASE & RAG ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────
+# KNOWLEDGE BASE MANAGEMENT
+# ─────────────────────────────────────────
+@flask_app.route('/api/kb/status', methods=['GET'])
+@require_auth()
+def kb_status():
+    """Get knowledge base status and statistics"""
+    if not KNOWLEDGE_BASE_AVAILABLE:
+        return jsonify({
+            'available': False,
+            'message': 'Knowledge base service not available'
+        }), 503
+    
+    try:
+        kb = get_knowledge_base()
+        stats = kb.get_stats()
+        return jsonify({
+            'available': True,
+            'stats': stats
+        })
+    except Exception as e:
+        logger.error(f"KB status error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/kb/search', methods=['POST'])
+@require_auth()
+def kb_search():
+    """
+    Search knowledge base for relevant documents
+    RAG-enhanced search with semantic similarity
+    """
+    if not KNOWLEDGE_BASE_AVAILABLE:
+        return jsonify({'error': 'Knowledge base not available'}), 503
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query', '')
+    top_k = data.get('top_k', 5)
+    filters = data.get('filters', None)
+    
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    try:
+        kb = get_knowledge_base()
+        results = kb.search(query, top_k=top_k, filters=filters)
+        
+        return jsonify({
+            'query': query,
+            'results': [
+                {
+                    'content': r.content,
+                    'source': r.source,
+                    'score': r.score,
+                    'metadata': r.metadata
+                }
+                for r in results
+            ],
+            'count': len(results)
+        })
+        
+    except Exception as e:
+        logger.error(f"KB search error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/kb/query', methods=['POST'])
+@require_auth()
+def kb_query():
+    """
+    Query knowledge base with LLM synthesis (RAG)
+    Combines retrieval with generative answering
+    """
+    if not KNOWLEDGE_BASE_AVAILABLE:
+        return jsonify({'error': 'Knowledge base not available'}), 503
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    query = data.get('query', '')
+    vehicle_context = data.get('vehicle_context', None)
+    
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
+    
+    try:
+        rag = get_rag_service()
+        response = rag.query(
+            question=query,
+            vehicle_context=vehicle_context,
+            top_k=5
+        )
+        
+        return jsonify({
+            'query': query,
+            'answer': response.answer,
+            'sources': response.sources,
+            'confidence': response.confidence,
+            'tokens_used': response.tokens_used,
+            'success': True
+        })
+        
+    except Exception as e:
+        logger.error(f"RAG query error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/kb/documents', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER'])
+def kb_add_documents():
+    """
+    Add documents to knowledge base
+    Supports service manuals, bulletins, repair guides
+    """
+    if not KNOWLEDGE_BASE_AVAILABLE:
+        return jsonify({'error': 'Knowledge base not available'}), 503
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    documents = data.get('documents', [])
+    source_type = data.get('source_type', 'manual')
+    
+    if not documents:
+        return jsonify({'error': 'Documents array is required'}), 400
+    
+    try:
+        from llama_index.core import Document
+        
+        kb = get_knowledge_base()
+        
+        # Convert to LlamaIndex documents
+        idx_docs = []
+        for doc in documents:
+            idx_doc = Document(
+                text=doc.get('content', ''),
+                metadata={
+                    **doc.get('metadata', {}),
+                    'added_by': g.user_id,
+                    'workshop_id': getattr(g, 'workshop_id', None)
+                }
+            )
+            idx_docs.append(idx_doc)
+        
+        success = kb.add_documents(idx_docs, source_type)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'documents_added': len(documents),
+                'source_type': source_type
+            })
+        else:
+            return jsonify({'error': 'Failed to add documents'}), 500
+            
+    except Exception as e:
+        logger.error(f"KB add documents error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# ─────────────────────────────────────────
+# DIAGNOSTIC AGENT (LangChain)
+# ─────────────────────────────────────────
+@flask_app.route('/api/agent/diagnose', methods=['POST'])
+@require_auth()
+@limiter.limit("10 per minute")
+def agent_diagnose():
+    """
+    Intelligent diagnostic with LangChain agent
+    Uses tools for knowledge retrieval and calculations
+    """
+    if not KNOWLEDGE_BASE_AVAILABLE:
+        return jsonify({'error': 'Agent not available'}), 503
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    symptoms = data.get('symptoms', '')
+    vehicle_context = data.get('vehicle_context', {})
+    chat_history = data.get('history', [])
+    
+    if not symptoms:
+        return jsonify({'error': 'Symptoms description is required'}), 400
+    
+    try:
+        agent = get_diagnostic_agent()
+        result = agent.diagnose(
+            symptoms=symptoms,
+            vehicle_context=vehicle_context,
+            chat_history=chat_history
+        )
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'diagnosis': result['diagnosis'],
+                'tokens_used': result.get('tokens_used', 0),
+                'cost': result.get('cost', 0),
+                'ai_generated': True
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': result.get('error', 'Diagnosis failed')
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Agent diagnosis error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@flask_app.route('/api/agent/enhanced-chat', methods=['POST'])
+@require_auth()
+@limiter.limit("15 per minute")
+def agent_enhanced_chat():
+    """
+    Enhanced chat with RAG context augmentation
+    Combines traditional AI with knowledge base retrieval
+    """
+    if not KNOWLEDGE_BASE_AVAILABLE:
+        # Fallback to regular chat
+        return chat()
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    user_message = data.get('message', '')
+    vehicle_context = data.get('context', {})
+    
+    if not user_message:
+        return jsonify({'error': 'Message is required'}), 400
+    
+    try:
+        # First, retrieve relevant context from knowledge base
+        rag = get_rag_service()
+        rag_response = rag.query(
+            question=user_message,
+            vehicle_context=vehicle_context,
+            top_k=3
+        )
+        
+        # Augment the user message with retrieved context
+        augmented_message = f"""User Question: {user_message}
+
+Retrieved Context from Knowledge Base:
+{rag_response.answer}
+
+Sources: {', '.join([s['source'] for s in rag_response.sources[:2]])}
+
+Please provide a comprehensive answer using the above context."""
+        
+        # Now call the regular chat with augmented message
+        data['history'] = data.get('history', []) + [{
+            'role': 'user',
+            'parts': [{'text': augmented_message}]
+        }]
+        
+        # Call existing chat endpoint logic
+        return chat()
+        
+    except Exception as e:
+        logger.error(f"Enhanced chat error: {e}")
+        # Fallback to regular chat
+        return chat()
+
 
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)
