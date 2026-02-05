@@ -4,11 +4,13 @@ Governed Automobile Intelligence System for Go4Garage Private Limited
 Features: Triple-Model Router, Rate Limiting, JWT Auth, Supabase Integration, PDI Pipeline
 """
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, g
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
+from decimal import Decimal
+from functools import wraps
 import os
 import json
 import base64
@@ -16,6 +18,11 @@ import jwt
 import datetime
 import logging
 from dotenv import load_dotenv
+
+# Import EKA-AI Services
+from services.mg_service import MGEngine
+from services.billing import calculate_invoice_totals, validate_gstin, determine_tax_type
+from middleware.auth import require_auth, get_current_user
 
 load_dotenv()
 
@@ -488,6 +495,301 @@ def generate_approval_link():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 2 & 3: NEW API ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────
+# MG FLEET ENDPOINTS
+# ─────────────────────────────────────────
+@flask_app.route('/api/mg/calculate', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER'])
+def mg_calculate():
+    """
+    Deterministic MG Calculator.
+    AI calls this tool to get 'facts', never calculates itself.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    try:
+        # Extract parameters with defaults
+        assured_km = int(data.get('assured_km', 0))
+        rate = Decimal(str(data.get('rate', 0)))
+        actual_km = int(data.get('actual_km', 0))
+        months = int(data.get('months_in_cycle', 1))
+        excess_rate = data.get('excess_rate')
+        
+        if assured_km <= 0 or rate <= 0:
+            return jsonify({'error': 'assured_km and rate must be positive'}), 400
+        
+        # Use excess calculation if excess_rate is provided
+        if excess_rate is not None:
+            result = MGEngine.calculate_excess_bill(
+                assured_km_annual=assured_km,
+                rate_per_km=rate,
+                excess_rate_per_km=Decimal(str(excess_rate)),
+                actual_km_run=actual_km,
+                months_in_cycle=months
+            )
+        else:
+            result = MGEngine.calculate_monthly_bill(
+                assured_km_annual=assured_km,
+                rate_per_km=rate,
+                actual_km_run=actual_km,
+                months_in_cycle=months
+            )
+        
+        # Add audit metadata
+        result['calculated_by'] = g.user_id
+        result['calculated_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        return jsonify(result)
+        
+    except (ValueError, TypeError) as e:
+        return jsonify({'error': f'Invalid input: {str(e)}', 'code': 'INVALID_INPUT'}), 400
+    except Exception as e:
+        logger.error(f"MG Calculation Error: {e}")
+        return jsonify({'error': str(e), 'code': 'CALCULATION_ERROR'}), 500
+
+
+@flask_app.route('/api/mg/validate-odometer', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER', 'FLEET_MANAGER', 'TECHNICIAN'])
+def mg_validate_odometer():
+    """Validate odometer readings for MG vehicle logs."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    try:
+        opening = int(data.get('opening_odometer', -1))
+        closing = int(data.get('closing_odometer', -1))
+        
+        is_valid = MGEngine.validate_odometer_reading(opening, closing)
+        
+        return jsonify({
+            'valid': is_valid,
+            'opening_odometer': opening,
+            'closing_odometer': closing,
+            'actual_km': closing - opening if is_valid else None,
+            'message': 'Valid odometer reading' if is_valid else 'Invalid: closing must be greater than opening and both must be non-negative'
+        })
+        
+    except (ValueError, TypeError) as e:
+        return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
+
+# ─────────────────────────────────────────
+# JOB CARD STATE GOVERNOR
+# ─────────────────────────────────────────
+VALID_TRANSITIONS = {
+    'CREATED': ['CONTEXT_VERIFIED'],
+    'CONTEXT_VERIFIED': ['DIAGNOSED'],
+    'DIAGNOSED': ['ESTIMATED'],
+    'ESTIMATED': ['CUSTOMER_APPROVAL'],
+    'CUSTOMER_APPROVAL': ['IN_PROGRESS', 'CONCERN_RAISED'],
+    'CONCERN_RAISED': ['ESTIMATED', 'CANCELLED'],
+    'IN_PROGRESS': ['PDI'],
+    'PDI': ['INVOICED'],
+    'INVOICED': ['CLOSED'],
+    'CLOSED': [],  # Terminal state
+    'CANCELLED': []  # Terminal state
+}
+
+@flask_app.route('/api/job/transition', methods=['POST'])
+@require_auth()
+def transition_state():
+    """
+    Strict State Machine Enforcer - Prevents invalid workflow jumps.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+        
+    job_id = data.get('job_id')
+    target_state = data.get('target_state')
+    notes = data.get('notes', '')
+    
+    if not job_id or not target_state:
+        return jsonify({'error': 'Missing job_id or target_state'}), 400
+    
+    if not supabase:
+        return jsonify({'error': 'Database not configured'}), 500
+    
+    try:
+        # Fetch current state from Supabase
+        response = supabase.table('job_cards').select('status, workshop_id').eq('id', job_id).execute()
+        if not response.data:
+            return jsonify({'error': 'Job card not found'}), 404
+        
+        job_data = response.data[0]
+        current_state = job_data['status']
+        job_workshop_id = job_data.get('workshop_id')
+        
+        # Workshop isolation check (if workshop_id is set on job)
+        if job_workshop_id and hasattr(g, 'workshop_id'):
+            if g.workshop_id != job_workshop_id:
+                return jsonify({'error': 'Access denied: job belongs to different workshop'}), 403
+        
+        # Validate transition
+        allowed = VALID_TRANSITIONS.get(current_state, [])
+        
+        if target_state not in allowed:
+            return jsonify({
+                'error': 'Invalid state transition',
+                'code': 'INVALID_TRANSITION',
+                'current': current_state,
+                'requested': target_state,
+                'allowed': allowed
+            }), 409
+        
+        # Update state with metadata
+        update_data = {
+            'status': target_state,
+            'updated_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'updated_by': g.user_id
+        }
+        
+        # Add state-specific timestamps
+        if target_state == 'CUSTOMER_APPROVAL':
+            update_data['sent_for_approval_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        elif target_state == 'IN_PROGRESS':
+            update_data['started_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        elif target_state == 'CLOSED':
+            update_data['closed_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        if notes:
+            update_data['status_notes'] = notes
+        
+        supabase.table('job_cards').update(update_data).eq('id', job_id).execute()
+        
+        # Log the transition
+        log_audit(
+            mode=5,  # State transition mode
+            status=target_state,
+            query=f"Transition {job_id}: {current_state} -> {target_state}",
+            response=f"Transition successful by {g.user_id}",
+            confidence=1.0
+        )
+        
+        return jsonify({
+            'success': True, 
+            'job_card_id': job_id,
+            'previous_state': current_state,
+            'new_state': target_state,
+            'transitions_allowed': VALID_TRANSITIONS.get(target_state, [])
+        })
+        
+    except Exception as e:
+        logger.error(f"State Transition Error: {e}")
+        return jsonify({'error': str(e), 'code': 'TRANSITION_ERROR'}), 500
+
+
+@flask_app.route('/api/job/transitions', methods=['GET'])
+@require_auth()
+def get_valid_transitions():
+    """Get valid transitions for a job card."""
+    job_id = request.args.get('job_id')
+    
+    if not job_id:
+        return jsonify({'error': 'Missing job_id parameter'}), 400
+    
+    if not supabase:
+        return jsonify({'error': 'Database not configured'}), 500
+    
+    try:
+        response = supabase.table('job_cards').select('status').eq('id', job_id).execute()
+        if not response.data:
+            return jsonify({'error': 'Job card not found'}), 404
+        
+        current_state = response.data[0]['status']
+        allowed = VALID_TRANSITIONS.get(current_state, [])
+        
+        return jsonify({
+            'job_card_id': job_id,
+            'current_state': current_state,
+            'allowed_transitions': allowed,
+            'all_states': list(VALID_TRANSITIONS.keys())
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ─────────────────────────────────────────
+# BILLING & GST ENDPOINTS
+# ─────────────────────────────────────────
+@flask_app.route('/api/billing/calculate', methods=['POST'])
+@require_auth(allowed_roles=['OWNER', 'MANAGER'])
+def calculate_billing():
+    """
+    Calculate invoice totals with GST.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    try:
+        items = data.get('items', [])
+        workshop_state = data.get('workshop_state', '')
+        customer_state = data.get('customer_state', '')
+        
+        if not items:
+            return jsonify({'error': 'No items provided'}), 400
+        
+        if not workshop_state or not customer_state:
+            return jsonify({'error': 'workshop_state and customer_state are required'}), 400
+        
+        result = calculate_invoice_totals(items, workshop_state, customer_state)
+        result['calculated_by'] = g.user_id
+        result['calculated_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Billing Calculation Error: {e}")
+        return jsonify({'error': str(e), 'code': 'BILLING_ERROR'}), 500
+
+
+@flask_app.route('/api/billing/validate-gstin', methods=['POST'])
+@require_auth()
+def validate_gstin_endpoint():
+    """Validate GSTIN format."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    gstin = data.get('gstin', '')
+    result = validate_gstin(gstin)
+    
+    return jsonify(result)
+
+
+@flask_app.route('/api/billing/tax-type', methods=['POST'])
+@require_auth()
+def get_tax_type():
+    """Determine tax type based on state codes."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    
+    workshop_state = data.get('workshop_state', '')
+    customer_state = data.get('customer_state', '')
+    
+    if not workshop_state or not customer_state:
+        return jsonify({'error': 'workshop_state and customer_state are required'}), 400
+    
+    tax_type = determine_tax_type(workshop_state, customer_state)
+    
+    return jsonify({
+        'workshop_state': workshop_state,
+        'customer_state': customer_state,
+        'tax_type': tax_type,
+        'is_interstate': tax_type == 'IGST'
+    })
 
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)
