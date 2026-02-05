@@ -30,13 +30,25 @@ raw_origins = os.environ.get('CORS_ORIGINS', '*')
 origins_list = [origin.strip() for origin in raw_origins.split(',') if origin.strip()]
 CORS(flask_app, origins=origins_list)
 
-# Rate Limiting (Use Redis URI in production for multi-instance)
-limiter = Limiter(
-    key_func=get_remote_address,
-    app=flask_app,
-    default_limits=["60 per minute"],
-    storage_uri="memory://"
-)
+# Production Rate Limiting (Redis-backed)
+redis_url = os.environ.get('REDIS_URL')
+if redis_url:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=flask_app,
+        default_limits=["60 per minute"],
+        storage_uri=redis_url,
+        strategy="fixed-window"
+    )
+    print("✅ Redis Rate Limiter Connected")
+else:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=flask_app,
+        default_limits=["60 per minute"],
+        storage_uri="memory://"
+    )
+    print("⚠️ Using In-Memory Rate Limiter (Development Only)")
 
 # ─────────────────────────────────────────
 # CLIENT INITIALIZATION (Graceful Degradation)

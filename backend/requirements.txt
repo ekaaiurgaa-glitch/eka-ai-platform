@@ -7,6 +7,7 @@ supabase>=2.0.0
 PyJWT>=2.8.0
 gunicorn>=21.2.0
 werkzeug>=3.0.0
+redis>=5.0.0
 # Optional AI Clients (Uncomment if using them)
 anthropic>=0.18.0
 openai>=1.12.0
