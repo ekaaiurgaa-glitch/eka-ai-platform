@@ -14,10 +14,13 @@ dist
 .gitignore
 
 # Environment files (use docker-compose env_file instead)
+# Keep .env.example files for reference
 .env
 .env.local
 .env.*.local
 backend/.env
+!.env.example
+!backend/.env.example
 
 # IDE
 .vscode
