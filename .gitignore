@@ -43,3 +43,7 @@ ENV/
 .env.local
 .env.*.local
 backend/.env
+-e 
+# Environment files
+*.env
+*.env.*
