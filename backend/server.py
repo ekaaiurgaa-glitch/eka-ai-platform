@@ -19,9 +19,17 @@ import datetime
 import logging
 from dotenv import load_dotenv
 
+# Setup logging first (before any imports that might fail)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Import EKA-AI Services
 from services.mg_service import MGEngine
 from services.billing import calculate_invoice_totals, validate_gstin, determine_tax_type
+from services.job_card_manager import JobCardManager, JobStatus, JobPriority, VALID_TRANSITIONS as JC_VALID_TRANSITIONS
+from services.pdi_manager import PDIManager, PDIStatus, STANDARD_PDI_ITEMS
+from services.invoice_manager import InvoiceManager
+from services.ai_governance import AIGovernance
 from middleware.auth import require_auth, get_current_user
 
 # Import LangChain/LlamaIndex Knowledge Base and Agents
@@ -35,10 +43,6 @@ except ImportError as e:
     KNOWLEDGE_BASE_AVAILABLE = False
 
 load_dotenv()
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────
 # FLASK APP INIT
@@ -96,6 +100,31 @@ try:
         print("✅ Anthropic Connected")
 except Exception as e: 
     print(f"⚠️  Anthropic Warning: {e}")
+
+# ─────────────────────────────────────────
+# MANAGER INITIALIZATION HELPERS
+# ─────────────────────────────────────────
+def get_job_card_manager(db):
+    """Get JobCardManager instance"""
+    if not db:
+        raise ValueError("Database connection required")
+    return JobCardManager(db)
+
+def get_pdi_manager(db):
+    """Get PDIManager instance"""
+    if not db:
+        raise ValueError("Database connection required")
+    return PDIManager(db)
+
+def get_invoice_manager(db):
+    """Get InvoiceManager instance"""
+    if not db:
+        raise ValueError("Database connection required")
+    return InvoiceManager(db)
+
+def get_ai_governance():
+    """Get AIGovernance instance"""
+    return AIGovernance()
 
 # ─────────────────────────────────────────
 # EKA-AI MASTER CONSTITUTION
@@ -493,7 +522,9 @@ def generate_approval_link():
             'customer_phone': customer_phone
         }).eq('id', job_card_id).execute()
         
-        base_url = os.environ.get('FRONTEND_URL', 'https://eka-ai.go4garage.in')
+        base_url = os.environ.get('FRONTEND_URL')
+        if not base_url:
+            return jsonify({'error': 'FRONTEND_URL environment variable not configured'}), 500
         approval_url = f"{base_url}/customer-approval?token={token}"
         
         return jsonify({
