@@ -32,3 +32,8 @@ langchain-google-genai>=2.0.0
 
 # Optional File Validation
 python-magic>=0.4.27
+
+# PDF Generation (WeasyPrint dependencies)
+weasyprint>=60.0
+cffi>=1.16.0
+cairocffi>=1.6.0
