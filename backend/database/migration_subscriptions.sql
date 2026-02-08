@@ -20,10 +20,21 @@ CREATE TABLE IF NOT EXISTS subscription_logs (
 -- Enable RLS on subscription_logs
 ALTER TABLE subscription_logs ENABLE ROW LEVEL SECURITY;
 
--- 3. Policy: Users can view their own workshop's subscription logs
-CREATE POLICY IF NOT EXISTS "Owners view subscription" ON subscription_logs
-    FOR SELECT USING (
+-- 3. Create policy conditionally (PostgreSQL doesn't support IF NOT EXISTS for policies)
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'subscription_logs' 
+    AND policyname = 'Owners view subscription'
+  ) THEN 
+    CREATE POLICY "Owners view subscription" ON subscription_logs
+      FOR SELECT USING (
         workshop_id IN (
-            SELECT workshop_id FROM user_profiles WHERE user_id = auth.uid()
+          SELECT workshop_id FROM user_profiles WHERE user_id = auth.uid()
         )
-    );
+      );
+  END IF;
+END $$;

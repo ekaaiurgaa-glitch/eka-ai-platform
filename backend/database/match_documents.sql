@@ -45,6 +45,17 @@ $$;
 -- Enable RLS on documents table
 alter table documents enable row level security;
 
--- Create policy for authenticated users to read documents
-create policy if not exists "Allow authenticated read" on documents
-    for select using (auth.role() = 'authenticated');
+-- Create policy conditionally (PostgreSQL doesn't support IF NOT EXISTS for policies)
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM pg_policies 
+    WHERE schemaname = 'public' 
+    AND tablename = 'documents' 
+    AND policyname = 'Allow authenticated read'
+  ) THEN 
+    CREATE POLICY "Allow authenticated read" ON documents
+      FOR SELECT USING (auth.role() = 'authenticated');
+  END IF;
+END $$;
