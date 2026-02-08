@@ -59,12 +59,9 @@ jobs:
             echo "🔨 Building and restarting containers..."
             docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
             
-            # Run database migrations if needed
-            echo "🔄 Checking database migrations..."
-            docker-compose -f docker-compose.prod.yml exec -T backend python -c "
-            from database.supabase_client import supabase_client
-            print('✅ Database connection verified')
-            " || echo "⚠️ Database check skipped"
+            # Verify container health
+            echo "🔄 Verifying container health..."
+            docker-compose -f docker-compose.prod.yml ps | grep -q "healthy" && echo "✅ Containers healthy" || echo "⚠️ Health check pending"
             
             # Prune unused images to save disk space
             echo "🧹 Cleaning up old images..."
