@@ -4,7 +4,7 @@ Governed Automobile Intelligence System for Go4Garage Private Limited
 Features: Triple-Model Router, Rate Limiting, JWT Auth, Supabase Integration, PDI Pipeline
 """
 
-from flask import Flask, jsonify, request, send_from_directory, g
+from flask import Flask, jsonify, request, send_from_directory, g, redirect
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -2016,45 +2016,14 @@ def governance_stats():
 
 
 # ─────────────────────────────────────────
-# SUBSCRIPTION & MONETIZATION
+# SUBSCRIPTION & MONETIZATION (PAYU INTEGRATION)
 # ─────────────────────────────────────────
 subscription_service = SubscriptionService()
 
-@flask_app.route('/api/subscription/checkout', methods=['POST'])
-@require_auth(allowed_roles=['OWNER'])
-def create_checkout():
-    """Create a checkout session for upgrading subscription"""
-    try:
-        data = request.get_json()
-        workshop_id = g.workshop_id
-        plan_id = data.get('plan_id', 'PRO')
-        
-        session = subscription_service.create_checkout_session(workshop_id, plan_id)
-        return jsonify(session)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        logger.error(f"Checkout error: {e}")
-        return jsonify({"error": "Failed to create checkout session"}), 500
-
-@flask_app.route('/api/subscription/webhook', methods=['POST'])
-def payment_webhook():
-    """Handle payment webhook from Razorpay/Stripe"""
-    try:
-        # In production, verify webhook signature here
-        data = request.get_json()
-        workshop_id = data.get('workshop_id')
-        plan_id = data.get('plan_id')
-        payment_id = data.get('payment_id')
-        
-        if not all([workshop_id, plan_id, payment_id]):
-            return jsonify({"error": "Missing required fields"}), 400
-            
-        subscription_service.activate_subscription(workshop_id, plan_id, payment_id)
-        return jsonify({"status": "success"})
-    except Exception as e:
-        logger.error(f"Webhook error: {e}")
-        return jsonify({"error": str(e)}), 500
+@flask_app.route('/api/subscription/plans', methods=['GET'])
+def get_subscription_plans():
+    """Get available subscription plans"""
+    return jsonify(subscription_service.PLANS)
 
 @flask_app.route('/api/subscription/status', methods=['GET'])
 @require_auth()
@@ -2068,10 +2037,62 @@ def get_subscription_status():
         logger.error(f"Status check error: {e}")
         return jsonify({"error": str(e)}), 500
 
-@flask_app.route('/api/subscription/plans', methods=['GET'])
-def get_subscription_plans():
-    """Get available subscription plans"""
-    return jsonify(subscription_service.PLANS)
+@flask_app.route('/api/subscription/payu-init', methods=['POST'])
+@require_auth(allowed_roles=['OWNER'])
+def payu_init():
+    """
+    Endpoint called when user clicks 'Upgrade'
+    Returns: JSON with form fields + hash for PayU
+    """
+    try:
+        user = g.user
+        data = request.get_json()
+        plan_id = data.get('plan_id', 'PRO')
+        
+        # Get user details for the hash
+        email = user.get('email', 'workshop@go4garage.com')
+        name = user.get('full_name', 'Workshop Owner')
+        
+        payload = subscription_service.create_payment_payload(
+            workshop_id=g.workshop_id,
+            plan_id=plan_id,
+            user_email=email,
+            user_name=name
+        )
+        return jsonify(payload)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"PayU Init error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@flask_app.route('/api/subscription/success', methods=['POST'])
+def payu_success():
+    """
+    PayU Redirects here after successful payment
+    """
+    try:
+        data = request.form
+        status = data.get('status')
+        txnid = data.get('txnid')
+        payu_id = data.get('mihpayid')
+        
+        if status == 'success':
+            subscription_service.activate_subscription(txnid, payu_id, status)
+            # Redirect user back to React App
+            return redirect(f"{os.getenv('FRONTEND_URL')}/app?status=upgraded")
+        else:
+            return redirect(f"{os.getenv('FRONTEND_URL')}/app?status=failed")
+    except Exception as e:
+        logger.error(f"PayU Success Handler error: {e}")
+        return redirect(f"{os.getenv('FRONTEND_URL')}/app?status=failed")
+
+@flask_app.route('/api/subscription/failure', methods=['POST'])
+def payu_failure():
+    """
+    PayU Redirects here after failed payment
+    """
+    return redirect(f"{os.getenv('FRONTEND_URL')}/app?status=failed")
 
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)

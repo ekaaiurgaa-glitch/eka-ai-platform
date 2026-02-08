@@ -1,5 +1,7 @@
+import hashlib
+import os
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict
 try:
     from database.supabase_client import supabase_client as supabase
 except ImportError:
@@ -8,59 +10,94 @@ except ImportError:
 
 class SubscriptionService:
     def __init__(self):
+        # Load credentials from environment
+        self.key = os.getenv('PAYU_MERCHANT_KEY')
+        self.salt = os.getenv('PAYU_MERCHANT_SALT')
+        self.base_url = os.getenv('PAYU_BASE_URL', 'https://secure.payu.in/_payment')
+        
+        # Define Plans
         self.PLANS = {
             'FREE': {'price': 0, 'limit_jobs': 5},
             'PRO': {'price': 2499, 'limit_jobs': 9999}
         }
 
-    def create_checkout_session(self, workshop_id: str, plan_id: str) -> Dict:
+    def generate_hash(self, data: Dict) -> str:
         """
-        Creates a payment link/session (Mocked for now, ready for Razorpay)
+        Generates PayU SHA-512 Hash
+        Formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|...||||||salt)
+        """
+        hash_string = (
+            f"{self.key}|{data['txnid']}|{data['amount']}|{data['productinfo']}|"
+            f"{data['firstname']}|{data['email']}|||||||||||{self.salt}"
+        )
+        return hashlib.sha512(hash_string.encode('utf-8')).hexdigest()
+
+    def create_payment_payload(self, workshop_id: str, plan_id: str, user_email: str, user_name: str) -> Dict:
+        """
+        Creates the Form Data for the Frontend to POST to PayU
         """
         if plan_id not in self.PLANS:
             raise ValueError("Invalid Plan ID")
             
-        amount = self.PLANS[plan_id]['price']
+        amount = float(self.PLANS[plan_id]['price'])
+        txnid = f"txn_{workshop_id}_{int(datetime.now().timestamp())}"
+        product_info = f"EKA-AI {plan_id} Plan"
         
-        # In a real integration, you would call Razorpay/Stripe API here
-        # checkout = razorpay.Order.create(...)
-        
-        return {
-            "order_id": f"ord_mock_{workshop_id}_{int(datetime.now().timestamp())}",
-            "amount": amount,
-            "currency": "INR",
-            "key": "rzp_test_YOUR_KEY_HERE" # Placeholder
-        }
-
-    def activate_subscription(self, workshop_id: str, plan_id: str, payment_id: str):
-        """
-        Activates the plan after successful payment
-        """
-        if not supabase:
-            raise RuntimeError("Supabase client not available")
-            
-        expiry = datetime.now() + timedelta(days=30)
-        
-        # 1. Update Workshop
+        # Basic Payload
         data = {
-            "subscription_plan": plan_id,
-            "subscription_status": "ACTIVE",
-            "subscription_expiry": expiry.isoformat()
+            "key": self.key,
+            "txnid": txnid,
+            "amount": amount,
+            "productinfo": product_info,
+            "firstname": user_name or "Owner",
+            "email": user_email,
+            "phone": "9999999999", # Required by PayU, can be dummy if not collected
+            "surl": f"{os.getenv('FRONTEND_URL')}/api/subscription/success",
+            "furl": f"{os.getenv('FRONTEND_URL')}/api/subscription/failure",
         }
         
-        response = supabase.table('workshops').update(data).eq('id', workshop_id).execute()
+        # Generate Hash
+        data['hash'] = self.generate_hash(data)
+        data['action'] = self.base_url
         
-        # 2. Log Transaction
-        log = {
-            "workshop_id": workshop_id,
-            "new_plan": plan_id,
-            "payment_id": payment_id,
-            "amount": self.PLANS[plan_id]['price']
-        }
-        supabase.table('subscription_logs').insert(log).execute()
-        
-        return True
-        
+        return data
+
+    def activate_subscription(self, txnid: str, payu_id: str, status: str):
+        """
+        Activates the plan in Supabase after successful payment
+        """
+        if status != 'success':
+            return False
+            
+        try:
+            # Extract workshop_id from transaction ID (txn_WORKSHOPID_TIMESTAMP)
+            parts = txnid.split('_')
+            workshop_id = parts[1]
+            
+            # Calculate Expiry (30 Days)
+            expiry = (datetime.now() + timedelta(days=30)).isoformat()
+            
+            # 1. Update Workshop Table
+            if supabase:
+                supabase.table('workshops').update({
+                    "subscription_plan": "PRO",
+                    "subscription_status": "ACTIVE",
+                    "subscription_expiry": expiry
+                }).eq('id', workshop_id).execute()
+                
+                # 2. Log Transaction
+                supabase.table('subscription_logs').insert({
+                    "workshop_id": workshop_id,
+                    "new_plan": "PRO",
+                    "payment_id": payu_id,
+                    "amount": 2499.00
+                }).execute()
+            
+            return True
+        except Exception as e:
+            print(f"Activation Failed: {e}")
+            return False
+            
     def get_subscription_status(self, workshop_id: str) -> Dict:
         """
         Get current subscription status for a workshop
