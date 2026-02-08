@@ -2,12 +2,24 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Shield, FileText, RotateCcw, Mail, MapPin, Building2 } from 'lucide-react';
 
-// Company Details - Go4Garage Private Limited
+// ═══════════════════════════════════════════════════════════════
+// ⚠️  IMPORTANT: UPDATE THESE WITH YOUR ACTUAL COMPANY DETAILS
+// Get CIN from Ministry of Corporate Affairs (MCA21 portal)
+// Get GSTIN from GST Portal
+// ═══════════════════════════════════════════════════════════════
 const COMPANY_INFO = {
   name: "Go4Garage Private Limited",
-  cin: "U72501MH2024PTC123456",  // Example CIN - update with actual
-  gstin: "27AABCG1234D1Z5",       // Example GSTIN - update with actual
+  // TODO: Replace with actual CIN from MCA
+  // Format: U72501MH2024PTCXXXXXX
+  cin: "U72501MH2024PTC123456",
+  
+  // TODO: Replace with actual GSTIN
+  // Format: 27XXXXXXXXXXZ5 (for Maharashtra)
+  gstin: "27AABCG1234D1Z5",
+  
+  // TODO: Replace with actual registered address
   address: "123, Techno Park, Andheri East, Mumbai - 400069, Maharashtra, India",
+  
   email: "legal@eka-ai.com",
   phone: "+91-22-1234-5678",
   website: "https://eka-ai.com"
