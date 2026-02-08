@@ -7,7 +7,7 @@
 ## 🚨 CRITICAL (Cannot Launch Without)
 
 ### 1. Domain & SSL
-- [ ] **Purchase Domain**: `app.eka-ai.com` or `app.eka-ai.in`
+- [ ] **Purchase Domain**: `app.eka-ai.in` or `app.eka-ai.in`
 - [ ] **VPS Provision**: 4GB RAM, 2 vCPU, 80GB SSD, Ubuntu 22.04 LTS
 - [ ] **DNS Records**: Point A record to VPS IP
 - [ ] **SSL Certificates**: Run `init-letsencrypt.sh` after VPS setup
@@ -21,7 +21,7 @@ gemini_api_key=AIzaSy...YOUR_PRODUCTION_KEY...  # Get from Google AI Studio
 jwt_secret=$(openssl rand -base64 32)  # Generate new secure secret
 
 # CORS - REMOVE LOCALHOST
-cors_origins=https://app.eka-ai.com,https://www.eka-ai.com  # Production only
+cors_origins=https://app.eka-ai.in,https://www.eka-ai.in  # Production only
 ```
 
 **File: `.env` (Frontend)**
@@ -65,9 +65,9 @@ const COMPANY_INFO = {
   cin: "U72501MH2024PTCXXXXXX",  // ← Replace with actual CIN
   gstin: "27AABCG1234D1Z5",       // ← Replace with actual GSTIN
   address: "Your Actual Registered Address",
-  email: "legal@eka-ai.com",
+  email: "legal@eka-ai.in",
   phone: "+91-22-XXXX-XXXX",
-  website: "https://eka-ai.com"
+  website: "https://eka-ai.in"
 };
 ```
 
@@ -79,14 +79,14 @@ const COMPANY_INFO = {
 
 - [ ] Get live merchant key/salt from PayU
 - [ ] Configure webhooks:
-  - Success: `https://app.eka-ai.com/api/subscription/success`
-  - Failure: `https://app.eka-ai.com/api/subscription/failure`
+  - Success: `https://app.eka-ai.in/api/subscription/success`
+  - Failure: `https://app.eka-ai.in/api/subscription/failure`
 - [ ] Test ₹1 live transaction
 
 ### 7. Email Configuration (Resend)
 
 - [ ] Create Resend account
-- [ ] Verify domain: `eka-ai.com`
+- [ ] Verify domain: `eka-ai.in`
 - [ ] Add API key to backend/.env:
 ```bash
 resend_api_key=re_...YOUR_KEY...

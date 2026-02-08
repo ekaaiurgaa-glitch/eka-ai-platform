@@ -91,7 +91,7 @@ Proxy status: DNS only (grey cloud)
 ```
 Type: CNAME
 Name: www
-Target: yourdomain.com
+Target: eka-ai.in
 TTL: Auto
 ```
 
@@ -127,8 +127,8 @@ nano backend/.env
 **Update these values:**
 ```bash
 # Replace with your actual domain
-FRONTEND_URL=https://app.yourdomain.com
-CORS_ORIGINS=https://app.yourdomain.com,https://www.yourdomain.com
+FRONTEND_URL=https://app.eka-ai.in
+CORS_ORIGINS=https://app.eka-ai.in,https://www.eka-ai.in
 
 # Add your PayU live credentials
 PAYU_MERCHANT_KEY=YOUR_LIVE_KEY
@@ -150,7 +150,7 @@ python deploy_schema.py --env production
 nano init-letsencrypt.sh
 
 # Change these lines:
-domains=(app.yourdomain.com yourdomain.com)
+domains=(app.eka-ai.in eka-ai.in)
 rsa_key_size=4096
 data_path="./certbot"
 email="your-email@example.com"
@@ -177,7 +177,7 @@ docker-compose -f docker-compose.prod.yml ps
 docker-compose -f docker-compose.prod.yml logs -f
 
 # Test health endpoint
-curl https://app.yourdomain.com/api/health
+curl https://app.eka-ai.in/api/health
 ```
 
 ### Expected response:
@@ -255,7 +255,7 @@ docker-compose -f docker-compose.prod.yml logs
 cat /var/log/letsencrypt/letsencrypt.log
 
 # Re-run certbot
-sudo certbot certonly --webroot -w /opt/eka-ai-platform/certbot/www -d app.yourdomain.com
+sudo certbot certonly --webroot -w /opt/eka-ai-platform/certbot/www -d app.eka-ai.in
 ```
 
 ### Issue: "Database connection failed"

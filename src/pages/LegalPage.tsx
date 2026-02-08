@@ -11,9 +11,9 @@ const COMPANY_INFO = {
   cin: "U34300UP2021PTC145107",  // MCA Registration
   gstin: "10AAICG9768N1ZZ",       // GST Registration (Bihar/Jharkhand region)
   address: "Go4Garage Private Limited, Uttar Pradesh, India",
-  email: "legal@eka-ai.com",
+  email: "legal@go4garage.in",
   phone: "+91-XXXX-XXXXXX",  // Update with actual phone
-  website: "https://eka-ai.com"
+  website: "https://app.eka-ai.in"
 };
 
 const LegalPage = () => {

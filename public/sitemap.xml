@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://eka-ai.com/</loc>
+    <loc>https://app.eka-ai.in/</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://eka-ai.com/login</loc>
+    <loc>https://app.eka-ai.in/login</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://eka-ai.com/legal/terms</loc>
+    <loc>https://app.eka-ai.in/legal/terms</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://eka-ai.com/legal/privacy</loc>
+    <loc>https://app.eka-ai.in/legal/privacy</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://eka-ai.com/legal/refund</loc>
+    <loc>https://app.eka-ai.in/legal/refund</loc>
     <lastmod>2026-02-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

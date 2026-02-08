@@ -250,15 +250,15 @@ npm run build
 - **GSTIN**: 27AABCG1234D1Z5
 - **Address**: 123, Techno Park, Andheri East, Mumbai - 400069
 
-[Terms of Service](https://eka-ai.com/legal/terms) | [Privacy Policy](https://eka-ai.com/legal/privacy) | [Refund Policy](https://eka-ai.com/legal/refund)
+[Terms of Service](https://app.eka-ai.in/legal/terms) | [Privacy Policy](https://app.eka-ai.in/legal/privacy) | [Refund Policy](https://app.eka-ai.in/legal/refund)
 
 ---
 
 ## 🤝 Support
 
-- **Email**: support@eka-ai.com
+- **Email**: support@app.eka-ai.in
 - **Phone**: +91-22-1234-5678
-- **Website**: https://eka-ai.com
+- **Website**: https://app.eka-ai.in
 
 ---
 

@@ -60,7 +60,7 @@ sudo apt update
 sudo apt install -y certbot python3-certbot-nginx
 
 # Obtain certificate
-sudo certbot certonly --standalone -d app.YOURDOMAIN.com
+sudo certbot certonly --standalone -d app.eka-ai.in
 
 # Auto-renewal
 sudo systemctl enable certbot.timer
@@ -83,8 +83,8 @@ chmod +x setup-production.sh
 nano backend/.env
 
 # Update these:
-FRONTEND_URL=https://app.YOURDOMAIN.com
-CORS_ORIGINS=https://app.YOURDOMAIN.com
+FRONTEND_URL=https://app.eka-ai.in
+CORS_ORIGINS=https://app.eka-ai.in
 
 # Deploy
 docker-compose -f docker-compose.prod.yml up -d
@@ -138,8 +138,8 @@ If you prefer AWS RDS PostgreSQL:
 ### Issue: Domain not resolving
 ```bash
 # Check DNS propagation
-dig app.YOURDOMAIN.com
-nslookup app.YOURDOMAIN.com
+dig app.eka-ai.in
+nslookup app.eka-ai.in
 ```
 
 ### Issue: SSL certificate error
@@ -148,8 +148,8 @@ nslookup app.YOURDOMAIN.com
 sudo cat /var/log/letsencrypt/letsencrypt.log
 
 # Re-run certbot
-sudo certbot delete -d app.YOURDOMAIN.com
-sudo certbot certonly --standalone -d app.YOURDOMAIN.com
+sudo certbot delete -d app.eka-ai.in
+sudo certbot certonly --standalone -d app.eka-ai.in
 ```
 
 ### Issue: EC2 connection timeout
@@ -164,4 +164,4 @@ sudo certbot certonly --standalone -d app.YOURDOMAIN.com
 
 1. Update domain in all config files
 2. Complete deployment
-3. Test at https://app.YOURDOMAIN.com
+3. Test at https://app.eka-ai.in
