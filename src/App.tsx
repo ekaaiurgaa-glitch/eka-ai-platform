@@ -4,6 +4,7 @@ import Sidebar from './components/layout/Sidebar';
 import ChatPage from './pages/ChatPage';
 import LoginPage from './pages/LoginPage';
 import PricingPage from './pages/PricingPage';
+import LegalPage from './pages/LegalPage';
 import VehicleContextPanel from './components/VehicleContextPanel';
 import { useJobCard } from './hooks/useJobCard';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -63,8 +64,9 @@ const App = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Route */}
+          {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/legal/:type" element={<LegalPage />} />
 
           {/* Root Redirect */}
           <Route path="/" element={<Navigate to="/app" replace />} />

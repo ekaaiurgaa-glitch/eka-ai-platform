@@ -37,3 +37,13 @@ python-magic>=0.4.27
 weasyprint>=60.0
 cffi>=1.16.0
 cairocffi>=1.6.0
+
+# Communication Services
+resend>=2.0.0
+requests>=2.31.0
+
+# Data Processing
+pandas>=2.0.0
+
+# PDF Parsing for RAG
+PyPDF2>=3.0.0

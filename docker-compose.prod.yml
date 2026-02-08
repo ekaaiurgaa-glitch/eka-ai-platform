@@ -1,63 +1,41 @@
 version: '3.8'
 
 services:
-  eka-ai:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: eka_backend_prod
+    restart: always
+    command: gunicorn --bind 0.0.0.0:8001 --workers 3 --timeout 120 wsgi:flask_app
+    env_file: .env
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: eka_nginx
+    restart: always
     ports:
-      - "8001:8001"
-    environment:
-      - PORT=8001
-      - REDIS_URL=redis://redis:6379/0
-      - SENTRY_DSN=${SENTRY_DSN}
-    env_file:
-      - backend/.env.production
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  redis:
-    image: redis:7-alpine
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+      - "80:80"
+      - "443:443"
     volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - backend
+    networks:
+      - app-network
 
-volumes:
-  redis_data:
-    driver: local
+  certbot:
+    image: certbot/certbot
+    container_name: eka_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 networks:
-  default:
-    name: eka-ai-network
+  app-network:
+    driver: bridge
