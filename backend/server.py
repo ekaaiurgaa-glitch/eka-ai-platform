@@ -317,7 +317,7 @@ def health():
 @flask_app.route('/api/chat', methods=['POST'])
 @limiter.limit("15 per minute")
 def chat():
-    """Main intelligence endpoint"""
+    """Main intelligence endpoint with LlamaGuard safety"""
     try:
         data = request.get_json()
         if not data:
@@ -328,6 +328,36 @@ def chat():
         status = data.get('status', 'CREATED')
         mode = data.get('intelligence_mode', 'FAST')
         op_mode = data.get('operating_mode', 0)
+        
+        # ─────────────────────────────────────────
+        # PHASE 5: LLAMAGUARD SAFETY CHECK (Input)
+        # ─────────────────────────────────────────
+        try:
+            from services.llama_guard import validate_ai_input
+            user_message = history[-1]['parts'][0]['text'] if history else ""
+            safety_result = validate_ai_input(user_message, context="chat")
+            
+            if not safety_result.is_safe and safety_result.action == "BLOCK":
+                logger.warning("LlamaGuard blocked input", extra={
+                    "category": safety_result.category.value if safety_result.category else None,
+                    "confidence": safety_result.confidence
+                })
+                return jsonify({
+                    "response_content": {
+                        "visual_text": f"⚠️ Request blocked due to safety policy ({safety_result.category.value if safety_result.category else 'Unknown'}). This content violates our acceptable use policy.",
+                        "audio_text": "Request blocked due to safety policy."
+                    },
+                    "job_status_update": status,
+                    "ui_triggers": {"theme_color": "#FF0000", "show_orange_border": True}
+                }), 400
+            
+            # Use redacted input
+            if history:
+                history[-1]['parts'][0]['text'] = safety_result.redacted_input
+                
+        except Exception as lg_err:
+            logger.error(f"LlamaGuard check error: {lg_err}")
+            # Continue without blocking if LlamaGuard fails
 
         # Enrich context from database
         if context.get('registrationNumber'):
