@@ -2,7 +2,7 @@ flask>=2.3.2
 flask-cors>=4.0.0
 flask-limiter>=3.0.0
 python-dotenv>=1.0.0
-google-genai>=0.3.0
+google-generativeai>=0.3.0
 supabase>=2.0.0
 PyJWT>=2.8.0
 gunicorn>=21.2.0
@@ -55,6 +55,7 @@ redis>=5.0.0
 redisvl>=0.1.0
 APScheduler>=3.10.0
 Flask-Limiter>=3.5.0
+psutil>=5.9.0
 
 # Sentry for error tracking
 sentry-sdk[flask]>=1.40.0

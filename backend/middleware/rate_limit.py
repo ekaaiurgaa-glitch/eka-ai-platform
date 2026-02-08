@@ -61,8 +61,8 @@ def init_rate_limiter(app: Flask) -> Limiter:
         strategy="fixed-window",  # Alternative: "moving-window"
         headers_enabled=True,  # Add rate limit headers to responses
         swallow_errors=True,  # Don't crash if Redis is down
-        in_memory_fallback=True,  # Fallback if Redis fails
-        retry_after=True  # Add Retry-After header
+        in_memory_fallback=DEFAULT_LIMITS,  # Fallback limits if Redis fails
+        retry_after="Retry-After"  # Add Retry-After header
     )
     
     logger.info(f"✅ Rate limiter initialized with limits: {DEFAULT_LIMITS}")

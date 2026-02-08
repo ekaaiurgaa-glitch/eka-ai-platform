@@ -24,11 +24,11 @@ MAX_CACHE_SIZE = 10000  # Maximum number of cached entries
 try:
     import redis
     from redis.commands.search.field import VectorField, TextField
-    from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+    from redis.commands.search.index_definition import IndexDefinition, IndexType
     REDIS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     REDIS_AVAILABLE = False
-    logger.warning("Redis not available. Semantic caching disabled.")
+    logger.warning(f"Redis modules not available: {e}. Semantic caching disabled.")
 
 try:
     import google.generativeai as genai

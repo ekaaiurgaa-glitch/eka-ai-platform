@@ -6,7 +6,13 @@ import time
 import logging
 from functools import wraps
 from flask import request, g, jsonify
-import psutil
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    psutil = None
+    
 import os
 
 # Configure structured logging
@@ -62,28 +68,42 @@ class MonitoringMiddleware:
     def get_system_health(self):
         """Get comprehensive system health metrics"""
         try:
-            cpu_percent = psutil.cpu_percent(interval=1)
-            memory = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
-            
-            return {
-                "status": "healthy" if cpu_percent < 80 and memory.percent < 90 else "degraded",
-                "timestamp": time.time(),
-                "system": {
-                    "cpu_percent": cpu_percent,
-                    "memory_percent": memory.percent,
-                    "memory_available_mb": memory.available // (1024 * 1024),
-                    "disk_percent": disk.percent,
-                    "disk_free_gb": disk.free // (1024 * 1024 * 1024)
-                },
-                "application": {
-                    "request_count": self.request_count,
-                    "error_count": self.error_count,
-                    "error_rate": (self.error_count / max(self.request_count, 1)) * 100,
-                    "avg_response_time": sum(self.response_times) / max(len(self.response_times), 1),
-                    "uptime_seconds": time.time() - psutil.Process().create_time()
+            if PSUTIL_AVAILABLE and psutil:
+                cpu_percent = psutil.cpu_percent(interval=1)
+                memory = psutil.virtual_memory()
+                disk = psutil.disk_usage('/')
+                
+                return {
+                    "status": "healthy" if cpu_percent < 80 and memory.percent < 90 else "degraded",
+                    "timestamp": time.time(),
+                    "system": {
+                        "cpu_percent": cpu_percent,
+                        "memory_percent": memory.percent,
+                        "memory_available_mb": memory.available // (1024 * 1024),
+                        "disk_percent": disk.percent,
+                        "disk_free_gb": disk.free // (1024 * 1024 * 1024)
+                    },
+                    "application": {
+                        "request_count": self.request_count,
+                        "error_count": self.error_count,
+                        "error_rate": (self.error_count / max(self.request_count, 1)) * 100,
+                        "avg_response_time": sum(self.response_times) / max(len(self.response_times), 1),
+                        "uptime_seconds": time.time() - psutil.Process().create_time()
+                    }
                 }
-            }
+            else:
+                # Fallback without psutil
+                return {
+                    "status": "healthy",
+                    "timestamp": time.time(),
+                    "system": {"note": "psutil not available"},
+                    "application": {
+                        "request_count": self.request_count,
+                        "error_count": self.error_count,
+                        "error_rate": (self.error_count / max(self.request_count, 1)) * 100,
+                        "avg_response_time": sum(self.response_times) / max(len(self.response_times), 1)
+                    }
+                }
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             return {"status": "unhealthy", "error": str(e)}
