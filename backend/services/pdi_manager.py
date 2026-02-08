@@ -7,6 +7,7 @@ Features:
 - Evidence upload management
 - Critical safety gates
 - Completion validation
+- PDF Report Generation
 """
 
 from datetime import datetime, timezone
@@ -17,6 +18,14 @@ import uuid
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Try to import WeasyPrint for PDF generation
+try:
+    from weasyprint import HTML, CSS
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    logger.warning("WeasyPrint not available. PDF generation will be disabled.")
 
 
 class PDIStatus(str, Enum):
@@ -865,6 +874,260 @@ class PDIManager:
             }).execute()
         except Exception as e:
             logger.error(f"Error logging audit: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PDF REPORT GENERATION
+    # ═══════════════════════════════════════════════════════════════
+    
+    def generate_pdi_report_pdf(
+        self,
+        checklist_id: str,
+        workshop_id: str,
+        workshop_details: Optional[Dict[str, Any]] = None,
+        vehicle_details: Optional[Dict[str, Any]] = None
+    ) -> Tuple[bool, bytes]:
+        """
+        Generate PDF PDI Report
+        
+        Args:
+            checklist_id: PDI Checklist ID
+            workshop_id: Workshop ID
+            workshop_details: Workshop info (name, address, GSTIN, logo)
+            vehicle_details: Vehicle info (brand, model, reg_number)
+        
+        Returns:
+            (success: bool, pdf_bytes or error message)
+        """
+        if not WEASYPRINT_AVAILABLE:
+            return False, b"PDF generation not available"
+        
+        try:
+            # Get checklist with full details
+            success, result = self.get_checklist(checklist_id, workshop_id)
+            if not success:
+                return False, result["error"].encode()
+            
+            checklist = result.get("checklist", {})
+            
+            # Get evidence for this checklist
+            evidence_result = self.supabase.table(self.evidence_table)\
+                .select("*")\
+                .eq("checklist_id", checklist_id)\
+                .execute()
+            evidence_list = evidence_result.data or []
+            
+            # Generate HTML
+            html_content = self._generate_pdi_report_html(
+                checklist, evidence_list, workshop_details, vehicle_details
+            )
+            
+            # Generate PDF
+            html = HTML(string=html_content)
+            pdf_bytes = html.write_pdf()
+            
+            return True, pdf_bytes
+            
+        except Exception as e:
+            logger.error(f"Error generating PDI report PDF: {e}")
+            return False, str(e).encode()
+    
+    def _generate_pdi_report_html(
+        self,
+        checklist: Dict[str, Any],
+        evidence_list: List[Dict],
+        workshop_details: Optional[Dict[str, Any]] = None,
+        vehicle_details: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Generate HTML for PDI Report PDF"""
+        
+        workshop = workshop_details or {}
+        vehicle = vehicle_details or {}
+        
+        # Build checklist items rows
+        items = checklist.get('items', [])
+        items_html = ""
+        
+        for item in items:
+            status = item.get('status', 'PENDING')
+            status_color = {
+                'PASS': '#28a745',
+                'FAIL': '#dc3545',
+                'NA': '#6c757d',
+                'PENDING': '#ffc107'
+            }.get(status, '#333')
+            
+            is_critical = item.get('critical', False)
+            critical_badge = "<span style='background:#dc3545;color:white;padding:2px 5px;border-radius:3px;font-size:8px;'>CRITICAL</span>" if is_critical else ""
+            
+            # Find evidence for this item
+            item_evidence = [e for e in evidence_list if e.get('checklist_item') == item.get('code')]
+            evidence_count = len(item_evidence)
+            
+            items_html += f"""
+            <tr>
+                <td>{item.get('code', 'N/A')}</td>
+                <td>
+                    {item.get('task', 'N/A')}
+                    {critical_badge}
+                </td>
+                <td style="color: {status_color}; font-weight: bold;">{status}</td>
+                <td>{item.get('notes', '-')}</td>
+                <td>{evidence_count} photo(s)</td>
+            </tr>
+            """
+        
+        if not items_html:
+            items_html = "<tr><td colspan='5' style='text-align:center;'>No checklist items</td></tr>"
+        
+        # Calculate progress
+        total = len(items)
+        passed = sum(1 for i in items if i.get('status') == 'PASS')
+        failed = sum(1 for i in items if i.get('status') == 'FAIL')
+        pending = sum(1 for i in items if i.get('status') == 'PENDING')
+        
+        progress_html = f"""
+        <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <h4 style="margin-top: 0;">Inspection Summary</h4>
+            <div style="display: flex; justify-content: space-between;">
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #333;">{total}</div>
+                    <div style="font-size: 10px; color: #666;">TOTAL ITEMS</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #28a745;">{passed}</div>
+                    <div style="font-size: 10px; color: #666;">PASSED</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #dc3545;">{failed}</div>
+                    <div style="font-size: 10px; color: #666;">FAILED</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #ffc107;">{pending}</div>
+                    <div style="font-size: 10px; color: #666;">PENDING</div>
+                </div>
+            </div>
+        </div>
+        """
+        
+        # Check if checklist is complete
+        is_complete = checklist.get('is_complete', False)
+        completion_status = "<span style='background:#28a745;color:white;padding:5px 15px;border-radius:5px;font-weight:bold;'>✓ COMPLETE</span>" if is_complete else "<span style='background:#ffc107;color:#333;padding:5px 15px;border-radius:5px;font-weight:bold;'>⚠ INCOMPLETE</span>"
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>PDI Report {checklist.get('id', 'N/A')[:8]}</title>
+            <style>
+                @page {{ size: A4; margin: 2cm; }}
+                body {{ font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #333; }}
+                .header {{ text-align: center; border-bottom: 3px solid #f18a22; padding-bottom: 10px; margin-bottom: 20px; }}
+                .header h1 {{ margin: 0; color: #333; font-size: 24pt; }}
+                .workshop-info {{ text-align: center; margin-bottom: 20px; }}
+                .section {{ margin-bottom: 15px; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }}
+                .section h3 {{ margin: 0 0 10px 0; color: #f18a22; border-bottom: 1px solid #eee; padding-bottom: 5px; }}
+                table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 9pt; }}
+                th {{ background-color: #f5f5f5; font-weight: bold; }}
+                .footer {{ margin-top: 30px; padding-top: 10px; border-top: 2px solid #f18a22; text-align: center; font-size: 9pt; color: #666; }}
+                .declaration {{ background: #f0f8ff; padding: 15px; border-left: 4px solid #f18a22; margin: 20px 0; }}
+                .signature-section {{ margin-top: 40px; }}
+                .signature-line {{ border-top: 1px solid #333; width: 200px; margin-top: 50px; padding-top: 5px; text-align: center; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>PRE-DELIVERY INSPECTION REPORT</h1>
+                <p style="font-size: 12pt; color: #666;">Go4Garage Private Limited</p>
+            </div>
+            
+            <div class="workshop-info">
+                <h2>{workshop.get('name', 'Go4Garage Workshop')}</h2>
+                <p>{workshop.get('address', '')}</p>
+                <p>GSTIN: {workshop.get('gstin', 'N/A')} | Phone: {workshop.get('phone', 'N/A')}</p>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                {completion_status}
+            </div>
+            
+            <div class="section">
+                <h3>Inspection Details</h3>
+                <div style="display: flex; justify-content: space-between;">
+                    <div>
+                        <p><strong>Report ID:</strong> {checklist.get('id', 'N/A')}</p>
+                        <p><strong>Job Card ID:</strong> {checklist.get('job_card_id', 'N/A')}</p>
+                        <p><strong>Category:</strong> {checklist.get('category', 'STANDARD')}</p>
+                    </div>
+                    <div>
+                        <p><strong>Vehicle:</strong> {vehicle.get('brand', 'N/A')} {vehicle.get('model', 'N/A')}</p>
+                        <p><strong>Registration:</strong> {vehicle.get('registration_number', 'N/A')}</p>
+                        <p><strong>Created:</strong> {checklist.get('created_at', 'N/A')[:10]}</p>
+                    </div>
+                </div>
+            </div>
+            
+            {progress_html}
+            
+            <div class="section">
+                <h3>Inspection Checklist</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">Code</th>
+                            <th style="width: 35%;">Task</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 25%;">Notes</th>
+                            <th style="width: 20%;">Evidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items_html}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="declaration">
+                <h4 style="margin-top: 0;">Technician Declaration</h4>
+                <p style="font-style: italic;">
+                    "I hereby certify that I have thoroughly inspected the vehicle according to the checklist above. 
+                    All items marked as PASS meet the required standards. Any items marked as FAIL have been documented 
+                    and communicated to the customer."
+                </p>
+                <p style="margin-top: 15px;">
+                    <strong>Declared by:</strong> {checklist.get('technician_declaration', {}).get('declared_by', 'N/A')}<br>
+                    <strong>Date:</strong> {checklist.get('technician_declaration', {}).get('declared_at', 'N/A')[:10] if checklist.get('technician_declaration') else 'N/A'}
+                </p>
+            </div>
+            
+            <div class="signature-section">
+                <div style="display: flex; justify-content: space-between;">
+                    <div class="signature-line">
+                        <strong>Technician Signature</strong>
+                    </div>
+                    <div class="signature-line">
+                        <strong>Customer Signature</strong>
+                    </div>
+                    <div class="signature-line">
+                        <strong>Manager Approval</strong>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>This is an official Pre-Delivery Inspection report from Go4Garage.</p>
+                <p>Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                <p style="font-size: 8pt; margin-top: 10px;">
+                    <strong>Disclaimer:</strong> This report is based on visual inspection and testing at the time of inspection. 
+                    Go4Garage is not liable for issues that may arise after vehicle delivery unless covered under warranty.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
 
 
 # ═══════════════════════════════════════════════════════════════

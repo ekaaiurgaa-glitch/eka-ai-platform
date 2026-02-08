@@ -1644,6 +1644,92 @@ def download_invoice_pdf(invoice_id):
     )
 
 
+@flask_app.route('/api/job-cards/<job_card_id>/pdf', methods=['GET'])
+@require_auth()
+def download_job_card_pdf(job_card_id):
+    """Download job card as PDF"""
+    manager = get_job_card_manager(supabase)
+    
+    workshop_details = {
+        'name': g.get('workshop_name', 'Go4Garage'),
+        'address': g.get('workshop_address', ''),
+        'gstin': g.get('workshop_gstin', ''),
+        'phone': g.get('workshop_phone', '')
+    }
+    
+    success, result = manager.generate_job_card_pdf(
+        job_card_id=job_card_id,
+        workshop_id=g.workshop_id,
+        workshop_details=workshop_details
+    )
+    
+    if not success:
+        return jsonify({'error': result.decode() if isinstance(result, bytes) else 'Failed to generate PDF'}), 400
+    
+    from flask import Response
+    return Response(
+        result,
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename=jobcard_{job_card_id}.pdf'
+        }
+    )
+
+
+@flask_app.route('/api/pdi/<checklist_id>/pdf', methods=['GET'])
+@require_auth()
+def download_pdi_report_pdf(checklist_id):
+    """Download PDI report as PDF"""
+    pdi_manager = get_pdi_manager(supabase)
+    
+    # Get checklist to find job card
+    success, result = pdi_manager.get_checklist(checklist_id, g.workshop_id)
+    if not success:
+        return jsonify({'error': 'Checklist not found'}), 404
+    
+    checklist = result.get('checklist', {})
+    job_card_id = checklist.get('job_card_id')
+    
+    # Get job card for vehicle details
+    vehicle_details = {}
+    if job_card_id:
+        job_manager = get_job_card_manager(supabase)
+        jc_success, jc_result = job_manager.get_job_card(job_card_id, g.workshop_id)
+        if jc_success:
+            jc = jc_result.get('job_card', {})
+            vehicle_details = {
+                'brand': jc.get('vehicle_brand', ''),
+                'model': jc.get('vehicle_model', ''),
+                'registration_number': jc.get('registration_number', '')
+            }
+    
+    workshop_details = {
+        'name': g.get('workshop_name', 'Go4Garage'),
+        'address': g.get('workshop_address', ''),
+        'gstin': g.get('workshop_gstin', ''),
+        'phone': g.get('workshop_phone', '')
+    }
+    
+    success, result = pdi_manager.generate_pdi_report_pdf(
+        checklist_id=checklist_id,
+        workshop_id=g.workshop_id,
+        workshop_details=workshop_details,
+        vehicle_details=vehicle_details
+    )
+    
+    if not success:
+        return jsonify({'error': result.decode() if isinstance(result, bytes) else 'Failed to generate PDF'}), 400
+    
+    from flask import Response
+    return Response(
+        result,
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename=pdi_report_{checklist_id}.pdf'
+        }
+    )
+
+
 # ═══════════════════════════════════════════════════════════════
 # PHASE 2: PRICING GOVERNANCE API
 # ═══════════════════════════════════════════════════════════════

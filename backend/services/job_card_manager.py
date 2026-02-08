@@ -7,6 +7,7 @@ Features:
 - Workshop isolation
 - Comprehensive audit logging
 - State transition validation
+- PDF Report Generation
 """
 
 from datetime import datetime, timezone
@@ -17,6 +18,14 @@ import uuid
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Try to import WeasyPrint for PDF generation
+try:
+    from weasyprint import HTML, CSS
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
+    logger.warning("WeasyPrint not available. PDF generation will be disabled.")
 
 
 class JobStatus(str, Enum):
@@ -841,6 +850,235 @@ class JobCardManager:
             }).execute()
         except Exception as e:
             logger.error(f"Error logging audit: {e}")
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PDF REPORT GENERATION
+    # ═══════════════════════════════════════════════════════════════
+    
+    def generate_job_card_pdf(
+        self,
+        job_card_id: str,
+        workshop_id: str,
+        workshop_details: Optional[Dict[str, Any]] = None
+    ) -> Tuple[bool, bytes]:
+        """
+        Generate PDF Job Card Report
+        
+        Args:
+            job_card_id: Job Card ID
+            workshop_id: Workshop ID
+            workshop_details: Workshop info (name, address, GSTIN, logo)
+        
+        Returns:
+            (success: bool, pdf_bytes or error message)
+        """
+        if not WEASYPRINT_AVAILABLE:
+            return False, b"PDF generation not available"
+        
+        try:
+            # Get job card with full details
+            success, result = self.get_job_card(job_card_id, workshop_id)
+            if not success:
+                return False, result["error"].encode()
+            
+            job_card = result.get("job_card", {})
+            state_history = result.get("state_history", [])
+            
+            # Generate HTML
+            html_content = self._generate_job_card_html(job_card, state_history, workshop_details)
+            
+            # Generate PDF
+            html = HTML(string=html_content)
+            pdf_bytes = html.write_pdf()
+            
+            return True, pdf_bytes
+            
+        except Exception as e:
+            logger.error(f"Error generating job card PDF: {e}")
+            return False, str(e).encode()
+    
+    def _generate_job_card_html(
+        self,
+        job_card: Dict[str, Any],
+        state_history: List[Dict],
+        workshop_details: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Generate HTML for Job Card PDF"""
+        
+        workshop = workshop_details or {}
+        
+        # Build state history rows
+        history_html = ""
+        for entry in state_history:
+            history_html += f"""
+            <tr>
+                <td>{entry.get('changed_at', 'N/A')[:10]}</td>
+                <td>{entry.get('previous_status', 'N/A')}</td>
+                <td>{entry.get('new_status', 'N/A')}</td>
+                <td>{entry.get('notes', '-')}</td>
+            </tr>
+            """
+        
+        if not history_html:
+            history_html = "<tr><td colspan='4' style='text-align:center;'>No state changes recorded</td></tr>"
+        
+        # Format symptoms
+        symptoms = job_card.get('symptoms', [])
+        symptoms_html = "<ul>"
+        for symptom in symptoms:
+            symptoms_html += f"<li>{symptom}</li>"
+        symptoms_html += "</ul>"
+        
+        if not symptoms:
+            symptoms_html = "<p>No symptoms recorded</p>"
+        
+        # Format diagnosis
+        diagnosis = job_card.get('diagnosis', {})
+        diagnosis_html = f"""
+        <p><strong>Fault Codes:</strong> {diagnosis.get('fault_codes', 'N/A')}</p>
+        <p><strong>Root Cause:</strong> {diagnosis.get('root_cause', 'N/A')}</p>
+        <p><strong>Recommended Actions:</strong> {diagnosis.get('recommended_actions', 'N/A')}</p>
+        """
+        
+        # Format estimate
+        estimate = job_card.get('estimate', {})
+        estimate_html = f"""
+        <p><strong>Estimated Amount:</strong> ₹{estimate.get('total_amount', 0):.2f}</p>
+        <p><strong>Parts Cost:</strong> ₹{estimate.get('parts_total', 0):.2f}</p>
+        <p><strong>Labor Cost:</strong> ₹{estimate.get('labor_total', 0):.2f}</p>
+        """
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Job Card {job_card.get('id', 'N/A')[:8]}</title>
+            <style>
+                @page {{ size: A4; margin: 2cm; }}
+                body {{ font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #333; }}
+                .header {{ text-align: center; border-bottom: 3px solid #f18a22; padding-bottom: 10px; margin-bottom: 20px; }}
+                .header h1 {{ margin: 0; color: #333; font-size: 24pt; }}
+                .workshop-info {{ text-align: center; margin-bottom: 20px; }}
+                .section {{ margin-bottom: 15px; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }}
+                .section h3 {{ margin: 0 0 10px 0; color: #f18a22; border-bottom: 1px solid #eee; padding-bottom: 5px; }}
+                .two-col {{ display: flex; justify-content: space-between; }}
+                .col {{ width: 48%; }}
+                table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+                th {{ background-color: #f5f5f5; font-weight: bold; }}
+                .status-badge {{ background: #f18a22; color: white; padding: 3px 10px; border-radius: 3px; font-weight: bold; }}
+                .footer {{ margin-top: 30px; padding-top: 10px; border-top: 2px solid #f18a22; text-align: center; font-size: 9pt; color: #666; }}
+                .vehicle-info {{ background: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 15px; }}
+                .vehicle-info p {{ margin: 5px 0; }}
+                ul {{ margin: 5px 0; padding-left: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>JOB CARD</h1>
+                <p style="font-size: 12pt; color: #666;">Go4Garage Private Limited</p>
+            </div>
+            
+            <div class="workshop-info">
+                <h2>{workshop.get('name', 'Go4Garage Workshop')}</h2>
+                <p>{workshop.get('address', '')}</p>
+                <p>GSTIN: {workshop.get('gstin', 'N/A')} | Phone: {workshop.get('phone', 'N/A')}</p>
+            </div>
+            
+            <div class="section">
+                <h3>Job Card Information</h3>
+                <div class="two-col">
+                    <div class="col">
+                        <p><strong>Job Card ID:</strong> {job_card.get('id', 'N/A')}</p>
+                        <p><strong>Created:</strong> {job_card.get('created_at', 'N/A')[:10]}</p>
+                        <p><strong>Status:</strong> <span class="status-badge">{job_card.get('status', 'N/A')}</span></p>
+                    </div>
+                    <div class="col">
+                        <p><strong>Priority:</strong> {job_card.get('priority', 'NORMAL')}</p>
+                        <p><strong>Customer Phone:</strong> {job_card.get('customer_phone', 'N/A')}</p>
+                        <p><strong>Registration:</strong> {job_card.get('registration_number', 'N/A')}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="vehicle-info">
+                <h3 style="color: #333; margin-top: 0;">Vehicle Details</h3>
+                <div class="two-col">
+                    <div class="col">
+                        <p><strong>Brand:</strong> {job_card.get('vehicle_brand', 'N/A')}</p>
+                        <p><strong>Model:</strong> {job_card.get('vehicle_model', 'N/A')}</p>
+                        <p><strong>Year:</strong> {job_card.get('vehicle_year', 'N/A')}</p>
+                    </div>
+                    <div class="col">
+                        <p><strong>Fuel Type:</strong> {job_card.get('fuel_type', 'N/A')}</p>
+                        <p><strong>VIN:</strong> {job_card.get('vin', 'N/A')}</p>
+                        <p><strong>Owner:</strong> {job_card.get('owner_name', 'N/A')}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>Customer Complaints / Symptoms</h3>
+                {symptoms_html}
+            </div>
+            
+            <div class="section">
+                <h3>Diagnosis</h3>
+                {diagnosis_html}
+            </div>
+            
+            <div class="section">
+                <h3>Cost Estimate</h3>
+                {estimate_html}
+            </div>
+            
+            <div class="section">
+                <h3>State History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {history_html}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h3>Notes</h3>
+                <p>{job_card.get('notes', 'No additional notes')}</p>
+            </div>
+            
+            <div style="margin-top: 30px;">
+                <div class="two-col">
+                    <div style="text-align: center;">
+                        <p style="border-top: 1px solid #333; padding-top: 5px; margin-top: 50px;">
+                            <strong>Customer Signature</strong>
+                        </p>
+                    </div>
+                    <div style="text-align: center;">
+                        <p style="border-top: 1px solid #333; padding-top: 5px; margin-top: 50px;">
+                            <strong>Technician Signature</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>This is an official job card document from Go4Garage.</p>
+                <p>Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
 
 
 # ═══════════════════════════════════════════════════════════════
