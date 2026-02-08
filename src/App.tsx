@@ -8,6 +8,7 @@ import MainLayout from './components/layout/MainLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import JobCardsPage from './pages/JobCardsPage';
 import ChatPage from './pages/ChatPage';
 import PricingPage from './pages/PricingPage';
 import LegalPage from './pages/LegalPage';
@@ -98,9 +99,9 @@ const App: React.FC = () => {
               <Route path="chats" element={<ChatPage />} />
               
               {/* Job Cards */}
-              <Route path="job-cards" element={<ChatPage />} />
-              <Route path="job-cards/new" element={<ChatPage />} />
-              <Route path="job-cards/:id" element={<ChatPage />} />
+              <Route path="job-cards" element={<JobCardsPage />} />
+              <Route path="job-cards/new" element={<JobCardsPage />} />
+              <Route path="job-cards/:id" element={<JobCardsPage />} />
               
               {/* PDI */}
               <Route path="pdi" element={<ChatPage />} />

@@ -23,15 +23,14 @@ const LoginPage = () => {
           password,
         });
         if (error) throw error;
-        // Navigation is handled by the AuthProvider listener in App.tsx
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
-              full_name: email.split('@')[0], // Default name
-              role: 'OWNER', // Default role for new signups
+              full_name: email.split('@')[0],
+              role: 'OWNER',
             },
           },
         });
@@ -46,29 +45,29 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4 bg-gradient-radial">
       {/* Brand Logo */}
       <div className="mb-8 flex flex-col items-center">
-        <div className="w-16 h-16 bg-brand-orange rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-900/20">
-          <span className="text-3xl font-bold text-white">E</span>
+        <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-orange-900/20">
+          <span className="text-3xl font-bold text-black">E</span>
         </div>
         <h1 className="text-2xl font-bold text-white tracking-tight">
-          Welcome to <span className="text-brand-orange">EKA-AI</span>
+          Welcome to <span className="text-orange-500">EKA-AI</span>
         </h1>
-        <p className="text-text-secondary mt-2 text-sm">
+        <p className="text-gray-500 mt-2 text-sm">
           Governed Automobile Intelligence
         </p>
       </div>
 
-      {/* Login Card */}
-      <div className="w-full max-w-md bg-surface border border-border rounded-2xl p-8 shadow-2xl">
-        <div className="flex gap-4 mb-6 border-b border-border pb-1">
+      {/* Login Card - Glass Panel */}
+      <div className="w-full max-w-md glass-panel rounded-2xl p-8">
+        <div className="flex gap-4 mb-6 border-b border-white/5 pb-1">
           <button
             onClick={() => setMode('LOGIN')}
             className={`pb-2 text-sm font-medium transition-colors ${
               mode === 'LOGIN'
-                ? 'text-brand-orange border-b-2 border-brand-orange'
-                : 'text-text-muted hover:text-text-primary'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-gray-500 hover:text-gray-300'
             }`}
           >
             Sign In
@@ -77,8 +76,8 @@ const LoginPage = () => {
             onClick={() => setMode('SIGNUP')}
             className={`pb-2 text-sm font-medium transition-colors ${
               mode === 'SIGNUP'
-                ? 'text-brand-orange border-b-2 border-brand-orange'
-                : 'text-text-muted hover:text-text-primary'
+                ? 'text-orange-500 border-b-2 border-orange-500'
+                : 'text-gray-500 hover:text-gray-300'
             }`}
           >
             Create Workshop Account
@@ -87,14 +86,14 @@ const LoginPage = () => {
 
         <form onSubmit={handleAuth} className="space-y-4">
           {error && (
-            <div className="bg-red-900/20 border border-red-900/50 rounded-lg p-3 flex items-start gap-3">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-200">{error}</p>
+              <p className="text-sm text-red-400">{error}</p>
             </div>
           )}
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-text-secondary uppercase">
+            <label className="text-xs font-semibold text-gray-500 uppercase">
               Email Address
             </label>
             <input
@@ -102,13 +101,13 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full bg-input border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-brand-orange transition-colors"
+              className="form-input"
               placeholder="workshop@go4garage.com"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-text-secondary uppercase">
+            <label className="text-xs font-semibold text-gray-500 uppercase">
               Password
             </label>
             <input
@@ -117,7 +116,7 @@ const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full bg-input border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-brand-orange transition-colors"
+              className="form-input"
               placeholder="••••••••"
             />
           </div>
@@ -125,7 +124,7 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-brand-orange hover:bg-brand-hover text-white font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 mt-6"
+            className="w-full btn-primary flex items-center justify-center gap-2 mt-6 disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -138,16 +137,15 @@ const LoginPage = () => {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-gray-600">
             By continuing, you agree to the{' '}
-            <a href="#" className="hover:text-brand-orange underline">
+            <a href="#" className="hover:text-orange-500 underline">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="#" className="hover:text-brand-orange underline">
+            <a href="#" className="hover:text-orange-500 underline">
               Privacy Policy
             </a>
-            .
           </p>
         </div>
       </div>

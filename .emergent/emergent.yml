@@ -1,4 +1,21 @@
-{
-  "job_id": "e8e7def9-97fd-4e43-b6f7-3163234add63",
-  "created_at": "2026-02-06T06:40:23.069851+00:00Z"
-}
+services:
+  # 1. The React Frontend
+  web:
+    path: .
+    build:
+      command: npm install && npm run build
+      output: dist
+    route: /
+    environment:
+      VITE_API_URL: /api
+
+  # 2. The Python Backend
+  api:
+    path: backend
+    build:
+      command: pip install -r requirements.txt
+    run: gunicorn --bind 0.0.0.0:8080 server:app
+    route: /api
+    environment:
+      FLASK_ENV: production
+      # Secrets will be injected by Emergent Vault
