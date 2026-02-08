@@ -1,24 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
-import Sidebar from './components/layout/Sidebar';
-import ChatPage from './pages/ChatPage';
-import LoginPage from './pages/LoginPage';
-import PricingPage from './pages/PricingPage';
-import LegalPage from './pages/LegalPage';
-import VehicleContextPanel from './components/VehicleContextPanel';
-import { useJobCard } from './hooks/useJobCard';
-import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-// 🔒 Protected Route Component
-const ProtectedRoute = () => {
+// Layout
+import MainLayout from './components/layout/MainLayout';
+
+// Pages
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ChatPage from './pages/ChatPage';
+import PricingPage from './pages/PricingPage';
+import LegalPage from './pages/LegalPage';
+
+// Context
+import { AuthProvider, useAuth } from './context/AuthContext';
+
+// ═══════════════════════════════════════════════════════════════
+// PROTECTED ROUTE WRAPPER
+// ═══════════════════════════════════════════════════════════════
+
+const ProtectedRoute: React.FC = () => {
   const { session, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return (
-      <div className="h-screen w-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-brand-orange animate-spin" />
+      <div className="h-screen w-screen bg-[#09090b] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+          <p className="text-zinc-500 text-sm">Authenticating...</p>
+        </div>
       </div>
     );
   }
@@ -30,59 +41,98 @@ const ProtectedRoute = () => {
   return <Outlet />;
 };
 
-// 🏗️ The "Claude-like" Workspace Layout
-const WorkspaceLayout = () => {
-  const [{ jobCard }] = useJobCard(); // Listen to global job card state
-  const [isArtifactManuallyOpen, setArtifactOpen] = useState(false);
+// ═══════════════════════════════════════════════════════════════
+// PUBLIC ROUTE WRAPPER (Redirects if already logged in)
+// ═══════════════════════════════════════════════════════════════
 
-  // Auto-open artifact panel if we have active job data OR user toggled it
-  const showArtifacts = isArtifactManuallyOpen || (jobCard !== null);
+const PublicRoute: React.FC = () => {
+  const { session, loading } = useAuth();
 
-  return (
-    <div className="flex h-screen bg-background text-text-primary overflow-hidden">
-      {/* 1. Sidebar (Fixed Left) */}
-      <Sidebar />
+  if (loading) {
+    return (
+      <div className="h-screen w-screen bg-[#09090b] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+      </div>
+    );
+  }
 
-      {/* 2. Main Chat Area (Flexible Center) */}
-      <main className="flex-1 flex flex-col relative min-w-0 bg-[#131313]">
-        <Outlet /> 
-      </main>
+  if (session) {
+    return <Navigate to="/app" replace />;
+  }
 
-      {/* 3. Artifacts Panel (Collapsible Right) */}
-      {showArtifacts && (
-        <aside className="w-[450px] border-l border-border bg-surface shadow-2xl transition-all duration-300 flex flex-col">
-           {/* You can add a close button handler here if needed */}
-           <VehicleContextPanel />
-        </aside>
-      )}
-    </div>
-  );
+  return <Outlet />;
 };
 
-const App = () => {
+// ═══════════════════════════════════════════════════════════════
+// MAIN APP COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+const App: React.FC = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
+          {/* ═══════════════════════════════════════════════════════
+              PUBLIC ROUTES
+          ═══════════════════════════════════════════════════════ */}
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<LoginPage />} />
+          </Route>
+
+          {/* Legal Pages (Public) */}
           <Route path="/legal/:type" element={<LegalPage />} />
 
-          {/* Root Redirect */}
-          <Route path="/" element={<Navigate to="/app" replace />} />
-
-          {/* 🔒 Protected Workspace Routes */}
+          {/* ═══════════════════════════════════════════════════════
+              PROTECTED ROUTES (Requires Authentication)
+          ═══════════════════════════════════════════════════════ */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/app" element={<WorkspaceLayout />}>
-              <Route index element={<ChatPage />} />
+            <Route path="/app" element={<MainLayout />}>
+              {/* Default Route - Dashboard */}
+              <Route index element={<DashboardPage />} />
+              
+              {/* Dashboard */}
+              <Route path="dashboard" element={<DashboardPage />} />
+              
+              {/* AI Diagnostics / Chat */}
+              <Route path="diagnostics" element={<ChatPage />} />
               <Route path="chats" element={<ChatPage />} />
-              <Route path="projects" element={<ChatPage />} />
+              
+              {/* Job Cards */}
+              <Route path="job-cards" element={<ChatPage />} />
+              <Route path="job-cards/new" element={<ChatPage />} />
+              <Route path="job-cards/:id" element={<ChatPage />} />
+              
+              {/* PDI */}
+              <Route path="pdi" element={<ChatPage />} />
+              <Route path="pdi/:id" element={<ChatPage />} />
+              
+              {/* Fleet Management */}
+              <Route path="fleet" element={<ChatPage />} />
+              <Route path="fleet/mg" element={<ChatPage />} />
+              
+              {/* Invoices */}
+              <Route path="invoices" element={<ChatPage />} />
+              <Route path="invoices/new" element={<ChatPage />} />
+              
+              {/* Settings */}
+              <Route path="settings" element={<ChatPage />} />
+              
+              {/* Pricing / Upgrade */}
               <Route path="pricing" element={<PricingPage />} />
-              {/* Add more protected routes here (e.g. /app/settings) */}
+              
+              {/* Scan VIN */}
+              <Route path="scan" element={<ChatPage />} />
             </Route>
           </Route>
+
+          {/* ═══════════════════════════════════════════════════════
+              REDIRECTS
+          ═══════════════════════════════════════════════════════ */}
           
-          {/* Catch all */}
+          {/* Root redirect */}
+          <Route path="/" element={<Navigate to="/app" replace />} />
+          
+          {/* Catch all - 404 */}
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Routes>
       </BrowserRouter>
