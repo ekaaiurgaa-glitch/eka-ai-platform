@@ -32,6 +32,7 @@ from services.invoice_manager import InvoiceManager
 from services.ai_governance import AIGovernance
 from services.subscription_service import SubscriptionService
 from middleware.auth import require_auth, get_current_user
+from middleware.monitoring import MonitoringMiddleware, track_performance
 
 # Import LangChain/LlamaIndex Knowledge Base and Agents
 try:
@@ -2093,6 +2094,53 @@ def payu_failure():
     PayU Redirects here after failed payment
     """
     return redirect(f"{os.getenv('FRONTEND_URL')}/app?status=failed")
+
+# ─────────────────────────────────────────
+# MONITORING & ADMIN ENDPOINTS
+# ─────────────────────────────────────────
+monitor = MonitoringMiddleware()
+monitor.init_app(flask_app)
+
+@flask_app.route('/api/monitoring/health', methods=['GET'])
+def detailed_health():
+    """Detailed health check with system metrics"""
+    return jsonify(monitor.get_system_health())
+
+@flask_app.route('/api/monitoring/metrics', methods=['GET'])
+@require_auth(allowed_roles=['OWNER'])
+def get_metrics():
+    """Get application metrics (admin only)"""
+    return jsonify({
+        "requests": monitor.request_count,
+        "errors": monitor.error_count,
+        "error_rate": (monitor.error_count / max(monitor.request_count, 1)) * 100,
+        "avg_response_time": sum(monitor.response_times) / max(len(monitor.response_times), 1),
+        "timestamp": time.time()
+    })
+
+@flask_app.route('/api/admin/users', methods=['GET'])
+@require_auth(allowed_roles=['OWNER'])
+def list_users():
+    """List all users (admin only)"""
+    try:
+        if supabase:
+            response = supabase.table('user_profiles').select('*').execute()
+            return jsonify({"users": response.data})
+        return jsonify({"error": "Supabase not configured"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@flask_app.route('/api/admin/subscriptions', methods=['GET'])
+@require_auth(allowed_roles=['OWNER'])
+def list_subscriptions():
+    """List all subscriptions (admin only)"""
+    try:
+        if supabase:
+            response = supabase.table('subscription_logs').select('*').execute()
+            return jsonify({"subscriptions": response.data})
+        return jsonify({"error": "Supabase not configured"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)
