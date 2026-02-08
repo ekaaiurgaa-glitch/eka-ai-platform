@@ -33,25 +33,14 @@ from services.ai_governance import AIGovernance
 from services.subscription_service import SubscriptionService
 from services.vector_engine import vector_engine, get_cached_response, cache_response
 from services.scheduler import start_scheduler
+from services.backup_service import backup_service, perform_backup
 from middleware.auth import require_auth, get_current_user
 from middleware.monitoring import MonitoringMiddleware, track_performance
 from middleware.rate_limit import init_rate_limiter, init_error_handlers
 
-# Phase 3: Initialize Sentry for error tracking (if DSN provided)
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
-
-SENTRY_DSN = os.environ.get('SENTRY_DSN')
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[FlaskIntegration()],
-        traces_sample_rate=0.1,
-        profiles_sample_rate=0.1,
-    )
-    logger.info("✅ Sentry error tracking initialized")
-else:
-    logger.info("ℹ️ Sentry not configured (set SENTRY_DSN env var)")
+# Phase 3: Initialize monitoring (Sentry)
+from config.monitoring import init_monitoring, capture_exception
+init_monitoring(flask_app)
 
 # Import LangChain/LlamaIndex Knowledge Base and Agents
 try:
@@ -88,9 +77,12 @@ logger.info("✅ Phase 3: Protection Layer (Rate Limiting) initialized")
 # ─────────────────────────────────────────
 # PHASE 3: CONCURRENCY LAYER (Scheduler)
 # ─────────────────────────────────────────
-# Start distributed job scheduler with Redis locking
-start_scheduler(flask_app)
-logger.info("✅ Phase 3: Concurrency Layer (Scheduler) initialized")
+# Start distributed job scheduler with Redis locking (production only)
+if os.getenv("FLASK_ENV") == "production":
+    start_scheduler(flask_app)
+    logger.info("✅ Phase 3: Concurrency Layer (Scheduler) initialized")
+else:
+    logger.info("ℹ️ Phase 3: Scheduler disabled (development mode)")
 
 # ─────────────────────────────────────────
 # PHASE 3: COGNITIVE LAYER (Vector Cache)

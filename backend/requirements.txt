@@ -59,3 +59,7 @@ psutil>=5.9.0
 
 # Sentry for error tracking
 sentry-sdk[flask]>=1.40.0
+
+# AWS S3 / Backblaze B2 / DigitalOcean Spaces for backups
+boto3>=1.34.0
+botocore>=1.34.0

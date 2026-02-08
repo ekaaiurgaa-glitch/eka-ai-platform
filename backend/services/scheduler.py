@@ -208,14 +208,23 @@ def start_scheduler(app=None):
     # 1. Database backup - Daily at 2 AM
     @distributed_lock("daily_backup")
     def daily_backup():
-        """Backup database daily."""
+        """Backup database daily to S3."""
         logger.info("Running daily backup...")
-        # Import and run backup logic
         try:
-            from scripts.backup_database import run_backup
-            run_backup()
+            from services.backup_service import backup_service
+            result = backup_service.perform_backup()
+            if result.get('success'):
+                logger.info(f"✅ Backup completed: {result.get('filename')}")
+            else:
+                logger.error(f"❌ Backup failed: {result.get('error')}")
         except Exception as e:
             logger.error(f"Backup failed: {e}")
+            # Capture in Sentry if available
+            try:
+                from config.monitoring import capture_exception
+                capture_exception(e, context={'job': 'daily_backup'})
+            except:
+                pass
     
     # Add jobs to scheduler
     scheduler.add_job(
