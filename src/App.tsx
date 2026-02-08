@@ -9,9 +9,13 @@ import MainLayout from './components/layout/MainLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import JobCardsPage from './pages/JobCardsPage';
+import MGFleetPage from './pages/MGFleetPage';
+import InvoicesPage from './pages/InvoicesPage';
+import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import PricingPage from './pages/PricingPage';
 import LegalPage from './pages/LegalPage';
+import PublicApprovalPage from './pages/PublicApprovalPage';
 
 // Context
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -82,6 +86,9 @@ const App: React.FC = () => {
 
           {/* Legal Pages (Public) */}
           <Route path="/legal/:type" element={<LegalPage />} />
+          
+          {/* Public Approval (No Auth Required) */}
+          <Route path="/approve" element={<PublicApprovalPage />} />
 
           {/* ═══════════════════════════════════════════════════════
               PROTECTED ROUTES (Requires Authentication)
@@ -108,15 +115,15 @@ const App: React.FC = () => {
               <Route path="pdi/:id" element={<ChatPage />} />
               
               {/* Fleet Management */}
-              <Route path="fleet" element={<ChatPage />} />
-              <Route path="fleet/mg" element={<ChatPage />} />
+              <Route path="fleet" element={<MGFleetPage />} />
+              <Route path="fleet/mg" element={<MGFleetPage />} />
               
               {/* Invoices */}
-              <Route path="invoices" element={<ChatPage />} />
-              <Route path="invoices/new" element={<ChatPage />} />
+              <Route path="invoices" element={<InvoicesPage />} />
+              <Route path="invoices/new" element={<InvoicesPage />} />
               
               {/* Settings */}
-              <Route path="settings" element={<ChatPage />} />
+              <Route path="settings" element={<SettingsPage />} />
               
               {/* Pricing / Upgrade */}
               <Route path="pricing" element={<PricingPage />} />
