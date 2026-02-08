@@ -31,8 +31,27 @@ from services.pdi_manager import PDIManager, PDIStatus, STANDARD_PDI_ITEMS
 from services.invoice_manager import InvoiceManager
 from services.ai_governance import AIGovernance
 from services.subscription_service import SubscriptionService
+from services.vector_engine import vector_engine, get_cached_response, cache_response
+from services.scheduler import start_scheduler
 from middleware.auth import require_auth, get_current_user
 from middleware.monitoring import MonitoringMiddleware, track_performance
+from middleware.rate_limit import init_rate_limiter, init_error_handlers
+
+# Phase 3: Initialize Sentry for error tracking (if DSN provided)
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+    )
+    logger.info("✅ Sentry error tracking initialized")
+else:
+    logger.info("ℹ️ Sentry not configured (set SENTRY_DSN env var)")
 
 # Import LangChain/LlamaIndex Knowledge Base and Agents
 try:
@@ -58,25 +77,26 @@ raw_origins = os.environ.get('CORS_ORIGINS', '*')
 origins_list = [origin.strip() for origin in raw_origins.split(',') if origin.strip()]
 CORS(flask_app, origins=origins_list)
 
-# Production Rate Limiting (Redis-backed)
-redis_url = os.environ.get('REDIS_URL')
-if redis_url:
-    limiter = Limiter(
-        key_func=get_remote_address,
-        app=flask_app,
-        default_limits=["60 per minute"],
-        storage_uri=redis_url,
-        strategy="fixed-window"
-    )
-    logger.info("✅ Redis Rate Limiter Connected")
-else:
-    limiter = Limiter(
-        key_func=get_remote_address,
-        app=flask_app,
-        default_limits=["60 per minute"],
-        storage_uri="memory://"
-    )
-    logger.warning("⚠️ Using In-Memory Rate Limiter (Development Only)")
+# ─────────────────────────────────────────
+# PHASE 3: PROTECTION LAYER (Rate Limiting)
+# ─────────────────────────────────────────
+# Initialize distributed rate limiter with Redis
+limiter = init_rate_limiter(flask_app)
+init_error_handlers(flask_app)
+logger.info("✅ Phase 3: Protection Layer (Rate Limiting) initialized")
+
+# ─────────────────────────────────────────
+# PHASE 3: CONCURRENCY LAYER (Scheduler)
+# ─────────────────────────────────────────
+# Start distributed job scheduler with Redis locking
+start_scheduler(flask_app)
+logger.info("✅ Phase 3: Concurrency Layer (Scheduler) initialized")
+
+# ─────────────────────────────────────────
+# PHASE 3: COGNITIVE LAYER (Vector Cache)
+# ─────────────────────────────────────────
+# Vector engine singleton is auto-initialized on import
+logger.info(f"✅ Phase 3: Cognitive Layer (Vector Cache) status: {vector_engine.get_cache_stats()}")
 
 # ─────────────────────────────────────────
 # CLIENT INITIALIZATION (Graceful Degradation)
@@ -2141,6 +2161,66 @@ def list_subscriptions():
         return jsonify({"error": "Supabase not configured"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ─────────────────────────────────────────
+# PHASE 3: COGNITIVE LAYER ENDPOINTS (Vector Cache)
+# ─────────────────────────────────────────
+@flask_app.route('/api/cache/stats', methods=['GET'])
+@require_auth(allowed_roles=['OWNER'])
+def cache_stats():
+    """Get semantic cache statistics (admin only)"""
+    return jsonify(vector_engine.get_cache_stats())
+
+@flask_app.route('/api/cache/clear', methods=['POST'])
+@require_auth(allowed_roles=['OWNER'])
+def clear_cache():
+    """Clear semantic cache (admin only)"""
+    try:
+        # Clear all cache entries with prefix
+        if vector_engine.redis:
+            keys = vector_engine.redis.keys("cache:*")
+            if keys:
+                vector_engine.redis.delete(*keys)
+            return jsonify({"message": f"Cleared {len(keys)} cache entries"})
+        return jsonify({"error": "Redis not available"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@flask_app.route('/api/cache/test', methods=['POST'])
+@require_auth()
+def test_cache():
+    """Test semantic caching with a query"""
+    try:
+        data = request.get_json()
+        query = data.get('query', '')
+        
+        # Check cache first
+        cached = get_cached_response(query)
+        if cached:
+            return jsonify({
+                "source": "cache",
+                "response": cached,
+                "note": "This response was retrieved from semantic cache"
+            })
+        
+        # If not cached, return message
+        return jsonify({
+            "source": "miss",
+            "message": "Query not in cache. This would normally trigger AI inference.",
+            "suggestion": "Call this endpoint twice with similar queries to test caching"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@flask_app.route('/api/scheduler/jobs', methods=['GET'])
+@require_auth(allowed_roles=['OWNER'])
+def list_scheduler_jobs():
+    """List scheduled background jobs (admin only)"""
+    from services.scheduler import scheduler
+    jobs = scheduler.get_jobs()
+    return jsonify({
+        "jobs": [{"id": job.id, "name": job.name, "next_run": str(job.next_run_time)} for job in jobs]
+    })
 
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)

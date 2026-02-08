@@ -1,0 +1,88 @@
+name: Production Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run Python syntax check
+        run: |
+          python -m py_compile backend/server.py
+          python -m py_compile backend/services/*.py
+          echo "✅ Python syntax check passed"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            # Stop execution on any error
+            set -e
+            
+            echo "🚀 Starting deployment to Phase 3..."
+            
+            # Navigate to project directory
+            cd /opt/eka-ai-platform
+            
+            # Pull latest changes from git
+            echo "📥 Pulling latest code..."
+            git pull origin main
+            
+            # Rebuild and restart containers
+            echo "🔨 Building and restarting containers..."
+            docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            
+            # Run database migrations if needed
+            echo "🔄 Checking database migrations..."
+            docker-compose -f docker-compose.prod.yml exec -T backend python -c "
+            from database.supabase_client import supabase_client
+            print('✅ Database connection verified')
+            " || echo "⚠️ Database check skipped"
+            
+            # Prune unused images to save disk space
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+            
+            # Health check
+            echo "🏥 Running health check..."
+            sleep 10
+            curl -f http://localhost:8001/api/health || exit 1
+            
+            echo "✅ Deployment to Phase 3 complete!"
+
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "🎉 Deployment successful!"
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed! Check logs."

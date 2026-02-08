@@ -45,6 +45,16 @@ requests>=2.31.0
 
 # Data Processing
 pandas>=2.0.0
+numpy>=1.24.0
 
 # PDF Parsing for RAG
 PyPDF2>=3.0.0
+
+# Phase 3: Distributed Systems
+redis>=5.0.0
+redisvl>=0.1.0
+APScheduler>=3.10.0
+Flask-Limiter>=3.5.0
+
+# Sentry for error tracking
+sentry-sdk[flask]>=1.40.0
