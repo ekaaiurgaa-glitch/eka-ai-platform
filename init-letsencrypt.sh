@@ -5,10 +5,10 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(app.eka-ai.com) # ⚠️ CHECK IF THIS DOMAIN IS CORRECT
+domains=(eka-ai.in www.eka-ai.in)
 rsa_key_size=4096
 data_path="./certbot"
-email="admin@eka-ai.com" # ⚠️ CHECK EMAIL
+email="admin@eka-ai.in"
 staging=0 
 
 if [ -d "$data_path" ]; then
