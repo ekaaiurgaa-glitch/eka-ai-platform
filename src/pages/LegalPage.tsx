@@ -3,25 +3,16 @@ import { useParams, Link } from 'react-router-dom';
 import { Shield, FileText, RotateCcw, Mail, MapPin, Building2 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════
-// ⚠️  IMPORTANT: UPDATE THESE WITH YOUR ACTUAL COMPANY DETAILS
-// Get CIN from Ministry of Corporate Affairs (MCA21 portal)
-// Get GSTIN from GST Portal
+// COMPANY DETAILS - Go4Garage Private Limited
+// Registered in Uttar Pradesh, India
 // ═══════════════════════════════════════════════════════════════
 const COMPANY_INFO = {
   name: "Go4Garage Private Limited",
-  // TODO: Replace with actual CIN from MCA
-  // Format: U72501MH2024PTCXXXXXX
-  cin: "U72501MH2024PTC123456",
-  
-  // TODO: Replace with actual GSTIN
-  // Format: 27XXXXXXXXXXZ5 (for Maharashtra)
-  gstin: "27AABCG1234D1Z5",
-  
-  // TODO: Replace with actual registered address
-  address: "123, Techno Park, Andheri East, Mumbai - 400069, Maharashtra, India",
-  
+  cin: "U34300UP2021PTC145107",  // MCA Registration
+  gstin: "10AAICG9768N1ZZ",       // GST Registration (Bihar/Jharkhand region)
+  address: "Go4Garage Private Limited, Uttar Pradesh, India",
   email: "legal@eka-ai.com",
-  phone: "+91-22-1234-5678",
+  phone: "+91-XXXX-XXXXXX",  // Update with actual phone
   website: "https://eka-ai.com"
 };
 
