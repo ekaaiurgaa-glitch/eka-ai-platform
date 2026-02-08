@@ -37,6 +37,7 @@ from services.backup_service import backup_service, perform_backup
 from middleware.auth import require_auth, get_current_user
 from middleware.monitoring import MonitoringMiddleware, track_performance
 from middleware.rate_limit import init_rate_limiter, init_error_handlers
+from routes.dashboard import dashboard_bp
 
 # Phase 3: Initialize monitoring (Sentry)
 from config.monitoring import init_monitoring, capture_exception
@@ -67,8 +68,14 @@ origins_list = [origin.strip() for origin in raw_origins.split(',') if origin.st
 CORS(flask_app, origins=origins_list)
 
 # ─────────────────────────────────────────
-# PHASE 3: PROTECTION LAYER (Rate Limiting)
+# PHASE 4: DASHBOARD BLUEPRINT (Glass Cockpit)
 # ─────────────────────────────────────────
+flask_app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
+logger.info("✅ Phase 4: Dashboard Blueprint (Glass Cockpit) registered")
+
+# ─────────────────────────────────────────
+# PHASE 3: PROTECTION LAYER (Rate Limiting)
+# ─────────────────────────────────---------
 # Initialize distributed rate limiter with Redis
 limiter = init_rate_limiter(flask_app)
 init_error_handlers(flask_app)

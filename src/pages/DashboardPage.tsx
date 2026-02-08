@@ -26,8 +26,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ jobs: 0, revenue: '₹0', pdi: 0 });
 
   useEffect(() => {
-    // Connect to Backend Metrics
-    api.get('/metrics/dashboard').then(res => setStats(res.data)).catch(console.error);
+    // Connect to Backend Metrics (Phase 4 Glass Cockpit)
+    api.get('/dashboard/metrics').then(res => setStats(res.data)).catch(console.error);
   }, []);
 
   return (
