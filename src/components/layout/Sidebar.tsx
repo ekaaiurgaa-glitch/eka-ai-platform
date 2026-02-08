@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MessageSquare, Truck, Settings, PenTool, Database } from 'lucide-react';
+import { Plus, MessageSquare, Truck, Settings, PenTool, Database, Zap } from 'lucide-react';
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -39,15 +39,31 @@ const Sidebar = () => {
         <RecentItem label="Creta AC Cooling Issue" />
       </div>
 
+      {/* Upgrade CTA */}
+      <div className="mt-auto mb-4 px-3">
+        <button 
+          onClick={() => navigate('/app/pricing')}
+          className="w-full bg-gradient-to-r from-brand-orange to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white py-2.5 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20"
+        >
+          <Zap size={16} className="fill-white" />
+          Upgrade to Pro
+        </button>
+      </div>
+
       {/* Footer */}
-      <div className="mt-auto pt-4 border-t border-border">
+      <div className="pt-4 border-t border-border">
         <div className="flex items-center gap-3 px-2 py-2 hover:bg-[#252525] rounded-md cursor-pointer transition-colors">
           <div className="w-8 h-8 rounded bg-gradient-to-br from-brand-orange to-red-500 flex items-center justify-center text-white font-bold text-xs">
             G4
           </div>
           <div className="text-sm">
             <div className="font-medium text-text-primary">Go4Garage</div>
-            <div className="text-xs text-text-secondary">Pro Plan</div>
+            <button 
+              onClick={() => navigate('/app/pricing')}
+              className="text-xs text-brand-orange hover:underline"
+            >
+              Free Plan → Upgrade
+            </button>
           </div>
         </div>
       </div>

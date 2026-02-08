@@ -30,6 +30,7 @@ from services.job_card_manager import JobCardManager, JobStatus, JobPriority, VA
 from services.pdi_manager import PDIManager, PDIStatus, STANDARD_PDI_ITEMS
 from services.invoice_manager import InvoiceManager
 from services.ai_governance import AIGovernance
+from services.subscription_service import SubscriptionService
 from middleware.auth import require_auth, get_current_user
 
 # Import LangChain/LlamaIndex Knowledge Base and Agents
@@ -2013,6 +2014,64 @@ def governance_stats():
     governance = get_ai_governance(supabase)
     return jsonify(governance.get_stats(g.workshop_id))
 
+
+# ─────────────────────────────────────────
+# SUBSCRIPTION & MONETIZATION
+# ─────────────────────────────────────────
+subscription_service = SubscriptionService()
+
+@flask_app.route('/api/subscription/checkout', methods=['POST'])
+@require_auth(allowed_roles=['OWNER'])
+def create_checkout():
+    """Create a checkout session for upgrading subscription"""
+    try:
+        data = request.get_json()
+        workshop_id = g.workshop_id
+        plan_id = data.get('plan_id', 'PRO')
+        
+        session = subscription_service.create_checkout_session(workshop_id, plan_id)
+        return jsonify(session)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Checkout error: {e}")
+        return jsonify({"error": "Failed to create checkout session"}), 500
+
+@flask_app.route('/api/subscription/webhook', methods=['POST'])
+def payment_webhook():
+    """Handle payment webhook from Razorpay/Stripe"""
+    try:
+        # In production, verify webhook signature here
+        data = request.get_json()
+        workshop_id = data.get('workshop_id')
+        plan_id = data.get('plan_id')
+        payment_id = data.get('payment_id')
+        
+        if not all([workshop_id, plan_id, payment_id]):
+            return jsonify({"error": "Missing required fields"}), 400
+            
+        subscription_service.activate_subscription(workshop_id, plan_id, payment_id)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@flask_app.route('/api/subscription/status', methods=['GET'])
+@require_auth()
+def get_subscription_status():
+    """Get current subscription status for the workshop"""
+    try:
+        workshop_id = g.workshop_id
+        status = subscription_service.get_subscription_status(workshop_id)
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"Status check error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@flask_app.route('/api/subscription/plans', methods=['GET'])
+def get_subscription_plans():
+    """Get available subscription plans"""
+    return jsonify(subscription_service.PLANS)
 
 # ─────────────────────────────────────────
 # STATIC FILE SERVING (Production)
