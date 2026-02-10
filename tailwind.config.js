@@ -7,29 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Claude Dark Theme Palette
-        background: '#191919', 
-        surface: '#252525',
-        border: '#333333',
-        input: '#2b2b2b',
-        
-        // EKA-AI Brand
-        brand: {
-          orange: '#f18a22',
-          hover: '#d97b1f',
-          purple: '#5B2C6F',
-          green: '#28B463',
-        },
-        
-        // Text
-        text: {
-          primary: '#ECECEC',
-          secondary: '#A1A1A1',
-          muted: '#666666'
-        }
+        primary: '#4F46E5',
+        secondary: '#A855F7',
+        accent: '#F18A22',
+        'text-primary': '#111827',
+        'text-secondary': '#6B7280',
+        background: '#FFFFFF',
+        'background-alt': '#F9FAFB',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Outfit', 'sans-serif'],
       }
     },
   },
