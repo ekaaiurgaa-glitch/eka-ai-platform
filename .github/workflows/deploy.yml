@@ -1,85 +1,69 @@
-name: Production Deployment
+name: Deploy to Production
 
 on:
   push:
-    branches: [ "main" ]
-  workflow_dispatch:  # Allow manual trigger
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install -r backend/requirements.txt
-
-      - name: Run Python syntax check
-        run: |
-          python -m py_compile backend/server.py
-          python -m py_compile backend/services/*.py
-          echo "✅ Python syntax check passed"
-
   deploy:
-    needs: test
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script_stop: true
-          script: |
-            # Stop execution on any error
-            set -e
-            
-            echo "🚀 Starting deployment to Phase 3..."
-            
-            # Navigate to project directory
-            cd /opt/eka-ai-platform
-            
-            # Pull latest changes from git
-            echo "📥 Pulling latest code..."
-            git pull origin main
-            
-            # Rebuild and restart containers
-            echo "🔨 Building and restarting containers..."
-            docker-compose -f docker-compose.prod.yml up -d --build --remove-orphans
-            
-            # Verify container health
-            echo "🔄 Verifying container health..."
-            docker-compose -f docker-compose.prod.yml ps | grep -q "healthy" && echo "✅ Containers healthy" || echo "⚠️ Health check pending"
-            
-            # Prune unused images to save disk space
-            echo "🧹 Cleaning up old images..."
-            docker image prune -f
-            
-            # Health check
-            echo "🏥 Running health check..."
-            sleep 10
-            curl -f http://localhost:8001/api/health || exit 1
-            
-            echo "✅ Deployment to Phase 3 complete!"
-
-      - name: Notify on Success
-        if: success()
-        run: |
-          echo "🎉 Deployment successful!"
-
-      - name: Notify on Failure
-        if: failure()
-        run: |
-          echo "❌ Deployment failed! Check logs."
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Type check
+      run: npm run typecheck
+      
+    - name: Build
+      run: npm run build
+      env:
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        
+    # Deploy to GitHub Pages (optional)
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        
+    # Deploy to AWS S3 (optional - configure if needed)
+    - name: Configure AWS credentials
+      if: false  # Enable this when ready
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+        
+    - name: Deploy to S3
+      if: false  # Enable this when ready
+      run: aws s3 sync dist/ s3://eka-ai-platform --delete
+      
+    # Deploy to EC2 (optional - configure if needed)
+    - name: Deploy to EC2
+      if: false  # Enable this when ready
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          cd /var/www/eka-ai-platform
+          git pull origin main
+          npm ci
+          npm run build
+          sudo systemctl restart nginx
