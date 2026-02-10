@@ -1,120 +1,62 @@
-# EKA-AI Platform - Git Ignore Configuration
-# Production v4.5 - Enterprise Grade
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
 
-# ═══════════════════════════════════════════════════════════════
-# LOGS
-# ═══════════════════════════════════════════════════════════════
-logs/
+# Build output
+dist/
+build/
+.vite/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
-# ═══════════════════════════════════════════════════════════════
-# DEPENDENCIES & BUILD ARTIFACTS
-# ═══════════════════════════════════════════════════════════════
-node_modules/
-dist/
-dist-ssr/
-*.local
-*.tgz
-*.tar.gz
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# ═══════════════════════════════════════════════════════════════
-# PYTHON
-# ═══════════════════════════════════════════════════════════════
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+*.tsbuildinfo
+.firebase/
+.firebaserc.backup
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 venv/
-.venv/
 ENV/
-*.egg-info/
-.eggs/
-*.egg
-.pytest_cache/
-*.pyo
-*.pyd
-.coverage
-htmlcov/
-.tox/
+env/
 
-# ═══════════════════════════════════════════════════════════════
-# ENVIRONMENT FILES (CRITICAL - NEVER COMMIT)
-# ═══════════════════════════════════════════════════════════════
-.env
-.env.local
-.env.*.local
-.env.production
-.env.staging
-backend/.env
-backend/.env.*
-*.env
-
-# ═══════════════════════════════════════════════════════════════
-# EDITOR & IDE
-# ═══════════════════════════════════════════════════════════════
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json.example
-.idea/
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-*.swp
-*.swo
-*~
-
-# ═══════════════════════════════════════════════════════════════
-# DATABASE & STORAGE
-# ═══════════════════════════════════════════════════════════════
-*.sqlite
-*.sqlite3
+# Database
 *.db
-*.dump
-*.sql.gz
-backups/
+*.sqlite
 
-# ═══════════════════════════════════════════════════════════════
-# CERTIFICATES & KEYS (CRITICAL - NEVER COMMIT)
-# ═══════════════════════════════════════════════════════════════
+# Secrets
 *.pem
 *.key
-*.crt
-*.csr
-*.der
-*.p12
-*.pfx
-certbot/conf/
-certbot/archive/
-certbot/keys/
-
-# ═══════════════════════════════════════════════════════════════
-# DOCKER
-# ═══════════════════════════════════════════════════════════════
-.dockerignore
-
-# ═══════════════════════════════════════════════════════════════
-# DEPLOYMENT
-# ═══════════════════════════════════════════════════════════════
-.ssh/
-*.private
-secrets/
-credentials/
-
-# ═══════════════════════════════════════════════════════════════
-# TESTING & TEMP FILES
-# ═══════════════════════════════════════════════════════════════
-temp/
-tmp/
-*.tmp
-*.bak
-.cache/
+!eka.pem
