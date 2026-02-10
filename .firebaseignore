@@ -1,0 +1,22 @@
+# Firebase ignore
+node_modules/
+.git/
+.github/
+backend/
+*.log
+*.md
+.env*
+!.env.example
+src/
+public/
+*.config.js
+*.config.ts
+tsconfig.json
+package.json
+package-lock.json
+.backup/
+.devcontainer/
+.emergent/
+nginx/
+scripts/
+docs/

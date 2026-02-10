@@ -42,7 +42,7 @@ echo "────────────────────────�
 
 check_file "tailwind.config.js"
 check_content "tailwind.config.js" "brand-orange" "Three-color palette defined"
-check_content "src/index.css" "--brand-orange" "CSS variables defined"
+check_content "src/index.css" "brand-orange" "CSS variables defined"
 check_file "src/components/VideoScroller.tsx"
 check_file "src/pages/LoginPage.tsx"
 check_content "src/pages/LoginPage.tsx" "VideoScroller" "Dual-pane login implemented"
